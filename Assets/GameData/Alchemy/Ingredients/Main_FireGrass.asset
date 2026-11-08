@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: main_fire_grass
   displayName: "\u706B\u708E\u8349"
   description: "\u89E6\u308B\u3068\u71B1\u3044\u8D64\u3044\u8349\u3002\u51B7\u6C17\u3092\u6253\u3061\u6D88\u3059\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4cf1e6aa609bf1942af0dd1446d4e88f, type: 3}
   category: 1
   color: {r: 0.9, g: 0.3, b: 0.15, a: 1}
   attributes:
@@ -32,6 +32,8 @@ MonoBehaviour:
   rarity: 1
   buyPrice: 6
   stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u8349"
   - "\u706B"
@@ -41,6 +43,12 @@ MonoBehaviour:
   heatSensitivity: -1
   activationTemp: 80
   activationBonus: 60
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: 4147ced62d37d2b4a993dd837ce2726d, type: 3}
   worldPrefab: {fileID: 0}
   container: 0
   dropPiecePrefab: {fileID: 0}

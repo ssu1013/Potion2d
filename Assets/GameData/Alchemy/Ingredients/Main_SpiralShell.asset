@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Main_SpiralShell
+  m_EditorClassIdentifier: 
+  ingredientId: main_spiral_shell
+  displayName: "\u6E26\u5DFB\u304D\u8C9D"
+  description: "\u5DE6\u5DFB\u304D\u306E\u5C0F\u3055\u306A\u8C9D\u6BBB\u3002\u98A8\u306E\u529B\u3092\u79D8\u3081\u3066\u3044\u308B\u3002\u3042\u308B\u5411\u304D\u306B\u6DF7\u305C\u305F\u3068\u304D\u3060\u3051\u3001\u307B\u3069\u3051\u308B\u3088\u3046\u306B\u6EB6\u3051\u308B\u3089\u3057\u3044\u3002"
+  icon: {fileID: 21300000, guid: d8af48ebbdddb8e4d9146882037be01c, type: 3}
+  category: 1
+  color: {r: 0.96, g: 0.8, b: 0.72, a: 1}
+  attributes:
+  - attribute: 7
+    value: 16
+  - attribute: 2
+    value: 3
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 0
+  amountPerUse: 1
+  rarity: 2
+  buyPrice: 9
+  stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 3
+  tags:
+  - "\u8C9D"
+  - "\u6D77"
+  - "\u98A8"
+  sortOrder: 0
+  solubility: 0.15
+  heatLimit: 0
+  heatSensitivity: 0
+  activationTemp: 0
+  activationBonus: 0
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 2
+  pieceSprite: {fileID: 21300000, guid: c26422679ab451046b33cf6ab9f43129, type: 3}
+  worldPrefab: {fileID: 0}
+  container: 0
+  dropPiecePrefab: {fileID: 0}

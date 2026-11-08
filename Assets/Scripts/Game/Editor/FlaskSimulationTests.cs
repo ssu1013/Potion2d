@@ -307,6 +307,61 @@ namespace PotionFrontier.Game.EditorTools
             LiquidRecord star = Make(f => { f.Pour(d.water, 100f); f.AddSolid(d.spiralShell, 1f); Stir(f, 10f, false, 5f); f.AddSolid(d.starPetal, 1f); Stir(f, 2.5f, false, 3f); f.Tick(4f); });
             Show("渦巻き貝を溶かしてから、星の花びらをそっと反時計回り", star);
             Check("反応「流れ星の渦」が起きる", star.reactionIds.Contains(d.starSpiral.ReactionId), string.Join(",", star.reactionIds));
+
+            Section("追加の素材（森の蜜蝋・ぜんまい草・泡雪の粉・月下の夜露）");
+            // 火加減 0.4 は 64℃ に向かう：蜜蝋（45℃）は溶けて、琥珀樹脂（65℃）は溶けない温度
+            FlaskSimulation tepidWax = HeatTo(56f, 0.4f); tepidWax.AddSolid(d.beesWax, 1f); Stir(tepidWax, 10f, true, 5f);
+            FlaskSimulation tepidAmber = HeatTo(56f, 0.4f); tepidAmber.AddSolid(d.amberResin, 1f); Stir(tepidAmber, 10f, true, 5f);
+            FlaskSimulation coldWax = New(); coldWax.Pour(d.water, 100f); coldWax.AddSolid(d.beesWax, 1f); Stir(coldWax, 10f, true, 5f);
+            Check("森の蜜蝋は、冷たいままだと溶けない", coldWax.DissolvedFraction < 0.01f, $"溶けた割合 {coldWax.DissolvedFraction:P0}（{coldWax.Temperature:0}℃）");
+            Check("森の蜜蝋は、ぬるめ（45℃以上）で溶ける。同じ温度で琥珀樹脂は溶けない", tepidWax.DissolvedFraction > 0.5f && tepidAmber.DissolvedFraction < 0.01f,
+                  $"蜜蝋 {tepidWax.DissolvedFraction:P0} ／ 琥珀樹脂 {tepidAmber.DissolvedFraction:P0}（{tepidWax.Temperature:0}℃）");
+
+            FlaskSimulation fernCw = New();
+            fernCw.Pour(d.water, 100f); fernCw.AddSolid(d.fiddlehead, 1f); Stir(fernCw, 10f, true, 5f);
+            FlaskSimulation fernCcw = New();
+            fernCcw.Pour(d.water, 100f); fernCcw.AddSolid(d.fiddlehead, 1f); Stir(fernCcw, 10f, false, 5f);
+            Check("ぜんまい草は、時計回りに混ぜると溶けて、反時計回りではほとんど溶けない（渦巻き貝と逆）",
+                  fernCw.DissolvedFraction > fernCcw.DissolvedFraction + 0.3f && fernCcw.DissolvedFraction < 0.5f,
+                  $"時計回り {fernCw.DissolvedFraction:P0} ／ 反時計回り {fernCcw.DissolvedFraction:P0}");
+
+            FlaskSimulation fizz = New();
+            fizz.Pour(d.water, 100f); fizz.AddSolid(d.fizzPowder, 1f); fizz.Tick(10f);
+            Check("泡雪の粉は、混ぜなくてもすぐ溶ける", fizz.DissolvedFraction > 0.7f, $"{fizz.DissolvedFraction:P0}（10秒、混ぜない）");
+            FlaskSimulation fizzCalm = New();
+            fizzCalm.Pour(d.water, 150f); fizzCalm.AddSolid(d.fizzPowder, 2f); fizzCalm.Tick(6f); fizzCalm.SetHeat(0.5f); fizzCalm.Tick(30f);
+            FlaskSimulation fizzBoil = New();
+            fizzBoil.Pour(d.water, 150f); fizzBoil.AddSolid(d.fizzPowder, 2f); fizzBoil.Tick(6f); fizzBoil.SetHeat(1f); fizzBoil.Tick(30f);
+            float wc = Total(fizzCalm, PotionAttribute.Wind), wb = Total(fizzBoil, PotionAttribute.Wind);
+            Check("泡雪の粉は、沸騰させると泡（風の力）が抜ける", wc > wb * 2f, $"沸騰させない {wc:0.0} ／ 沸騰させた {wb:0.0}");
+
+            FlaskSimulation dewCalm = New();
+            dewCalm.Pour(d.nightDew, 150f); dewCalm.SetHeat(0.5f); dewCalm.Tick(30f);
+            FlaskSimulation dewBoil = New();
+            dewBoil.Pour(d.nightDew, 150f); dewBoil.SetHeat(1f); dewBoil.Tick(30f);
+            float vc = Total(dewCalm, PotionAttribute.Invisibility), vb = Total(dewBoil, PotionAttribute.Invisibility);
+            Check("月下の夜露（ベース液体）も、煮立てると力が飛ぶ", vc > vb * 2f, $"沸騰させない {vc:0.0} ／ 沸騰させた {vb:0.0}");
+
+            LiquidRecord cradle = Make(f =>
+            {
+                f.Pour(d.water, 100f); f.SetHeat(0.6f);
+                for (int i = 0; i < 2000 && f.Temperature < 55f; i++) f.Tick(FlaskSimulation.StepSeconds);
+                f.SetHeat(0.4f);
+                f.AddSolid(d.beesWax, 1f); f.AddSolid(d.fiddlehead, 1f); Stir(f, 10f, true, 6f); f.Tick(4f);
+            });
+            Show("ぬるいまま森の蜜蝋とぜんまい草を時計回り", cradle);
+            Check("反応「蜜蝋のゆりかご」が起きる", cradle.reactionIds.Contains(d.waxCradle.ReactionId), string.Join(",", cradle.reactionIds));
+        }
+
+        /// <summary>水 100ml を火加減 0.6 で temp℃ まで温め、火加減を hold にしたフラスコ</summary>
+        private static FlaskSimulation HeatTo(float temp, float hold)
+        {
+            FlaskSimulation f = New();
+            f.Pour(d.water, 100f);
+            f.SetHeat(0.6f);
+            for (int i = 0; i < 2000 && f.Temperature < temp; i++) f.Tick(FlaskSimulation.StepSeconds);
+            f.SetHeat(hold);
+            return f;
         }
 
         /// <summary>属性の合計（100ml あたりの濃さ × 量）。煮詰めて濃くなった分を差し引いて比べる</summary>

@@ -34,6 +34,7 @@ namespace PotionFrontier.Game
 
         [Header("発見・素材ノート（Assets/Art2D/UI/Discovery。同じ名前の PNG で上書きすると差し替わる）")]
         [Tooltip("page.png：新しい反応を見つけたときのページ・書き足したお知らせの紙（9スライス推奨）")] public Sprite discoveryPage;
+        [Tooltip("page_turn.png：ページめくりで、めくれていく紙（左の辺がとじ目。9スライス推奨）")] public Sprite pageTurn;
         [Tooltip("card.png：素材ノートの素材カード（9スライス推奨）")] public Sprite notebookCard;
         [Tooltip("unknown.png：まだ出会っていない素材の影絵（白で描くと暗い色で塗られる）")] public Sprite unknownMark;
         [Tooltip("stamp_new.png：新しい液体を発見")] public Sprite stampNew;

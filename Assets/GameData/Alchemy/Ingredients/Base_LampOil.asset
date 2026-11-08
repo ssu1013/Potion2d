@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: base_lamp_oil
   displayName: "\u706F\u308A\u6CB9"
   description: "\u30E9\u30F3\u30D7\u7528\u306E\u6CB9\u3002\u307B\u3093\u306E\u308A\u706B\u306E\u6C17\u3092\u5E2F\u3073\u3066\u3044\u308B\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c07d965eb59946e4c84f6bb1c4c05606, type: 3}
   category: 0
   color: {r: 0.95, g: 0.8, b: 0.35, a: 0.9}
   attributes:
@@ -29,10 +29,24 @@ MonoBehaviour:
   amountPerUse: 1
   rarity: 1
   buyPrice: 4
+  stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u6CB9"
   - "\u706B"
   sortOrder: 0
+  solubility: -1
+  heatLimit: -1
+  heatSensitivity: -1
+  activationTemp: 0
+  activationBonus: 50
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 0}
   worldPrefab: {fileID: 0}
   container: 0
   dropPiecePrefab: {fileID: 0}

@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Main_BeesWax
+  m_EditorClassIdentifier: 
+  ingredientId: main_bees_wax
+  displayName: "\u68EE\u306E\u871C\u874B"
+  description: "\u68EE\u306E\u8702\u304C\u4F5C\u3063\u305F\u3084\u308F\u3089\u304B\u3044\u874B\u3002\u306C\u308B\u3081\u306E\u304A\u6E6F\uFF0845\u2103\uFF09\u3067\u6EB6\u3051\u3066\u3001\u80B2\u3066\u308B\u529B\u3068\u7652\u3084\u3057\u3092\u4E0E\u3048\u308B\u3002"
+  icon: {fileID: 21300000, guid: e3ed519aec0539f42bc296c4195285b4, type: 3}
+  category: 1
+  color: {r: 0.98, g: 0.84, b: 0.42, a: 1}
+  attributes:
+  - attribute: 3
+    value: 12
+  - attribute: 0
+    value: 8
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 2
+  amountPerUse: 1
+  rarity: 1
+  buyPrice: 6
+  stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 1
+  tags:
+  - "\u6A39\u8102"
+  - "\u874B"
+  - "\u68EE"
+  sortOrder: 0
+  solubility: 0.6
+  heatLimit: 0
+  heatSensitivity: 0
+  activationTemp: 0
+  activationBonus: 0
+  meltTemp: 45
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: 6adcdf2a94d4e7b46b20af9351aad9f6, type: 3}
+  worldPrefab: {fileID: 0}
+  container: 2
+  dropPiecePrefab: {fileID: 0}

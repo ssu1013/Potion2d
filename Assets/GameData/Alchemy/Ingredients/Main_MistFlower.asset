@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: main_mist_flower
   displayName: "\u9727\u96A0\u308C\u306E\u82B1"
   description: "\u898B\u3064\u3081\u3066\u3044\u308B\u3068\u8F2A\u90ED\u304C\u307C\u3084\u3051\u308B\u4E0D\u601D\u8B70\u306A\u82B1\u3002\u5149\u3092\u5ACC\u3046\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 231d6f2cd6049f24a91b2af3f8b76dd1, type: 3}
   category: 1
   color: {r: 0.85, g: 0.85, b: 0.95, a: 1}
   attributes:
@@ -32,6 +32,8 @@ MonoBehaviour:
   rarity: 2
   buyPrice: 9
   stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u82B1"
   - "\u68EE"
@@ -41,6 +43,12 @@ MonoBehaviour:
   heatSensitivity: 0.7
   activationTemp: 0
   activationBonus: 0
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: 8115911733273344a9b98bd7397f5e6e, type: 3}
   worldPrefab: {fileID: 0}
   container: 0
   dropPiecePrefab: {fileID: 0}

@@ -61,6 +61,10 @@ namespace PotionFrontier.Game2D
         private readonly Text resultQuest;
         private readonly RectTransform newStamp;
         private bool resultIsNew;
+        // 新しい液体：「新発見！」の見出し・ページめくり・影絵から色が付いていく瓶
+        private readonly Text newHeader;
+        private readonly PageFlipUI resultFlip;
+        private const float NewPageDelay = 0.45f;
 
         // 素材ノートに書き足したお知らせ（順番に1つずつ）
         private sealed class SlipData
@@ -88,6 +92,7 @@ namespace PotionFrontier.Game2D
         private readonly Image[] pageIcons = new Image[3];
         private readonly Text[] pagePlus = new Text[2];
         private readonly RectTransform pageStamp;
+        private readonly PageFlipUI pageFlip;
         private float pageAge = 100f;
         private readonly Text[] stars = new Text[5];
         private readonly float[] starAge = new float[5];
@@ -97,11 +102,17 @@ namespace PotionFrontier.Game2D
 
         /// <summary>結果カードの ★ が1つ付いた（番号 0〜4）。音を鳴らすのに使う</summary>
         public System.Action<int> StarShown;
+        /// <summary>ページをめくりはじめた（新しい液体・新しい反応）。音を鳴らすのに使う</summary>
+        public System.Action PageTurnStarted;
 
         public bool ResultVisible => result.gameObject.activeSelf;
         public bool SlipVisible => slip.gameObject.activeSelf;
         public bool PageVisible => page.gameObject.activeSelf;
         public bool NewStampVisible => newStamp.gameObject.activeSelf;
+        public bool NewHeaderVisible => newHeader.gameObject.activeSelf;
+        /// <summary>これまでにページをめくった回数（自動テスト用）</summary>
+        public int PageTurnCount => resultFlip.PlayCount + pageFlip.PlayCount;
+        public bool PageTurning => resultFlip.Playing || pageFlip.Playing;
         public int ResultStarsShown => starsShown;
         public bool RingVisible => ring.gameObject.activeSelf;
 
@@ -179,6 +190,15 @@ namespace PotionFrontier.Game2D
             newStamp.anchorMin = newStamp.anchorMax = new Vector2(1f, 1f);
             newStamp.anchoredPosition = new Vector2(-44f, -36f);
             newStamp.gameObject.SetActive(false);
+            // 新しい液体なら、カードの上に「新発見！」の見出し。カードは図鑑のページのようにめくれて現れる
+            newHeader = UIFactory.Label(result, "NewHeader", "新発見！　図鑑に新しいページ", 26, new Color(1f, 0.86f, 0.36f), TextAnchor.LowerCenter, FontStyle.Bold);
+            newHeader.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var headerOutline = newHeader.gameObject.AddComponent<Outline>();
+            headerOutline.effectColor = new Color(0.25f, 0.12f, 0.04f, 0.9f);
+            headerOutline.effectDistance = new Vector2(2f, -2f);
+            UIFactory.Place(newHeader.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(480f, 40f));
+            newHeader.gameObject.SetActive(false);
+            resultFlip = new PageFlipUI(result, "PageTurn");
             result.gameObject.SetActive(false);
 
             // 素材ノートに書き足したお知らせ（上の真ん中）
@@ -232,6 +252,7 @@ namespace PotionFrontier.Game2D
             pageStamp = StampUI.Create(page, "Stamp", SkinSprite(s => s.stampReaction), "反応", new Vector2(136f, 136f), -14f, StampUI.Red);
             pageStamp.anchorMin = pageStamp.anchorMax = new Vector2(1f, 1f);
             pageStamp.anchoredPosition = new Vector2(-92f, -86f);
+            pageFlip = new PageFlipUI(page, "PageTurn");
             page.gameObject.SetActive(false);
         }
 
@@ -306,6 +327,14 @@ namespace PotionFrontier.Game2D
             resultQuest.color = m.questMatch ? new Color(0.2f, 0.5f, 0.18f, 1f) : UIColors.InkLight;
             resultIsNew = m.isNew;
             newStamp.gameObject.SetActive(false);
+            newHeader.gameObject.SetActive(m.isNew);
+            bottle.color = m.isNew ? SilhouetteColor : Color.white;
+            if (m.isNew)
+            {
+                resultFlip.Play(true);
+                if (PageTurnStarted != null) PageTurnStarted();
+            }
+            else resultFlip.Stop();
             resultStars = Mathf.Clamp(m.stars, 0, 5);
             starsShown = 0;
             for (int i = 0; i < 5; i++)
@@ -459,19 +488,24 @@ namespace PotionFrontier.Game2D
             pageAge = 0f;
             page.gameObject.SetActive(true);
             page.SetAsLastSibling();
+            pageFlip.Play(true);
+            if (PageTurnStarted != null) PageTurnStarted();
         }
 
         private void TickPage(float dt)
         {
             if (!page.gameObject.activeSelf) return;
             pageAge += dt;
-            const float life = 5.5f;
+            const float life = 5.8f;
+            pageFlip.Tick(dt);
             float s = pageAge < 0.2f ? Mathf.Lerp(0.8f, 1.04f, pageAge / 0.2f) : Mathf.Lerp(1.04f, 1f, Mathf.Clamp01((pageAge - 0.2f) / 0.15f));
             page.localScale = Vector3.one * s;
             pageGroup.alpha = pageAge < life - 0.5f ? Mathf.Clamp01(pageAge / 0.15f) : Mathf.Clamp01((life - pageAge) / 0.5f);
-            StampUI.Slam(pageStamp, pageAge - 0.7f, -14f);
+            StampUI.Slam(pageStamp, pageAge - 0.95f, -14f);
             if (pageAge >= life) page.gameObject.SetActive(false);
         }
+
+        private static readonly Color SilhouetteColor = new Color(0.1f, 0.07f, 0.05f, 1f);
 
         private static Sprite SkinSprite(System.Func<UISkin, Sprite> pick)
         {
@@ -484,14 +518,24 @@ namespace PotionFrontier.Game2D
         {
             if (!result.gameObject.activeSelf) return;
             resultAge += dt;
-            const float life = 4.2f;
+            float delay = resultIsNew ? NewPageDelay : 0f;    // 新しい液体はページをめくり終えてから
+            float life = 4.2f + delay;
+            resultFlip.Tick(dt);
+            if (resultIsNew)
+            {
+                // 影絵の瓶に、めくり終わるころから色が付いていく
+                bottle.color = Color.Lerp(SilhouetteColor, Color.white, Mathf.Clamp01((resultAge - 0.4f) / 0.7f));
+                float h = resultAge < 0.2f ? Mathf.Lerp(0.5f, 1.12f, resultAge / 0.2f) : Mathf.Lerp(1.12f, 1f, Mathf.Clamp01((resultAge - 0.2f) / 0.15f));
+                newHeader.rectTransform.localScale = Vector3.one * h;
+            }
             // ぽんっと出て、最後にすっと消える
             float s = resultAge < 0.18f ? Mathf.Lerp(0.7f, 1.06f, resultAge / 0.18f) : Mathf.Lerp(1.06f, 1f, Mathf.Clamp01((resultAge - 0.18f) / 0.15f));
             result.localScale = Vector3.one * s;
             resultGroup.alpha = resultAge < life - 0.4f ? Mathf.Clamp01(resultAge / 0.12f) : Mathf.Clamp01((life - resultAge) / 0.4f);
             // ★ を1つずつ
-            if (resultIsNew) StampUI.Slam(newStamp, resultAge - 0.3f, -12f);
-            int want = resultAge < 0.45f ? 0 : Mathf.Min(resultStars, 1 + Mathf.FloorToInt((resultAge - 0.45f) / 0.2f));
+            if (resultIsNew) StampUI.Slam(newStamp, resultAge - 0.3f - delay, -12f);
+            float starTime = resultAge - delay;
+            int want = starTime < 0.45f ? 0 : Mathf.Min(resultStars, 1 + Mathf.FloorToInt((starTime - 0.45f) / 0.2f));
             while (starsShown < want)
             {
                 starAge[starsShown] = 0f;

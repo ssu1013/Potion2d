@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Main_AmberResin
+  m_EditorClassIdentifier: 
+  ingredientId: main_amber_resin
+  displayName: "\u7425\u73C0\u6A39\u8102"
+  description: "\u53E4\u3044\u6728\u304B\u3089\u3057\u307F\u51FA\u305F\u3001\u304B\u305F\u3044\u3084\u306B\u3002\u6E29\u3081\u306A\u3044\u3068\u6EB6\u3051\u306A\u3044\u304C\u3001\u6EB6\u3051\u308B\u3068\u7652\u3084\u3057\u3068\u6DE1\u3044\u5149\u3092\u653E\u3064\u3002"
+  icon: {fileID: 21300000, guid: bad0ba5b4b7660e48ad4b2fc1aeff5b2, type: 3}
+  category: 1
+  color: {r: 0.93, g: 0.58, b: 0.16, a: 1}
+  attributes:
+  - attribute: 0
+    value: 14
+  - attribute: 6
+    value: 6
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 0
+  amountPerUse: 1
+  rarity: 2
+  buyPrice: 8
+  stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 1
+  tags:
+  - "\u6A39\u8102"
+  - "\u68EE"
+  sortOrder: 0
+  solubility: 0.5
+  heatLimit: 0
+  heatSensitivity: 0
+  activationTemp: 0
+  activationBonus: 0
+  meltTemp: 65
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: e300734990d86384489542d90d6b21e8, type: 3}
+  worldPrefab: {fileID: 0}
+  container: 0
+  dropPiecePrefab: {fileID: 0}

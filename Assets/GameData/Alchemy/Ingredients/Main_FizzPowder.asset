@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Main_FizzPowder
+  m_EditorClassIdentifier: 
+  ingredientId: main_fizz_powder
+  displayName: "\u6CE1\u96EA\u306E\u7C89"
+  description: "\u5165\u308C\u305F\u3068\u305F\u3093\u3001\u3057\u3085\u308F\u3063\u3068\u6EB6\u3051\u308B\u767D\u3044\u7C89\u3002\u305F\u3060\u3057\u6CE1\u306E\u529B\u306F\u8EFD\u304F\u3001\u6CB8\u9A30\u3055\u305B\u308B\u3068\u629C\u3051\u3066\u3057\u307E\u3046\u3002"
+  icon: {fileID: 21300000, guid: a729f9037afc94e4885739f18273e25a, type: 3}
+  category: 1
+  color: {r: 0.88, g: 0.96, b: 1, a: 1}
+  attributes:
+  - attribute: 7
+    value: 12
+  - attribute: 2
+    value: 5
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 3
+  amountPerUse: 1
+  rarity: 1
+  buyPrice: 5
+  stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
+  tags:
+  - "\u7C89"
+  - "\u98A8"
+  - "\u6C37"
+  sortOrder: 0
+  solubility: 1
+  heatLimit: 0
+  heatSensitivity: 0
+  activationTemp: 0
+  activationBonus: 0
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0.6
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: 4a1b2bbab3248834aa4fced7594d368a, type: 3}
+  worldPrefab: {fileID: 0}
+  container: 4
+  dropPiecePrefab: {fileID: 0}

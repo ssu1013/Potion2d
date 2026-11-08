@@ -12,7 +12,7 @@ namespace PotionFrontier.Game
         private static readonly float[] BellRatios = { 1f, 2f, 2.76f, 5.4f };
         private static readonly float[] BellGains = { 1f, 0.32f, 0.22f, 0.08f };
 
-        private static AudioClip chime, goal, discovery, reaction, softWarning;
+        private static AudioClip chime, goal, discovery, reaction, softWarning, pageTurn;
 
         /// <summary>鈴の「ちりん」（★1つ分。pitch を上げて音階にする）</summary>
         public static AudioClip Chime
@@ -106,6 +106,32 @@ namespace PotionFrontier.Game
             }
         }
 
+        /// <summary>紙をめくる「ぱらっ」：ざらっとした音が通り過ぎて、最後に軽く「ぱさ」</summary>
+        public static AudioClip PageTurn
+        {
+            get
+            {
+                if (pageTurn == null)
+                {
+                    var data = new float[(int)(Rate * 0.5f)];
+                    var rng = new System.Random(11);
+                    float fast = 0f, slow = 0f;
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        float t = i / (float)Rate;
+                        float n = (float)rng.NextDouble() * 2f - 1f;
+                        fast += (n - fast) * 0.35f;       // 高すぎるざらつきを丸める
+                        slow += (fast - slow) * 0.03f;     // 低いごろごろを抜く
+                        float env = t < 0.3f ? Mathf.Pow(Mathf.Sin(Mathf.PI * t / 0.3f), 2f) * 0.55f : 0f;
+                        if (t >= 0.27f) env += Mathf.Exp(-(t - 0.27f) * 45f) * 0.9f;
+                        data[i] = (fast - slow) * env;
+                    }
+                    pageTurn = Make("synth_page_turn", data);
+                }
+                return pageTurn;
+            }
+        }
+
         /// <summary>鐘のような倍音を、高い音ほど早く消えるように足す</summary>
         private static void AddBell(float[] data, float startSeconds, float frequency, float amplitude, float decaySeconds)
         {
@@ -145,6 +171,7 @@ namespace PotionFrontier.Game
             discovery = null;
             reaction = null;
             softWarning = null;
+            pageTurn = null;
         }
     }
 }

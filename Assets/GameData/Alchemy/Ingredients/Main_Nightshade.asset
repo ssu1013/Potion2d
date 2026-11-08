@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: main_nightshade
   displayName: "\u30CA\u30A4\u30C8\u30B7\u30A7\u30FC\u30C9"
   description: "\u6BD2\u3092\u6301\u3064\u7D2B\u306E\u5B9F\u3002\u5BB3\u866B\u3088\u3051\u306B\u4F7F\u3048\u308B\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c2e9d32afa1dfd04bad5035e9bfd67d6, type: 3}
   category: 1
   color: {r: 0.45, g: 0.2, b: 0.55, a: 1}
   attributes:
@@ -32,6 +32,8 @@ MonoBehaviour:
   rarity: 2
   buyPrice: 6
   stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u5B9F"
   - "\u6BD2"
@@ -41,6 +43,12 @@ MonoBehaviour:
   heatSensitivity: 0
   activationTemp: 90
   activationBonus: 40
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: 7d6fbc9d6e070014491e4ad0ce93ba7a, type: 3}
   worldPrefab: {fileID: 0}
   container: 0
   dropPiecePrefab: {fileID: 0}

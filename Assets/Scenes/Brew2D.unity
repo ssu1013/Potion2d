@@ -447,6 +447,10 @@ MonoBehaviour:
   reactions:
   - {fileID: 11400000, guid: 40a2e3b473a0e1e40a69f5d14942b0fb, type: 2}
   - {fileID: 11400000, guid: f140bb28fc2b56b44998f0165a5f9665, type: 2}
+  - {fileID: 11400000, guid: 7c57f0bebc552c44f93b0ec493e5c290, type: 2}
+  - {fileID: 11400000, guid: 3e906d62eabe53748b38576b2eeb8644, type: 2}
+  - {fileID: 11400000, guid: 9a97b161fc1ec714d9db710bf7f522b2, type: 2}
+  - {fileID: 11400000, guid: 78d60c8f62a8ff8478791803473a4af2, type: 2}
 --- !u!114 &612026277
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -528,7 +532,7 @@ MonoBehaviour:
   m_Intensity: 0.32
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
-  m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f0000000000000000b820352d000000000000000000000000
+  m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f101a4152bdb76224b820352d2f3836609ed09d24b347d36c
   m_LightCookieSprite: {fileID: 0}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0
@@ -610,7 +614,7 @@ MonoBehaviour:
   m_Intensity: 0.7
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
-  m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f0000000000000000b820352d000000000000000000000000
+  m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f101a4152bdb76224b820352d2f3836609ed09d24b347d36c
   m_LightCookieSprite: {fileID: 0}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0
@@ -1382,7 +1386,7 @@ MonoBehaviour:
   m_Intensity: 0.65
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
-  m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f0000000000000000b820352d000000000000000000000000
+  m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f101a4152bdb76224b820352d2f3836609ed09d24b347d36c
   m_LightCookieSprite: {fileID: 0}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0

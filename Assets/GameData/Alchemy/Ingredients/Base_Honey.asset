@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: base_honey
   displayName: "\u82B1\u306E\u871C"
   description: "\u8FB2\u5712\u306E\u82B1\u304B\u3089\u63A1\u308C\u308B\u7518\u3044\u871C\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6de7e8ecf4c483545ad82350fab53dd7, type: 3}
   category: 0
   color: {r: 1, g: 0.75, b: 0.3, a: 0.9}
   attributes:
@@ -31,10 +31,24 @@ MonoBehaviour:
   amountPerUse: 1
   rarity: 1
   buyPrice: 5
+  stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u8FB2\u5712"
   - "\u82B1"
   sortOrder: 0
+  solubility: -1
+  heatLimit: -1
+  heatSensitivity: -1
+  activationTemp: 0
+  activationBonus: 50
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 0}
   worldPrefab: {fileID: 0}
   container: 0
   dropPiecePrefab: {fileID: 0}

@@ -161,11 +161,20 @@ namespace PotionFrontier.Game2D
             IngredientData water = db != null ? db.Get("base_water") : null;
             IngredientData herb = db != null ? db.Get("main_herb") : null;
             Check(water != null && herb != null, "素材カタログに水と薬草がある");
-            Check(db != null && db.Count >= 21, $"素材カタログに新しい素材が入っている（{(db != null ? db.Count : 0)} 種類）");
+            Check(db != null && db.Count >= 25, $"素材カタログに新しい素材が入っている（{(db != null ? db.Count : 0)} 種類）");
+            IngredientData wax = db != null ? db.Get("main_bees_wax") : null;
+            IngredientData fern = db != null ? db.Get("main_fiddlehead") : null;
+            IngredientData fizz = db != null ? db.Get("main_fizz_powder") : null;
+            IngredientData dew = db != null ? db.Get("base_night_dew") : null;
+            Check(wax != null && wax.MeltTemp > 0f && wax.MeltTemp < 60f, "森の蜜蝋（ぬるめで溶ける）がある");
+            Check(fern != null && fern.DissolveDirection == StirDirection.Clockwise, "ぜんまい草（時計回りでだけ溶ける）がある");
+            Check(fizz != null && fizz.Volatility > 0f && dew != null && dew.Volatility > 0f, "泡雪の粉・月下の夜露（沸騰で力が飛ぶ）がある");
+            Check(wax != null && wax.Icon != null && wax.PieceSprite != null && dew != null && dew.Icon != null, "追加の素材にも絵（Art2D/Ingredients）が割り当てられている");
             Check(db != null && db.Get("main_amber_resin") != null && db.Get("main_amber_resin").MeltTemp > 0f, "琥珀樹脂（溶ける温度）がある");
             Check(water != null && water.Icon != null && herb != null && herb.Icon != null && herb.PieceSprite != null,
                   "素材の絵（Art2D/Ingredients の <ID>.png・<ID>_piece.png）が割り当てられている");
-            Check(UIFactory.Skin != null && UIFactory.Skin.stampNew != null && UIFactory.Skin.discoveryPage != null, "発見の絵（Art2D/UI/Discovery）が UISkin に割り当てられている");
+            Check(UIFactory.Skin != null && UIFactory.Skin.stampNew != null && UIFactory.Skin.discoveryPage != null && UIFactory.Skin.pageTurn != null,
+                  "発見の絵（Art2D/UI/Discovery。page_turn も）が UISkin に割り当てられている");
             Log($"所持金 {progress.Gold} G ／ 素材 {(db != null ? db.Count : 0)} 種類のうち {(stock != null ? stock.CountKinds(db) : 0)} 種類を持っている ／ いる所 {AtelierView2D.StopNames[view.Stop]}");
             yield return Shot("room_start");
             yield return Measure("部屋");
@@ -310,7 +319,14 @@ namespace PotionFrontier.Game2D
             Check(bottleAll != null, "「全部詰める」ボタンがある");
             if (bottleAll != null) bottleAll.onClick.Invoke();
             else session.BottleAll();
-            yield return Wait(1.1f);
+            yield return Wait(0.15f);
+            yield return Shot("new_page_turn");
+            if (feedback != null)
+            {
+                Check(feedback.PageTurnCount > 0, "新しい液体の結果カードが、図鑑のページをめくるように現れる");
+                Check(feedback.NewHeaderVisible, "結果カードの上に「新発見！」の見出しが出る");
+            }
+            yield return Wait(0.95f);
             yield return Shot("bottled");
             LiquidRecord bottled = lastBottled;
             if (feedback != null)
@@ -355,7 +371,7 @@ namespace PotionFrontier.Game2D
             // 新しい反応を見つけたときのページ（演出だけ。記録は変えない）
             AlchemyManager am = session.Alchemy;
             ReactionData sampleReaction = am != null && am.Reactions.Count > 2 ? am.Reactions[2] : (am != null && am.Reactions.Count > 0 ? am.Reactions[0] : null);
-            Check(am != null && am.Reactions.Count >= 5, $"シーンの調合に新しい反応が登録されている（{(am != null ? am.Reactions.Count : 0)} 個）");
+            Check(am != null && am.Reactions.Count >= 6, $"シーンの調合に新しい反応が登録されている（{(am != null ? am.Reactions.Count : 0)} 個）");
             if (feedback != null && sampleReaction != null)
             {
                 feedback.PreviewDiscoveryPage(sampleReaction);
@@ -442,7 +458,14 @@ namespace PotionFrontier.Game2D
             Check(hud.IsNotebookOpen, "M（素材ノート）で素材ノートが開く");
             if (hud.Notebook != null)
             {
-                Check(hud.Notebook.Count >= 21, $"素材ノートに全部の素材が並ぶ（{hud.Notebook.Count}）");
+                Check(hud.Notebook.Count >= 25, $"素材ノートに全部の素材が並ぶ（{hud.Notebook.Count}）");
+                int turned = hud.Notebook.PageTurnCount;
+                hud.Notebook.TurnPage(1);
+                yield return Wait(0.25f);
+                yield return Shot("notebook_page_turn");
+                Check(hud.Notebook.PageTurnCount > turned, "素材ノートのページを送ると、紙がめくれる");
+                yield return Wait(0.6f);
+                yield return Shot("notebook_page2");
                 hud.Notebook.SelectById("main_herb");
                 yield return Wait(0.5f);
                 Log("[素材ノート] 薬草のページ：" + hud.Notebook.FactsText.Replace('\n', ' '));
