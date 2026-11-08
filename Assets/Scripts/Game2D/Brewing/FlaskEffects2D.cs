@@ -35,6 +35,10 @@ namespace PotionFrontier.Game2D
         [SerializeField, Range(0f, 2f)] private float burnerVolume = 1f;
         [SerializeField, Range(0f, 1f), Tooltip("部屋にいるとき（調合台に向かっていないとき）の、ループの音の大きさ")] private float roomVolume = 0.35f;
 
+        [Header("夜の環境音（お湯がコトコト・ガラスが触れ合う）")]
+        [SerializeField, Range(0f, 2f), Tooltip("お湯が温まると、泡でフラスコが台に当たる「コト」の大きさ（50℃ から増える）")] private float kotoVolume = 1f;
+        [SerializeField, Range(0f, 2f), Tooltip("沸きはじめたフラスコのガラスが、軽く触れ合う「ちん」の大きさ（75℃ から）")] private float glassVolume = 1f;
+
         private sealed class Ripple
         {
             public SpriteRenderer renderer;
@@ -42,6 +46,18 @@ namespace PotionFrontier.Game2D
             public float strength;
             public float x;
         }
+
+        private const float KotoStart = 50f;
+        private const float GlassStart = 75f;
+        private float kotoTimer = 1f;
+        private float glassTimer = 3f;
+
+        /// <summary>お湯の「コト」を鳴らした回数（自動テスト用）</summary>
+        public int KnockCount { get; private set; }
+        /// <summary>ガラスが触れ合う「ちん」を鳴らした回数（自動テスト用）</summary>
+        public int GlassCount { get; private set; }
+        /// <summary>きらきらの粒を出した回数（夜の空気感では使わない。自動テストで 0 を確かめる）</summary>
+        public int SparkleCount { get; private set; }
 
         private BrewSession2D session;
         private Flask2D flask;
@@ -98,9 +114,13 @@ namespace PotionFrontier.Game2D
             Emit(ps, position, velocity, size, life, color);
         }
 
-        /// <summary>フラスコの中から、きらきらの粒をはじけさせる（反応が起きた・目標に届いた・新しい液体を発見したとき）</summary>
+        /// <summary>
+        /// フラスコの中から、きらきらの粒をはじけさせる。
+        /// 夜の空気感（Step6）からは使っていない（発見は Flask2D.WarmBloom の「温かい光がフワッ」）。派手にしたいときのために残してある
+        /// </summary>
         public void Sparkle(Color color, int count)
         {
+            SparkleCount++;
             if (!ready || flask == null || sparkle == null) return;
             Vector3 center = Vector3.Lerp(flask.BottomWorld, flask.SurfaceWorld, 0.6f);
             Color c = Color.Lerp(color, Color.white, 0.45f);
@@ -527,11 +547,14 @@ namespace PotionFrontier.Game2D
             boilBlend = Mathf.MoveTowards(boilBlend, wet && sim.IsBoiling ? 1f : 0f, dt * 0.7f);
             scorchBlend = Mathf.MoveTowards(scorchBlend, sim.IsScorching ? 1f : 0f, dt * 0.8f);
             Set(simmer, simmerBlend * 0.5f * boilVolume * room, 0.9f + simmerBlend * 0.15f);
-            Set(boil, boilBlend * (0.45f + 0.25f * heat) * boilVolume * room, 0.92f + 0.12f * heat);
+            Set(boil, boilBlend * (0.3f + 0.15f * heat) * boilVolume * room, 0.92f + 0.1f * heat); // ぐつぐつは控えめに（夜の空気感）
             Set(scorch, scorchBlend * 0.55f * boilVolume * room, 1f);
 
             // 加熱台の炎：火加減で大きさと高さが変わる
             Set(burner, heat > 0.001f ? (0.1f + 0.3f * heat) * burnerVolume * room : 0f, 0.85f + 0.3f * heat);
+
+            // お湯がコトコト・ガラスが軽く触れ合う（温度に合わせて、不規則に）
+            if (!silent && wet) Ambience(sim, temperature, room, dt);
 
             float master = GameSettings.SeVolume;
             foreach (AudioSource s in sources)
@@ -546,6 +569,56 @@ namespace PotionFrontier.Game2D
                 }
                 else if (s.volume <= 0.001f && want <= 0f && s.isPlaying) s.Stop();
             }
+        }
+
+        /// <summary>
+        /// お湯が温まると、泡でフラスコが台に当たって「コト…コト」（温まるほど増え、沸騰すると少しせわしなく）。
+        /// 75℃ をこえると、ときどきガラスが軽く触れ合う「ちん」。どちらも小さく、間隔は不規則に
+        /// </summary>
+        private void Ambience(FlaskSimulation sim, float temperature, float room, float dt)
+        {
+            SoundLibrary lib = AudioManager.Lib;
+            float warm = Smooth(KotoStart, 100f, temperature);
+            if (warm > 0.001f)
+            {
+                kotoTimer -= dt;
+                if (kotoTimer <= 0f)
+                {
+                    float perSecond = Mathf.Lerp(0.35f, 2.2f, warm) * (sim.IsBoiling ? 1.4f : 1f);
+                    kotoTimer = Random.Range(0.5f, 1.5f) / perSecond;
+                    AudioClip clip = Pick(lib != null ? lib.kotoKnock : null, SfxSynth.Knock);
+                    AudioManager.Se(clip, (0.1f + 0.18f * warm) * kotoVolume * room, Random.Range(0.85f, 1.18f));
+                    KnockCount++;
+                }
+            }
+            else kotoTimer = Random.Range(0.3f, 1f);
+
+            float hot = Smooth(GlassStart, 100f, temperature);
+            if (hot > 0.001f)
+            {
+                glassTimer -= dt;
+                if (glassTimer <= 0f)
+                {
+                    glassTimer = Random.Range(1.5f, 5f) / Mathf.Lerp(0.5f, 1.4f, hot);
+                    AudioClip custom = Pick(lib != null ? lib.glassTouch : null, null);
+                    if (custom != null) AudioManager.Se(custom, (0.06f + 0.06f * hot) * glassVolume * room, Random.Range(0.95f, 1.08f));
+                    else if (lib != null && lib.stirTink != null && lib.stirTink.Length > 0)
+                        AudioManager.Se(lib.stirTink[Random.Range(0, lib.stirTink.Length)], (0.05f + 0.05f * hot) * glassVolume * room, Random.Range(1.35f, 1.7f));
+                    else AudioManager.Se(SfxSynth.GlassTap, (0.04f + 0.04f * hot) * glassVolume * room, Random.Range(0.9f, 1.1f));
+                    GlassCount++;
+                }
+            }
+            else glassTimer = Random.Range(1f, 3f);
+        }
+
+        private static AudioClip Pick(AudioClip[] list, AudioClip fallback)
+        {
+            if (list != null && list.Length > 0)
+            {
+                AudioClip c = list[Random.Range(0, list.Length)];
+                if (c != null) return c;
+            }
+            return fallback;
         }
 
         /// <summary>部屋にいる間は、ループの音を小さくする</summary>

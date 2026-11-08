@@ -37,7 +37,6 @@ namespace PotionFrontier.Game2D
         [SerializeField, Tooltip("反応が起きた瞬間、一瞬だけ時間をゆっくりにする")] private bool reactionSlowMotion = true;
         [SerializeField, Range(0.1f, 1f)] private float slowMotionScale = 0.35f;
         [SerializeField, Min(0f), Tooltip("ゆっくりにする時間（実際の秒）")] private float slowMotionSeconds = 0.45f;
-        [SerializeField, Tooltip("反応が起きた瞬間、画面がパッと光る")] private bool screenFlash = true;
         [SerializeField, Tooltip("瓶詰めの結果カードを出す（出すときは、下の文字のお知らせは出さない）")] private bool showBottleResult = true;
         [SerializeField, Min(0.1f), Tooltip("同じ属性の「+3」が続けて出るときの間隔（秒）")] private float popInterval = 0.55f;
         [SerializeField, Range(0f, 2f), Tooltip("手ごたえの音の大きさ")] private float soundVolume = 1f;
@@ -49,7 +48,6 @@ namespace PotionFrontier.Game2D
         private BrewSession2D session;
         private BrewInput2D input;
         private Flask2D flask;
-        private FlaskEffects2D effects;
         private HeldItem2D held;
         private QuestManager quests;
         private Canvas canvas;
@@ -275,7 +273,7 @@ namespace PotionFrontier.Game2D
             {
                 popups.ShowPop("溶けきった！", SurfaceScreen() + new Vector2(0f, 40f), new Color(1f, 0.88f, 0.45f, 1f), true);
                 popups.RingCompleted();
-                Play(lib != null ? lib.starChime : null, SfxSynth.Chime, 0.55f, 1.5f);
+                Play(lib != null ? lib.starChime : null, SfxSynth.Chime, 0.4f, 1.5f);
             }
             lastDissolved = solids ? df : 1f;
 
@@ -297,9 +295,8 @@ namespace PotionFrontier.Game2D
                 if (s.activation > 0.05f && Once(d, IngredientFact.Wakes))
                 {
                     popups.ShowPop($"{n}の力が目覚めはじめた！（{d.ActivationTemp:0}℃）", at, new Color(1f, 0.85f, 0.4f, 1f), true);
-                    Play(lib != null ? lib.starChime : null, SfxSynth.Chime, 0.5f, 1.26f);
-                    if (effects == null) effects = FindFirstObjectByType<FlaskEffects2D>();
-                    if (effects != null) effects.Sparkle(new Color(1f, 0.85f, 0.4f, 1f), 14);
+                    Play(lib != null ? lib.starChime : null, SfxSynth.Chime, 0.38f, 1.26f);
+                    if (flask != null) flask.WarmBloom(0.25f);
                 }
                 if (s.broken && s.quality < 0.9f && Once(d, IngredientFact.Fragile))
                 {
@@ -344,8 +341,7 @@ namespace PotionFrontier.Game2D
             if (popups == null) return;
             popups.ShowSlip(IngredientIcons.Get(d), "素材ノートに書き足した：" + d.DisplayName, DiscoveryJournal.Describe(d, fact));
             SoundLibrary lib = AudioManager.Lib;
-            StartCoroutine(PlayLater(0.3f, lib != null ? lib.putBack : null, null, 0.55f, 0.8f));
-            StartCoroutine(PlayLater(0.36f, lib != null ? lib.starChime : null, SfxSynth.Chime, 0.45f, 1.122f));
+            StartCoroutine(PlayLater(0.36f, lib != null ? lib.starChime : null, SfxSynth.Chime, 0.32f, 1.122f));
         }
 
         /// <summary>新しい反応を初めて見つけた：反応のページ</summary>
@@ -356,7 +352,7 @@ namespace PotionFrontier.Game2D
             foreach (IngredientData x in r.RequiredIngredients) if (x != null) icons.Add(IngredientIcons.Get(x));
             popups.ShowDiscoveryPage(r.DisplayName, r.Description, icons);
             SoundLibrary lib = AudioManager.Lib;
-            StartCoroutine(PlayLater(0.6f, lib != null ? lib.discovery : null, SfxSynth.Discovery, 0.75f, 1f));
+            StartCoroutine(PlayLater(0.6f, lib != null ? lib.discovery : null, SfxSynth.Discovery, 0.55f, 1f));
         }
 
         /// <summary>素材ノートのお知らせを、試しに出す（確認用・自動テスト用。記録は変わらない）</summary>
@@ -661,11 +657,10 @@ namespace PotionFrontier.Game2D
         private void OnGoalReached(QuestData quest)
         {
             SoundLibrary lib = AudioManager.Lib;
-            Play(lib != null ? lib.goalReached : null, SfxSynth.Goal, 0.75f, 1f);
+            Play(lib != null ? lib.goalReached : null, SfxSynth.Goal, 0.45f, 1f);
             popups.ShowPop($"{quest.ClientName}さんの悩みに合いそう！", MouthScreen() + new Vector2(0f, 70f), new Color(1f, 0.9f, 0.5f, 1f), true);
             meter.Glow(new Color(1f, 0.82f, 0.3f, 1f));
-            if (effects == null) effects = FindFirstObjectByType<FlaskEffects2D>();
-            if (effects != null) effects.Sparkle(new Color(1f, 0.85f, 0.4f, 1f), 26);
+            if (flask != null) flask.WarmBloom(0.35f);
         }
 
         private void OnGoalLost(QuestData quest)
@@ -692,13 +687,11 @@ namespace PotionFrontier.Game2D
             Color color = flask != null ? flask.ShownColor : Color.white;
             Vector2 at = WorldToScreen(flask != null ? flask.MouthWorld : Vector3.zero) + new Vector2(0f, 90f);
             popups.ShowPop(string.IsNullOrEmpty(reactionName) ? "反応が起きた！" : $"反応！「{reactionName}」", at, new Color(1f, 0.93f, 0.65f, 1f), true);
-            if (flask != null) flask.Flash(color);
-            if (effects == null) effects = FindFirstObjectByType<FlaskEffects2D>();
-            if (effects != null) effects.Sparkle(color, 40);
-            if (screenFlash) popups.Flash(color);
+            // 夜の空気感：きらきら・画面のフラッシュはやめて、温かい光がフラスコからふわっと漏れる
+            if (flask != null) flask.WarmBloom(0.7f);
             meter.Glow(Color.Lerp(color, Color.white, 0.3f));
             SoundLibrary lib = AudioManager.Lib;
-            Play(lib != null ? lib.reactionSting : null, SfxSynth.Reaction, 0.85f, 1f);
+            Play(lib != null ? lib.reactionSting : null, SfxSynth.Reaction, 0.55f, 1f);
             if (reactionSlowMotion && slowMotionSeconds > 0f)
             {
                 if (slowRoutine != null) StopCoroutine(slowRoutine);
@@ -761,9 +754,9 @@ namespace PotionFrontier.Game2D
             if (isNew)
             {
                 SoundLibrary lib = AudioManager.Lib;
-                StartCoroutine(PlayLater(0.15f, lib != null ? lib.discovery : null, SfxSynth.Discovery, 0.7f, 1f));
-                if (effects == null) effects = FindFirstObjectByType<FlaskEffects2D>();
-                if (effects != null) effects.Sparkle(record.color, 30);
+                // 新発見：温かい光がフラスコからフワッと漏れて、ギターが「ポロロン…」
+                StartCoroutine(PlayLater(0.3f, lib != null ? lib.discovery : null, SfxSynth.Discovery, 0.6f, 1f));
+                if (flask != null) flask.WarmBloom(1f);
             }
         }
 
@@ -777,7 +770,7 @@ namespace PotionFrontier.Game2D
         private void OnStarShown(int index)
         {
             SoundLibrary lib = AudioManager.Lib;
-            Play(lib != null ? lib.starChime : null, SfxSynth.Chime, 0.5f, StarPitch[Mathf.Clamp(index, 0, StarPitch.Length - 1)]);
+            Play(lib != null ? lib.starChime : null, SfxSynth.Chime, 0.32f, StarPitch[Mathf.Clamp(index, 0, StarPitch.Length - 1)]);
         }
 
         private IEnumerator PlayLater(float seconds, AudioClip custom, AudioClip fallback, float volume, float pitch)
