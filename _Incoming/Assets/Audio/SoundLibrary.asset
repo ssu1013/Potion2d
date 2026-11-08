@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf6123207e758a49b85ffa73b6dcc71, type: 3}
+  m_Name: SoundLibrary
+  m_EditorClassIdentifier: 
+  bgmTitle: {fileID: 8300000, guid: de5e51481766fcb41ab4795946e92f6b, type: 3}
+  bgmAtelier: {fileID: 8300000, guid: cea98c9fe16a2e646b80ecfe278ef6c9, type: 3}
+  ambientRoom: {fileID: 8300000, guid: 53bc4e3026de07642ba544a472191908, type: 3}
+  ambientCauldron: {fileID: 8300000, guid: ce0a3d69f8c827e48b183b7cd4dc0e7e, type: 3}
+  uiClick: {fileID: 8300000, guid: b2ab8f0aca2d57c4c8b935a7254a61cb, type: 3}
+  uiHover: {fileID: 8300000, guid: aac083fd087997c47ad541fa5e0cee37, type: 3}
+  uiOpen: {fileID: 8300000, guid: 9fbe5a615bb8c264a988ed3a1c481454, type: 3}
+  uiClose: {fileID: 8300000, guid: ffd34a61d0dce4a4f9e4aa6f9a19bed5, type: 3}
+  page: {fileID: 8300000, guid: 0dfe63663fcd1ae48b9e70fd4554cf9b, type: 3}
+  startGame: {fileID: 8300000, guid: fe2535bd69ce7754a89f5159f286fa36, type: 3}
+  pickup: {fileID: 8300000, guid: 8ec1f9b6db9076e47a48404b9359de91, type: 3}
+  putBack: {fileID: 8300000, guid: eeeae15950b599544b57d74a80103d16, type: 3}
+  pourLoop: {fileID: 8300000, guid: 74eea1582393d6c428449b0ed33c668d, type: 3}
+  plop: {fileID: 8300000, guid: c6b3e6112e003f949ad9e4a26eab59a2, type: 3}
+  brewSuccess: {fileID: 8300000, guid: 4d8075797361f574fa3ee9f7bb838781, type: 3}
+  brewSpecial: {fileID: 8300000, guid: 59b7ae2c1e4c9314e9f51fe6068a20d2, type: 3}
+  brewFail: {fileID: 8300000, guid: d7368a3cdf811a84fb540b0569bd175c, type: 3}
+  discard: {fileID: 8300000, guid: bc70b4c03deadd24eb218a63f47513d2, type: 3}
+  warning: {fileID: 8300000, guid: 94688e4e88b841d49a7bf32723535a52, type: 3}
+  shelfPlace: {fileID: 8300000, guid: 2f42c3a2bb3f53d45be38ce74c9e426e, type: 3}
+  dropSolid:
+  - {fileID: 8300000, guid: f166eef13bcedb7499aa9c4ad2998a3b, type: 3}
+  - {fileID: 8300000, guid: 71655c488c9333649a54e1b44de92dca, type: 3}
+  - {fileID: 8300000, guid: aecf4ad6b19f1c547a7bf5a0d6f076dc, type: 3}
+  dropPowder:
+  - {fileID: 8300000, guid: a5ffa49485704004a8d5ccef846f5242, type: 3}
+  - {fileID: 8300000, guid: 131008225bfe7d847987c28a4a958279, type: 3}
+  pourThinLoop: {fileID: 8300000, guid: 6b73642110b9fba4d8ebe6bf7aea1710, type: 3}
+  stirLoop: {fileID: 8300000, guid: 67c70f949abf9c345ae9c46598054cff, type: 3}
+  stirTink:
+  - {fileID: 8300000, guid: 741f00f3100ab7741a113c4e21f0d288, type: 3}
+  - {fileID: 8300000, guid: 8cad3f2494c608d4aae14a29ceb0921d, type: 3}
+  - {fileID: 8300000, guid: b251c430aa2bfe44d9fca46f9035ce6d, type: 3}
+  simmerLoop: {fileID: 8300000, guid: 710fc432ef83af448865e273c5d2cc65, type: 3}
+  boilLoop: {fileID: 8300000, guid: 56a2fc99dafe85f40a70b8fb406e6c03, type: 3}
+  scorchLoop: {fileID: 8300000, guid: a53a08aa31a398e4081bfd9d6815494a, type: 3}
+  burnerLoop: {fileID: 8300000, guid: dff478bb6c4f75f4cba725bb3c68e690, type: 3}
+  ignite: {fileID: 8300000, guid: 81ece5778731f9648bc5b0d8e6f4a3a6, type: 3}
+  knobTick: {fileID: 8300000, guid: 074d5c0a37bc6a644a86cd287a98cf8b, type: 3}
+  corkPop: {fileID: 8300000, guid: a1b6fe03cb7b3ce47a944f05ba747d1c, type: 3}
+  doorBell: {fileID: 8300000, guid: 35161e79eca6fcd4ca2345c729016449, type: 3}
+  voiceBlip: {fileID: 8300000, guid: da2989a224c94de48a892c816a1bae96, type: 3}
+  coins: {fileID: 8300000, guid: fba0cdb375a5e6447bf1ae42fd1d8a9c, type: 3}
+  questAccept: {fileID: 8300000, guid: 2c125810965ac8749b761361c059400b, type: 3}
+  questComplete: {fileID: 8300000, guid: d1e72fae5f9c32f4885de43c67d937b9, type: 3}
+  footsteps:
+  - {fileID: 8300000, guid: 7fad55fa709611347b57fa4bdc95426a, type: 3}
+  - {fileID: 8300000, guid: 112b9ce448ff5874e9c41c7f19a0ec02, type: 3}
+  - {fileID: 8300000, guid: d51e5df36fd59744c83142775892f074, type: 3}
+  - {fileID: 8300000, guid: 74673553094d8924880d1ffe4d857478, type: 3}

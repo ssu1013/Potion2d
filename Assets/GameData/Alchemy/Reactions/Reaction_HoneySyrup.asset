@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a3347e7820b8ae4fab80b163c6edb7b, type: 3}
+  m_Name: Reaction_HoneySyrup
+  m_EditorClassIdentifier: 
+  reactionId: reaction_honey_syrup
+  displayName: "\u871C\u306E\u3068\u308D\u307F"
+  description: "\u82B1\u306E\u871C\u3092\u6CB8\u9A30\u3059\u308B\u307B\u3069\u71B1\u3057\u7D9A\u3051\u308B\u3068\u3001\u3068\u308D\u308A\u3068\u716E\u8A70\u307E\u308A\u3001\u80B2\u3066\u308B\u529B\u304C\u7652\u3084\u3057\u306E\u529B\u306B\u5909\u308F\u308B\u3002"
+  requiredIngredients:
+  - {fileID: 11400000, guid: 7b18c5f3f851beb4c99212ede3ee5ce5, type: 2}
+  minDissolvedUnits: 0.5
+  minTemperature: 95
+  maxTemperature: 200
+  stirDirection: 0
+  minRecentTurns: 0
+  attributeConditions: []
+  duration: 6
+  conversions:
+  - from: 3
+    to: 0
+    percent: 40
+    efficiency: 1
+  multipliers:
+  - attribute: 0
+    multiplier: 1.15
+  traits:
+  - traitId: syrupy
+    strength: 0.9

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Base_Honey
+  m_EditorClassIdentifier: 
+  ingredientId: base_honey
+  displayName: "\u82B1\u306E\u871C"
+  description: "\u8FB2\u5712\u306E\u82B1\u304B\u3089\u63A1\u308C\u308B\u7518\u3044\u871C\u3002"
+  icon: {fileID: 0}
+  category: 0
+  color: {r: 1, g: 0.75, b: 0.3, a: 0.9}
+  attributes:
+  - attribute: 0
+    value: 3
+  - attribute: 3
+    value: 2
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30B7\u30ED\u30C3\u30D7"
+  potionBottlePrefab: {fileID: 0}
+  form: 0
+  amountPerUse: 1
+  rarity: 1
+  buyPrice: 5
+  tags:
+  - "\u8FB2\u5712"
+  - "\u82B1"
+  sortOrder: 0
+  worldPrefab: {fileID: 0}
+  container: 0
+  dropPiecePrefab: {fileID: 0}

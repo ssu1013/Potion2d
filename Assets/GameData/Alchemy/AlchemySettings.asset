@@ -1,0 +1,157 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a0913fe13549f54da61189a375decaa, type: 3}
+  m_Name: AlchemySettings
+  m_EditorClassIdentifier: 
+  attributeInfos:
+  - displayName: "\u56DE\u5FA9"
+    attribute: 0
+    primaryName: "\u56DE\u5FA9"
+    secondaryModifier: "\u7652\u3084\u3057\u306E"
+    color: {r: 0.45, g: 0.9, b: 0.5, a: 1}
+    effectFormat: "\u4F53\u529B\u3092{0}\u56DE\u5FA9"
+  - displayName: "\u706B"
+    attribute: 1
+    primaryName: "\u706B\u708E"
+    secondaryModifier: "\u707C\u71B1\u306E"
+    color: {r: 0.95, g: 0.35, b: 0.2, a: 1}
+    effectFormat: "\u708E\u306E\u529B {0}"
+  - displayName: "\u6C37"
+    attribute: 2
+    primaryName: "\u6C37\u7D50"
+    secondaryModifier: "\u51CD\u3066\u3064\u304F"
+    color: {r: 0.55, g: 0.85, b: 1, a: 1}
+    effectFormat: "\u51B7\u6C17\u306E\u529B {0}"
+  - displayName: "\u6210\u9577\u4FC3\u9032"
+    attribute: 3
+    primaryName: "\u6210\u9577"
+    secondaryModifier: "\u82BD\u5439\u304D\u306E"
+    color: {r: 0.65, g: 0.9, b: 0.2, a: 1}
+    effectFormat: "\u4F5C\u7269\u306E\u6210\u9577\u901F\u5EA6 +{0}%"
+  - displayName: "\u900F\u660E\u5316"
+    attribute: 4
+    primaryName: "\u900F\u660E\u5316"
+    secondaryModifier: "\u304A\u307C\u308D\u3052\u306A"
+    color: {r: 0.85, g: 0.85, b: 0.95, a: 1}
+    effectFormat: "{0}\u79D2\u9593 \u59FF\u304C\u898B\u3048\u306B\u304F\u304F\u306A\u308B"
+  - displayName: "\u6BD2"
+    attribute: 5
+    primaryName: "\u6BD2"
+    secondaryModifier: "\u6BD2\u3092\u5B55\u3093\u3060"
+    color: {r: 0.6, g: 0.25, b: 0.75, a: 1}
+    effectFormat: "\u6BD2\u306E\u529B {0}"
+  - displayName: "\u5149"
+    attribute: 6
+    primaryName: "\u9583\u5149"
+    secondaryModifier: "\u8F1D\u304F"
+    color: {r: 1, g: 0.9, b: 0.4, a: 1}
+    effectFormat: "\u5149\u306E\u529B {0}"
+  - displayName: "\u98A8"
+    attribute: 7
+    primaryName: "\u75BE\u98A8"
+    secondaryModifier: "\u98A8\u3092\u307E\u3068\u3046"
+    color: {r: 0.5, g: 0.95, b: 0.85, a: 1}
+    effectFormat: "\u98A8\u306E\u529B {0}"
+  gradeTiers:
+  - minPotency: 10
+    prefix: "\u5FAE\u5F31\u306A"
+    stars: 1
+  - minPotency: 25
+    prefix: 
+    stars: 2
+  - minPotency: 45
+    prefix: "\u4E0A\u8CEA\u306A"
+    stars: 3
+  - minPotency: 70
+    prefix: "\u6975\u4E0A\u306E"
+    stars: 4
+  - minPotency: 100
+    prefix: "\u4F1D\u8AAC\u7D1A\u306E"
+    stars: 5
+  nameFormat: '{grade}{secondary}{primary}{form}'
+  secondaryMinRatio: 0.4
+  effectMinValue: 3
+  minimumPotency: 10
+  failedPotionName: "\u6FC1\u3063\u305F\u8272\u6C34"
+  failedColor: {r: 0.45, g: 0.4, b: 0.32, a: 1}
+  potionMinPotency: 25
+  potionPrimaryShare: 0.45
+  brewRules:
+    roomTemperature: 20
+    maxHeatTemperature: 130
+    boilingPoint: 100
+    heatingRate: 0.18
+    coolingRate: 0.04
+    heatVolumeMl: 200
+    boilEvaporationMlPerSec: 6
+    scorchBelowMl: 15
+    scorchBelowRatio: 0.25
+    scorchRate: 0.25
+    scorchDamagePerSec: 0.15
+    concentratedRatio: 0.6
+    solidVolumeMlPerUnit: 5
+    powderVolumeMlPerUnit: 2
+    minVolumeMl: 10
+    dissolveRate: 0.2
+    naturalDissolveMin: 0.35
+    naturalDissolveMax: 0.85
+    heatDissolveBonus: 0.3
+    stirDissolvePerTurn: 0.1
+    heatDamageScale: 0.5
+    activationSeconds: 6
+    clockwisePrimaryPerTurn: 0.02
+    clockwisePrimaryMax: 0.25
+    clockwiseOthersPerTurn: 0.01
+    clockwiseOthersMax: 0.15
+    counterSecondaryPerTurn: 0.03
+    counterSecondaryMax: 0.3
+    counterPrimaryPerTurn: 0.01
+    counterPrimaryMax: 0.1
+    foamStartTurns: 30
+    foamFullTurns: 60
+    waitStepSeconds: 5
+  traitInfos:
+  - displayName: "\u7126\u3052"
+    id: scorched
+    nameModifier: "\u7126\u3052\u305F"
+    tint: {r: 0.22, g: 0.14, b: 0.09, a: 1}
+    tintStrength: 0.75
+  - displayName: "\u6CE1\u7ACB\u3061"
+    id: foamy
+    nameModifier: "\u6CE1\u7ACB\u3064"
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    tintStrength: 0.25
+  - displayName: "\u6FC3\u7E2E"
+    id: concentrated
+    nameModifier: "\u6FC3\u7E2E\u3055\u308C\u305F"
+    tint: {r: 0, g: 0, b: 0, a: 1}
+    tintStrength: 0.15
+  - displayName: "\u6FC1\u308A"
+    id: cloudy
+    nameModifier: "\u6FC1\u3063\u305F"
+    tint: {r: 0.55, g: 0.5, b: 0.45, a: 1}
+    tintStrength: 0.4
+  - displayName: "\u3086\u3089\u3081\u304D"
+    id: shimmer
+    nameModifier: "\u3086\u3089\u3081\u304F"
+    tint: {r: 0.85, g: 0.8, b: 1, a: 1}
+    tintStrength: 0.25
+  - displayName: "\u3068\u308D\u307F"
+    id: syrupy
+    nameModifier: "\u3068\u308D\u308A\u3068\u3057\u305F"
+    tint: {r: 0.95, g: 0.65, b: 0.25, a: 1}
+    tintStrength: 0.3
+  rulesVersion: 3
+  baseLiquidColorInfluence: 0.3
+  maxAmplifyMultiplier: 3
+  maxMainMaterials: 3
+  maxCatalysts: 1

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ad03d3193bd49540bf42aca69b58bc5, type: 3}
+  m_Name: BrewArt2D
+  m_EditorClassIdentifier: 
+  tallBottle:
+    body: {fileID: 21300000, guid: 6ca7f57a75d113c4bb619f7a49fd17aa, type: 3}
+    content: {fileID: 21300000, guid: 288af70eb42094b42b0c57b1a094b3ef, type: 3}
+  jar:
+    body: {fileID: 21300000, guid: 17fb93d1e1effe64da1fd065c7a5b954, type: 3}
+    content: {fileID: 21300000, guid: 25f55c972a1bb124996dddba2481e538, type: 3}
+  roundFlask:
+    body: {fileID: 21300000, guid: 03728d9846b712646833d0692f294475, type: 3}
+    content: {fileID: 21300000, guid: 462d3e6cbfc3d8446a12fc338f0b65d6, type: 3}
+  pouch:
+    body: {fileID: 21300000, guid: 59524c6e23753ff4b9a149c4bfb15b11, type: 3}
+    content: {fileID: 21300000, guid: 2e957efad4af60745bcf2ea2db8ef153, type: 3}
+  crystal:
+    body: {fileID: 21300000, guid: afa201133b46c924aae6bae26dfda239, type: 3}
+    content: {fileID: 21300000, guid: 90a5729982677d84d9eff337b2ebe3c8, type: 3}
+  potionBottle:
+    body: {fileID: 21300000, guid: 33b8d340068991447b63939bfe39c8c0, type: 3}
+    content: {fileID: 21300000, guid: fd4e978127650484e9d2b04592548964, type: 3}
+  dropPiece: {fileID: 21300000, guid: 0f94c3d037828dd44bd78f1da980e181, type: 3}
+  steam: {fileID: 21300000, guid: 2b25f1bc386687f4d8ff03a5725b394f, type: 3}
+  bubble: {fileID: 21300000, guid: 48717b2ee8d38ec43bcf3889f37d36d6, type: 3}
+  droplet: {fileID: 21300000, guid: 1a53f3ce20d2fc74182ea84096b9b933, type: 3}
+  swirl: {fileID: 21300000, guid: 2a3e601907a4e2547a1c9a054c98be66, type: 3}
+  ripple: {fileID: 21300000, guid: 9306ef9d8a3afe74ea30fb17717a3fb3, type: 3}
+  particleMaterial: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}

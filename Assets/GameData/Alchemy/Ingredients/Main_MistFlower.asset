@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Main_MistFlower
+  m_EditorClassIdentifier: 
+  ingredientId: main_mist_flower
+  displayName: "\u9727\u96A0\u308C\u306E\u82B1"
+  description: "\u898B\u3064\u3081\u3066\u3044\u308B\u3068\u8F2A\u90ED\u304C\u307C\u3084\u3051\u308B\u4E0D\u601D\u8B70\u306A\u82B1\u3002\u5149\u3092\u5ACC\u3046\u3002"
+  icon: {fileID: 0}
+  category: 1
+  color: {r: 0.85, g: 0.85, b: 0.95, a: 1}
+  attributes:
+  - attribute: 4
+    value: 24
+  - attribute: 6
+    value: -6
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 0
+  amountPerUse: 1
+  rarity: 2
+  buyPrice: 9
+  stockPolicy: 0
+  tags:
+  - "\u82B1"
+  - "\u68EE"
+  sortOrder: 0
+  solubility: 0.55
+  heatLimit: 60
+  heatSensitivity: 0.7
+  activationTemp: 0
+  activationBonus: 0
+  worldPrefab: {fileID: 0}
+  container: 0
+  dropPiecePrefab: {fileID: 0}

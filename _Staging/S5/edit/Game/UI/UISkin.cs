@@ -1,0 +1,47 @@
+using UnityEngine;
+
+namespace PotionFrontier.Game
+{
+    /// <summary>
+    /// UIの絵とフォント（Assets/Art/UI/UISkin.asset）。
+    /// 空の欄は、コードで描いた仮の絵（UIFactory）が使われる。自作の絵を入れると、その部分だけ差し替わる。
+    /// 枠の絵（羊皮紙・木の板・ボタンなど）は、スプライトエディタで「Border（9スライス）」を設定すると、
+    /// どんな大きさのウィンドウでも角が伸びずにきれいに表示される。
+    /// </summary>
+    [CreateAssetMenu(fileName = "UISkin", menuName = "Potion Frontier/UIスキン (UI Skin)", order = 12)]
+    public class UISkin : ScriptableObject
+    {
+        [Header("フォント")]
+        [Tooltip("日本語が表示できるフォント（.ttf / .otf）。空ならOSのフォント（製品版では必ず指定する）")]
+        public Font font;
+        [Tooltip("太字に使うフォント（同じ書体の Bold など）。空なら上のフォントを太らせて表示する")]
+        public Font fontBold;
+
+        [Header("枠・パネル（9スライス推奨）")]
+        public Sprite parchment;
+        public Sprite woodPanel;
+        [Tooltip("ボタン（空なら木の板）")] public Sprite button;
+        [Tooltip("棚・素材箱のマス")] public Sprite slot;
+        [Tooltip("選んでいるマス")] public Sprite slotSelected;
+
+        [Header("アイコン・小物")]
+        public Sprite crosshair;
+        public Sprite coin;
+        [Tooltip("スライダーのつまみ")] public Sprite knob;
+        public Sprite vignette;
+        public Sprite sparkle;
+        [Tooltip("ぼんやり光る丸（光の粒など）")] public Sprite softDot;
+
+        [Header("発見・素材ノート（Assets/Art2D/UI/Discovery。同じ名前の PNG で上書きすると差し替わる）")]
+        [Tooltip("page.png：新しい反応を見つけたときのページ・書き足したお知らせの紙（9スライス推奨）")] public Sprite discoveryPage;
+        [Tooltip("card.png：素材ノートの素材カード（9スライス推奨）")] public Sprite notebookCard;
+        [Tooltip("unknown.png：まだ出会っていない素材の影絵（白で描くと暗い色で塗られる）")] public Sprite unknownMark;
+        [Tooltip("stamp_new.png：新しい液体を発見")] public Sprite stampNew;
+        [Tooltip("stamp_fact.png：素材の性質を発見")] public Sprite stampFact;
+        [Tooltip("stamp_reaction.png：新しい反応を発見")] public Sprite stampReaction;
+        [Tooltip("stamp_helped.png：レシピ本「役に立った」（分け与えた）")] public Sprite stampHelped;
+        [Tooltip("stamp_taught.png：レシピ本「作り方を教えた」")] public Sprite stampTaught;
+        [Tooltip("stamp_complete.png：素材ノート「すべて発見」")] public Sprite stampComplete;
+        [Tooltip("スタンプの上に文字（新発見・役に立った など）を重ねる。スタンプの絵に文字を描き込んだらオフにする")] public bool drawStampLabels = true;
+    }
+}

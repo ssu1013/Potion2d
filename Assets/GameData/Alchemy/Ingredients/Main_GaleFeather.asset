@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Main_GaleFeather
+  m_EditorClassIdentifier: 
+  ingredientId: main_gale_feather
+  displayName: "\u75BE\u98A8\u306E\u7FBD\u6839"
+  description: "\u98A8\u3092\u547C\u3076\u9CE5\u306E\u7FBD\u6839\u3002"
+  icon: {fileID: 0}
+  category: 1
+  color: {r: 0.55, g: 0.95, b: 0.85, a: 1}
+  attributes:
+  - attribute: 7
+    value: 18
+  - attribute: 3
+    value: 3
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 0
+  amountPerUse: 1
+  rarity: 2
+  buyPrice: 7
+  stockPolicy: 0
+  tags:
+  - "\u7FBD\u6839"
+  - "\u98A8"
+  sortOrder: 0
+  solubility: 0.25
+  heatLimit: -1
+  heatSensitivity: -1
+  activationTemp: 0
+  activationBonus: 0
+  worldPrefab: {fileID: 0}
+  container: 0
+  dropPiecePrefab: {fileID: 0}

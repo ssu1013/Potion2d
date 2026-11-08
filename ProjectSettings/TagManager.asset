@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags: []
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 332801758
+    locked: 0
+  - name: Room
+    uniqueID: 1770476891
+    locked: 0
+  - name: Workbench
+    uniqueID: 1333430695
+    locked: 0
+  - name: Flask
+    uniqueID: 1379998224
+    locked: 0
+  - name: Liquid
+    uniqueID: 610449341
+    locked: 0
+  - name: FlaskFront
+    uniqueID: 758456504
+    locked: 0
+  - name: Items
+    uniqueID: 1614166063
+    locked: 0
+  - name: Held
+    uniqueID: 614322334
+    locked: 0
+  - name: FX
+    uniqueID: 1825785779
+    locked: 0

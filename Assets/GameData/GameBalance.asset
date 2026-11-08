@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 249f2a2a99d51314aa27e3959b51e78a, type: 3}
+  m_Name: GameBalance
+  m_EditorClassIdentifier: 
+  startingGold: 50
+  startingIngredients:
+  - ingredient: {fileID: 11400000, guid: d0dece20f4cee4b48b7677183ea01a99, type: 2}
+    amount: 1
+  - ingredient: {fileID: 11400000, guid: 422cc75b4011e584199154807800d95f, type: 2}
+    amount: 1
+  - ingredient: {fileID: 11400000, guid: 7b18c5f3f851beb4c99212ede3ee5ce5, type: 2}
+    amount: 1
+  - ingredient: {fileID: 11400000, guid: 6c6d2ff08686da243b7899243636462d, type: 2}
+    amount: 1
+  - ingredient: {fileID: 11400000, guid: 2206304b864fa904e82c7065156bf28a, type: 2}
+    amount: 1
+  - ingredient: {fileID: 11400000, guid: 4d63daeb3a64e594b9ef661bafc45990, type: 2}
+    amount: 1
+  - ingredient: {fileID: 11400000, guid: 3564c442257307b46aecf9af8ec221e6, type: 2}
+    amount: 1
+  - ingredient: {fileID: 11400000, guid: 72bab4d0bfe37a0458ff327149ee8f56, type: 2}
+    amount: 3
+  - ingredient: {fileID: 11400000, guid: 24665f8300ecdc64784ffe274559d811, type: 2}
+    amount: 2
+  - ingredient: {fileID: 11400000, guid: 169f5cc3fa812a342ba0574449eb0d1b, type: 2}
+    amount: 2
+  - ingredient: {fileID: 11400000, guid: add5205e991d4d3449097db6b12084de, type: 2}
+    amount: 2
+  infiniteRarityMax: 2
+  unlockPriceMultiplier: 8
+  containerFullAmount: 8
+  version: 2

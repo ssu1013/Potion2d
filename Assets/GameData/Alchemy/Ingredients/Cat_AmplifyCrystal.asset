@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Cat_AmplifyCrystal
+  m_EditorClassIdentifier: 
+  ingredientId: cat_amplify_crystal
+  displayName: "\u5897\u5E45\u306E\u7D50\u6676"
+  description: "\u3042\u3089\u3086\u308B\u5C5E\u6027\u306E\u529B\u3092\u5F15\u304D\u51FA\u3059\u7D50\u6676\u3002"
+  icon: {fileID: 0}
+  category: 2
+  color: {r: 0.8, g: 0.6, b: 1, a: 1}
+  attributes: []
+  globalAmplifyPercent: 50
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 2
+  amountPerUse: 1
+  rarity: 3
+  buyPrice: 16
+  stockPolicy: 0
+  tags:
+  - "\u9271\u77F3"
+  sortOrder: 0
+  solubility: 0.2
+  heatLimit: 0
+  heatSensitivity: 0
+  activationTemp: 0
+  activationBonus: 0
+  worldPrefab: {fileID: 0}
+  container: 5
+  dropPiecePrefab: {fileID: 0}

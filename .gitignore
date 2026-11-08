@@ -1,0 +1,14 @@
+# Unityの一時ファイルやビルドファイルを除外
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Visual Studioなどのキャッシュファイルを除外
+.vs/
+.idea/
+*.csproj
+*.sln

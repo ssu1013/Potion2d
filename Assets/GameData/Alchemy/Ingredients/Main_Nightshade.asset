@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Main_Nightshade
+  m_EditorClassIdentifier: 
+  ingredientId: main_nightshade
+  displayName: "\u30CA\u30A4\u30C8\u30B7\u30A7\u30FC\u30C9"
+  description: "\u6BD2\u3092\u6301\u3064\u7D2B\u306E\u5B9F\u3002\u5BB3\u866B\u3088\u3051\u306B\u4F7F\u3048\u308B\u3002"
+  icon: {fileID: 0}
+  category: 1
+  color: {r: 0.45, g: 0.2, b: 0.55, a: 1}
+  attributes:
+  - attribute: 5
+    value: 20
+  - attribute: 0
+    value: -4
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 0
+  amountPerUse: 1
+  rarity: 2
+  buyPrice: 6
+  stockPolicy: 0
+  tags:
+  - "\u5B9F"
+  - "\u6BD2"
+  sortOrder: 0
+  solubility: 0.4
+  heatLimit: 0
+  heatSensitivity: 0
+  activationTemp: 90
+  activationBonus: 40
+  worldPrefab: {fileID: 0}
+  container: 0
+  dropPiecePrefab: {fileID: 0}
