@@ -353,8 +353,8 @@ MonoBehaviour:
   m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 0.75
   m_LocalBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 0, y: -0.00000011920929, z: 0}
+    m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 0.8
@@ -507,9 +507,33 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 783958827276552865, guid: e66b970867645bd46984d148329a6a3e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 783958827276552865, guid: e66b970867645bd46984d148329a6a3e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 4391108433127471353, guid: e66b970867645bd46984d148329a6a3e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4391108433127471353, guid: e66b970867645bd46984d148329a6a3e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.21
+      objectReference: {fileID: 0}
     - target: {fileID: 4842222303429647415, guid: e66b970867645bd46984d148329a6a3e, type: 3}
       propertyPath: m_Name
       value: Room
+      objectReference: {fileID: 0}
+    - target: {fileID: 6555143257696192477, guid: e66b970867645bd46984d148329a6a3e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6555143257696192477, guid: e66b970867645bd46984d148329a6a3e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.21000099
       objectReference: {fileID: 0}
     - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -732,8 +756,7 @@ MonoBehaviour:
   boundsLeft: {fileID: 579811163}
   boundsRight: {fileID: 579811162}
   roomSize: 5.4
-  panSpeed: 14
-  edgePanPixels: 36
+  slideSeconds: 0.5
   workbenchFocus: {fileID: 579811158}
   zoomSize: 1.9
   zoomSeconds: 0.55
@@ -1273,8 +1296,8 @@ MonoBehaviour:
   m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 0.75
   m_LocalBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 0, y: -0.00000011920929, z: 0}
+    m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 1.2
@@ -1352,6 +1375,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inventory: {fileID: 0}
+  ingredients: {fileID: 0}
   progress: {fileID: 0}
   quests: {fileID: 0}
   alchemy: {fileID: 0}
