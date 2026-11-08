@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: cat_sun_stone
   displayName: "\u967D\u3060\u307E\u308A\u306E\u77F3"
   description: "\u307D\u304B\u307D\u304B\u6E29\u304B\u3044\u77F3\u3002\u690D\u7269\u306E\u6210\u9577\u3092\u5927\u304D\u304F\u52A9\u3051\u308B\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: a98c082d97582b343a395329072a5f1d, type: 3}
   category: 2
   color: {r: 1, g: 0.85, b: 0.5, a: 1}
   attributes:
@@ -32,6 +32,8 @@ MonoBehaviour:
   rarity: 3
   buyPrice: 12
   stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u9271\u77F3"
   - "\u5149"
@@ -41,6 +43,12 @@ MonoBehaviour:
   heatSensitivity: 0
   activationTemp: 70
   activationBonus: 50
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: e53c35b59910740408d32fd1a1357ab8, type: 3}
   worldPrefab: {fileID: 0}
   container: 5
   dropPiecePrefab: {fileID: 0}

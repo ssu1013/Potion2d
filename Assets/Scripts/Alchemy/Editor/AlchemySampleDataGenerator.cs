@@ -49,18 +49,25 @@ namespace PotionFrontier.Alchemy.EditorTools
             public IngredientData frostStone;
             public IngredientData spiralShell;
             public IngredientData volcanoAsh;
+            public IngredientData beesWax;
+            public IngredientData fiddlehead;
+            public IngredientData fizzPowder;
+            public IngredientData nightDew;
             public ReactionData frostFire;
             public ReactionData amberSun;
             public ReactionData starSpiral;
+            public ReactionData waxCradle;
 
             public IngredientData[] BaseLiquids => new[] { water, oil, honey, spiritWater };
             public IngredientData[] MainMaterials => new[] { herb, fireGrass, frostMint, sproutSeed, mistFlower, nightshade, sunPetal, galeFeather };
             public IngredientData[] Catalysts => new[] { amplifyCrystal, sunStone, moonDust };
             public PotionConditionData[] Recipes => new[] { invisibility, growthBooster, legendary };
-            public ReactionData[] Reactions => new[] { mistMoon, honeySyrup, frostFire, amberSun, starSpiral };
-            public IngredientData[] NewIngredients => new[] { amberResin, starPetal, dreamLavender, frostStone, spiralShell, volcanoAsh };
+            public ReactionData[] Reactions => new[] { mistMoon, honeySyrup, frostFire, amberSun, starSpiral, waxCradle };
+            public IngredientData[] NewIngredients => new[] { amberResin, starPetal, dreamLavender, frostStone, spiralShell, volcanoAsh,
+                                                              beesWax, fiddlehead, fizzPowder, nightDew };
             public IngredientData[] AllIngredients => new[] { water, oil, honey, spiritWater, herb, fireGrass, frostMint, sproutSeed, mistFlower, nightshade, sunPetal, galeFeather, amplifyCrystal, sunStone, moonDust,
-                                                             amberResin, starPetal, dreamLavender, frostStone, spiralShell, volcanoAsh };
+                                                             amberResin, starPetal, dreamLavender, frostStone, spiralShell, volcanoAsh,
+                                                             beesWax, fiddlehead, fizzPowder, nightDew };
         }
 
         /// <summary>設定・素材・完成条件のアセットを、なければ作って返す（既にあれば上書きしない）</summary>
@@ -159,6 +166,18 @@ namespace PotionFrontier.Alchemy.EditorTools
             var volcanoAsh = Ingredient("Main_VolcanoAsh", "main_volcano_ash", "火山の灰", IngredientCategory.MainMaterial,
                 new Color(0.46f, 0.41f, 0.39f), "火山のふもとで集めた灰。水に入れるとすぐ溶けて、火の力と土の恵みを与える。",
                 new[] { Attr(PotionAttribute.Fire, 10f), Attr(PotionAttribute.Growth, 6f) });
+            var beesWax = Ingredient("Main_BeesWax", "main_bees_wax", "森の蜜蝋", IngredientCategory.MainMaterial,
+                new Color(0.98f, 0.84f, 0.42f), "森の蜂が作ったやわらかい蝋。ぬるめのお湯（45℃）で溶けて、育てる力と癒やしを与える。",
+                new[] { Attr(PotionAttribute.Growth, 12f), Attr(PotionAttribute.Healing, 8f) });
+            var fiddlehead = Ingredient("Main_Fiddlehead", "main_fiddlehead", "ぜんまい草", IngredientCategory.MainMaterial,
+                new Color(0.52f, 0.70f, 0.28f), "くるりと巻いた若い芽。巻きと同じ向きに混ぜると、ほどけるように溶けるらしい。",
+                new[] { Attr(PotionAttribute.Growth, 14f), Attr(PotionAttribute.Wind, 6f) });
+            var fizzPowder = Ingredient("Main_FizzPowder", "main_fizz_powder", "泡雪の粉", IngredientCategory.MainMaterial,
+                new Color(0.88f, 0.96f, 1.00f), "入れたとたん、しゅわっと溶ける白い粉。ただし泡の力は軽く、沸騰させると抜けてしまう。",
+                new[] { Attr(PotionAttribute.Wind, 12f), Attr(PotionAttribute.Ice, 5f) });
+            var nightDew = Ingredient("Base_NightDew", "base_night_dew", "月下の夜露", IngredientCategory.BaseLiquid,
+                new Color(0.62f, 0.66f, 0.95f, 0.75f), "月の夜にだけ集まる露。姿を隠す力がほんのりあるが、煮立てると湯気といっしょに消えてしまう。",
+                new[] { Attr(PotionAttribute.Invisibility, 6f), Attr(PotionAttribute.Ice, 2f) }, form: "エリクシル");
 
             // ---- 完成条件データ（特殊レシピ）----
             var invisibility = Condition("Potion_Invisibility", "special_invisibility", "透明化の秘薬",
@@ -217,6 +236,10 @@ namespace PotionFrontier.Alchemy.EditorTools
             Details(frostStone, 2, 10, "鉱石", "氷");
             Details(spiralShell, 2, 9, "貝", "海", "風");
             Details(volcanoAsh, 1, 4, "粉", "火", "土");
+            Details(beesWax, 1, 6, "樹脂", "蝋", "森");
+            Details(fiddlehead, 2, 7, "草", "森", "風");
+            Details(fizzPowder, 1, 5, "粉", "風", "氷");
+            Details(nightDew, 2, 9, "水", "夜", "神秘");
             // 取引先帳で取引できるようになる時期（解決した相談の数）
             Trade(volcanoAsh, 0);
             Trade(amberResin, 1);
@@ -224,6 +247,10 @@ namespace PotionFrontier.Alchemy.EditorTools
             Trade(starPetal, 2);
             Trade(frostStone, 2);
             Trade(spiralShell, 3);
+            Trade(fizzPowder, 0);
+            Trade(beesWax, 1);
+            Trade(fiddlehead, 2);
+            Trade(nightDew, 3);
             // 見た目に変化をつける（形状・容器がまだ「自動」の素材だけ）
             Shape(moonDust, IngredientForm.Powder, ContainerStyle.Pouch);
             Shape(sproutSeed, IngredientForm.Solid, ContainerStyle.Pouch);
@@ -232,6 +259,9 @@ namespace PotionFrontier.Alchemy.EditorTools
             Shape(frostStone, IngredientForm.Solid, ContainerStyle.Crystal);
             Shape(volcanoAsh, IngredientForm.Powder, ContainerStyle.Pouch);
             Shape(starPetal, IngredientForm.Solid, ContainerStyle.Jar);
+            Shape(beesWax, IngredientForm.Solid, ContainerStyle.Jar);
+            Shape(fiddlehead, IngredientForm.Solid, ContainerStyle.Pouch);
+            Shape(fizzPowder, IngredientForm.Powder, ContainerStyle.Pouch);
 
             // 工程での性質（まだ「自動」のままの素材だけ）
             //   薬草：熱に弱い（70℃を超えると弱まる）→ 冷ましてから入れると強い
@@ -262,6 +292,15 @@ namespace PotionFrontier.Alchemy.EditorTools
             Traits(dreamLavender, 0f, 0f, 0.8f, 0f, StirDirection.Any);
             Traits(frostStone, 0f, 0f, 0f, 30f, StirDirection.Any);
             Traits(spiralShell, 0f, 0f, 0f, 0f, StirDirection.CounterClockwise);
+            //   森の蜜蝋：45℃ で溶ける（琥珀樹脂よりぬるくてよい）／ぜんまい草：時計回りに混ぜたときだけ溶ける
+            //   泡雪の粉：すぐ溶ける粉だが、沸騰で力が抜ける／月下の夜露：ベース液体だが、沸騰で力が飛ぶ
+            Process(beesWax, 0.6f, 0f, 0f, 0f, 0f);
+            Process(fiddlehead, 0.2f, 85f, 0.4f, 0f, 0f);
+            Process(fizzPowder, 1f, 0f, 0f, 0f, 0f);
+            Traits(beesWax, 45f, 0f, 0f, 0f, StirDirection.Any);
+            Traits(fiddlehead, 0f, 0f, 0f, 0f, StirDirection.Clockwise);
+            Traits(fizzPowder, 0f, 0f, 0.6f, 0f, StirDirection.Any);
+            Traits(nightDew, 0f, 0f, 0.5f, 0f, StirDirection.Any);
 
             // ---- 反応（なければ作る）----
             var mistMoon = Reaction("Reaction_MistMoon", "reaction_mist_moon", "霧と月の共鳴",
@@ -302,6 +341,16 @@ namespace PotionFrontier.Alchemy.EditorTools
                 new[] { new AttributeConversion { from = PotionAttribute.Light, to = PotionAttribute.Wind, percent = 40f, efficiency = 1.3f } },
                 new[] { new AttributeMultiplier { attribute = PotionAttribute.Wind, multiplier = 1.1f } },
                 new[] { new TraitGain { traitId = LiquidTraits.Shimmer, strength = 0.5f } });
+            var waxCradle = Reaction("Reaction_WaxCradle", "reaction_wax_cradle", "蜜蝋のゆりかご",
+                "溶かした森の蜜蝋とぜんまい草を、ぬるいまま時計回りに混ぜると、芽吹く力がやさしく包まれて大きく育つ。",
+                new[] { beesWax, fiddlehead }, 0.3f, 45f, 85f, StirDirection.Clockwise, 2f, null, 3f,
+                null,
+                new[]
+                {
+                    new AttributeMultiplier { attribute = PotionAttribute.Growth, multiplier = 1.3f },
+                    new AttributeMultiplier { attribute = PotionAttribute.Healing, multiplier = 1.1f },
+                },
+                new[] { new TraitGain { traitId = LiquidTraits.Syrupy, strength = 0.5f } });
 
             AssetDatabase.SaveAssets();
             IngredientCatalog.EnsureDatabase();
@@ -339,6 +388,11 @@ namespace PotionFrontier.Alchemy.EditorTools
                 frostFire = frostFire,
                 amberSun = amberSun,
                 starSpiral = starSpiral,
+                beesWax = beesWax,
+                fiddlehead = fiddlehead,
+                fizzPowder = fizzPowder,
+                nightDew = nightDew,
+                waxCradle = waxCradle,
             };
         }
 

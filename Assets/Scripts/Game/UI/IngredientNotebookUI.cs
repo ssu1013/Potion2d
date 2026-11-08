@@ -51,8 +51,11 @@ namespace PotionFrontier.Game
         private int page;
         private int selected;
         private float stampTime = -1f;
+        private readonly PageFlipUI gridFlip;
 
         public bool IsOpen => root.activeSelf;
+        /// <summary>カードの並びのページをめくった回数（自動テスト用）</summary>
+        public int PageTurnCount => gridFlip.PlayCount;
         public int Count => list.Count;
         public IngredientData Selected => selected >= 0 && selected < list.Count ? list[selected] : null;
         /// <summary>今のページの、性質の行（自動テスト用）</summary>
@@ -72,6 +75,7 @@ namespace PotionFrontier.Game
             RectTransform grid = UIFactory.CreateRect("Grid", panel);
             UIFactory.Place(grid, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(44f, -100f), new Vector2(720f, 650f));
             for (int i = 0; i < PerPage; i++) cards.Add(BuildCard(grid, i, onClose));
+            gridFlip = new PageFlipUI(grid, "PageTurn"); // ページを送ると、紙が1枚めくれる
 
             RectTransform pager = UIFactory.CreateRect("Pager", panel);
             UIFactory.Place(pager, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(44f, -770f), new Vector2(720f, 56f));
@@ -186,6 +190,7 @@ namespace PotionFrontier.Game
         {
             if (!IsOpen) return;
             MenuPanel.Pop(panel, ref appear, dt);
+            gridFlip.Tick(dt);
             if (stampTime >= 0f)
             {
                 stampTime += dt;
@@ -207,11 +212,20 @@ namespace PotionFrontier.Game
         {
             if (list.Count == 0) return;
             selected = Mathf.Clamp(index, 0, list.Count - 1);
+            int before = page;
             page = selected / PerPage;
             stampTime = -1f;
             Refresh();
-            SoundLibrary lib = AudioManager.Lib;
-            if (lib != null) AudioManager.Se(lib.page, 0.4f, UnityEngine.Random.Range(0.95f, 1.08f));
+            if (page != before)
+            {
+                gridFlip.Play(page > before);
+                PageSound(0.6f);
+            }
+            else
+            {
+                SoundLibrary lib = AudioManager.Lib;
+                if (lib != null) AudioManager.Se(lib.page, 0.4f, UnityEngine.Random.Range(0.95f, 1.08f));
+            }
         }
 
         public bool SelectById(string id)
@@ -231,13 +245,33 @@ namespace PotionFrontier.Game
             if (index < list.Count) Select(index);
         }
 
+        /// <summary>カードの並びのページを送る（自動テスト用にも公開。1 = 次、-1 = 前）</summary>
+        public void TurnPage(int direction)
+        {
+            if (list.Count > 0 && direction != 0) ChangePage(direction > 0 ? 1 : -1);
+        }
+
         private void ChangePage(int direction)
         {
             int pages = Mathf.Max(1, Mathf.CeilToInt(list.Count / (float)PerPage));
+            int before = page;
             page = (page + direction + pages) % pages;
             selected = Mathf.Min(list.Count - 1, page * PerPage);
             stampTime = -1f;
             Refresh();
+            if (page != before)
+            {
+                gridFlip.Play(direction > 0);
+                PageSound(0.6f);
+            }
+        }
+
+        /// <summary>ページめくりの音（SoundLibrary の page。空ならコードで作った音）</summary>
+        private static void PageSound(float volume)
+        {
+            SoundLibrary lib = AudioManager.Lib;
+            AudioClip clip = lib != null && lib.page != null ? lib.page : SfxSynth.PageTurn;
+            if (clip != null) AudioManager.Se(clip, volume, UnityEngine.Random.Range(0.95f, 1.06f));
         }
 
         private int FirstMet()

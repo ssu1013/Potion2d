@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: cat_amplify_crystal
   displayName: "\u5897\u5E45\u306E\u7D50\u6676"
   description: "\u3042\u3089\u3086\u308B\u5C5E\u6027\u306E\u529B\u3092\u5F15\u304D\u51FA\u3059\u7D50\u6676\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e53f3ac98e374ad45ad1ff768103c4f6, type: 3}
   category: 2
   color: {r: 0.8, g: 0.6, b: 1, a: 1}
   attributes: []
@@ -28,6 +28,8 @@ MonoBehaviour:
   rarity: 3
   buyPrice: 16
   stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u9271\u77F3"
   sortOrder: 0
@@ -36,6 +38,12 @@ MonoBehaviour:
   heatSensitivity: 0
   activationTemp: 0
   activationBonus: 0
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: 81432173f5616c64fbb99ed67284f9c4, type: 3}
   worldPrefab: {fileID: 0}
   container: 5
   dropPiecePrefab: {fileID: 0}

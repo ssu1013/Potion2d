@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df5f7fc22f74da47b40253b55375cbc, type: 3}
+  m_Name: Main_VolcanoAsh
+  m_EditorClassIdentifier: 
+  ingredientId: main_volcano_ash
+  displayName: "\u706B\u5C71\u306E\u7070"
+  description: "\u706B\u5C71\u306E\u3075\u3082\u3068\u3067\u96C6\u3081\u305F\u7070\u3002\u6C34\u306B\u5165\u308C\u308B\u3068\u3059\u3050\u6EB6\u3051\u3066\u3001\u706B\u306E\u529B\u3068\u571F\u306E\u6075\u307F\u3092\u4E0E\u3048\u308B\u3002"
+  icon: {fileID: 21300000, guid: 50aec1fe34294244f830193fd7513b26, type: 3}
+  category: 1
+  color: {r: 0.46, g: 0.41, b: 0.39, a: 1}
+  attributes:
+  - attribute: 1
+    value: 10
+  - attribute: 3
+    value: 6
+  globalAmplifyPercent: 0
+  amplifiers: []
+  potionFormName: "\u30DD\u30FC\u30B7\u30E7\u30F3"
+  potionBottlePrefab: {fileID: 0}
+  form: 3
+  amountPerUse: 1
+  rarity: 1
+  buyPrice: 4
+  stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
+  tags:
+  - "\u7C89"
+  - "\u706B"
+  - "\u571F"
+  sortOrder: 0
+  solubility: 1
+  heatLimit: 0
+  heatSensitivity: 0
+  activationTemp: 0
+  activationBonus: 0
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: 659a5dfe6a42a9c41be48982367a8f41, type: 3}
+  worldPrefab: {fileID: 0}
+  container: 4
+  dropPiecePrefab: {fileID: 0}

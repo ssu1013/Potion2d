@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: cat_moon_dust
   displayName: "\u6708\u5F71\u306E\u7C89"
   description: "\u6708\u306E\u5F71\u3092\u96C6\u3081\u305F\u7C89\u3002\u59FF\u3092\u96A0\u3059\u529B\u3092\u5F37\u3081\u3001\u5149\u3092\u5F31\u3081\u308B\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e54bd0575572a7f47ad34eab8ed0eb75, type: 3}
   category: 2
   color: {r: 0.4, g: 0.4, b: 0.65, a: 1}
   attributes: []
@@ -31,10 +31,24 @@ MonoBehaviour:
   amountPerUse: 1
   rarity: 3
   buyPrice: 12
+  stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u7C89"
   - "\u795E\u79D8"
   sortOrder: 0
+  solubility: -1
+  heatLimit: -1
+  heatSensitivity: -1
+  activationTemp: 0
+  activationBonus: 50
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: 833f712fc2dcccc4090021f8f9b5fc27, type: 3}
   worldPrefab: {fileID: 0}
   container: 4
   dropPiecePrefab: {fileID: 0}

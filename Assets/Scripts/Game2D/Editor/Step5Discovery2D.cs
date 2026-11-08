@@ -8,6 +8,7 @@ using PotionFrontier.Game;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using P = PotionFrontier.Game2D.EditorTools.PlaceholderArt2D;
 
 namespace PotionFrontier.Game2D.EditorTools
@@ -46,9 +47,11 @@ namespace PotionFrontier.Game2D.EditorTools
             log.AppendLine("・新しい素材（なければ作った）：" + string.Join("、", Names(d.NewIngredients)));
             log.AppendLine("・新しい反応（なければ作った）：" + string.Join("、", ReactionNames(d.Reactions, 2)));
 
+            // 反応の登録を先に（シーンの書き換え。結果が長い一覧に埋もれないように）
+            RegisterReactions(d.Reactions, log);
+            RepairLightLayers(log);
             EnsureIngredientArt(log);
             EnsureDiscoveryArt(log);
-            RegisterReactions(d.Reactions, log);
 
             AssetDatabase.SaveAssets();
             if (!string.IsNullOrEmpty(before) && File.Exists(before)) EditorSceneManager.OpenScene(before);
@@ -104,7 +107,7 @@ namespace PotionFrontier.Game2D.EditorTools
         {
             if (d.IsPoured || d.Category == IngredientCategory.BaseLiquid) return Shape.Bottle;
             if (d.HasTag("貝")) return Shape.Shell;
-            if (d.HasTag("樹脂")) return Shape.Resin;
+            if (d.HasTag("樹脂") || d.HasTag("蝋")) return Shape.Resin;
             if (d.HasTag("羽根")) return Shape.Feather;
             if (d.HasTag("種")) return Shape.Seed;
             if (d.HasTag("実")) return Shape.Berry;
@@ -292,6 +295,7 @@ namespace PotionFrontier.Game2D.EditorTools
             P.EnsureFolder(DiscoveryArtDir);
             int made = 0;
             Sprite page = Make("page", 256, 256, 56, PageArt, ref made);
+            Sprite pageTurn = Make("page_turn", 256, 256, 40, PageTurnArt, ref made);
             Sprite card = Make("card", 128, 144, 26, CardArt, ref made);
             Sprite unknown = Make("unknown", 128, 128, 0, UnknownArt, ref made);
             Sprite stampNew = Make("stamp_new", 160, 160, 0, (x, y) => StampArt(x, y, new Color(0.8f, 0.16f, 0.12f, 1f)), ref made);
@@ -304,6 +308,7 @@ namespace PotionFrontier.Game2D.EditorTools
             var readme = new StringBuilder();
             readme.AppendLine("発見・素材ノートの絵（同じ名前の PNG で上書きすると差し替わります。UISkin の「発見・素材ノート」から参照）");
             readme.AppendLine("  page.png            … 256×256。新しい反応のページ・「書き足した」お知らせの紙（9スライス：ふち 56）");
+            readme.AppendLine("  page_turn.png       … 256×256。ページめくりで、めくれていく紙（左の辺がとじ目。9スライス：ふち 40）");
             readme.AppendLine("  card.png            … 128×144。素材ノートの素材カード（9スライス：ふち 26）");
             readme.AppendLine("  unknown.png         … 128×128。まだ出会っていない素材の影絵（白で描くと、暗い色で塗られる）");
             readme.AppendLine("  stamp_new.png       … 160×160。新しい液体を発見");
@@ -322,6 +327,7 @@ namespace PotionFrontier.Game2D.EditorTools
             {
                 Undo.RecordObject(skin, "Step5 発見の絵");
                 assigned += Fill(ref skin.discoveryPage, page);
+                assigned += Fill(ref skin.pageTurn, pageTurn);
                 assigned += Fill(ref skin.notebookCard, card);
                 assigned += Fill(ref skin.unknownMark, unknown);
                 assigned += Fill(ref skin.stampNew, stampNew);
@@ -374,6 +380,20 @@ namespace PotionFrontier.Game2D.EditorTools
             return result;
         }
 
+        private static Color PageTurnArt(float x, float y)
+        {
+            // めくれていく紙：左の辺（とじ目）は少し影、右の辺はめくれて明るい
+            float d = P.Box(x, y, 0f, 0f, 126f, 126f, 14f);
+            float noise = Mathf.PerlinNoise(x * 0.04f + 3f, y * 0.04f + 8f);
+            Color paper = Color.Lerp(new Color(0.99f, 0.96f, 0.86f, 1f), new Color(0.94f, 0.87f, 0.7f, 1f), noise * 0.55f);
+            float k = Mathf.InverseLerp(-128f, 128f, x);
+            paper = Color.Lerp(paper, new Color(0.78f, 0.66f, 0.47f, 1f), Mathf.Clamp01((0.18f - k) / 0.18f) * 0.45f);
+            paper = Color.Lerp(paper, Color.white, Mathf.Clamp01((k - 0.86f) / 0.14f) * 0.35f);
+            Color result = P.Paint(paper, P.Fill(d));
+            result = P.Over(P.Paint(new Color(0.6f, 0.42f, 0.22f, 1f), P.Stroke(d, 4f)), result);
+            return result;
+        }
+
         private static Color CardArt(float x, float y)
         {
             float d = P.Box(x, y, 0f, 0f, 62f, 70f, 12f);
@@ -416,19 +436,32 @@ namespace PotionFrontier.Game2D.EditorTools
 
         private static void RegisterReactions(ReactionData[] reactions, StringBuilder log)
         {
+            // シーンを開くと、シーンから使われていないアセットは読み直しになる（手元の参照が空になる）ので、場所で覚えておく
+            var reactionPaths = new List<string>();
+            foreach (ReactionData r in reactions)
+            {
+                string p = r != null ? AssetDatabase.GetAssetPath(r) : null;
+                if (!string.IsNullOrEmpty(p)) reactionPaths.Add(p);
+            }
             foreach (string path in Scenes)
             {
                 if (!File.Exists(path)) continue;
                 var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
-                AlchemyManager am = UnityEngine.Object.FindFirstObjectByType<AlchemyManager>();
-                if (am == null) continue;
+                AlchemyManager[] found = UnityEngine.Object.FindObjectsByType<AlchemyManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                AlchemyManager am = found.Length > 0 ? found[0] : null;
+                if (am == null)
+                {
+                    log.AppendLine($"・{Path.GetFileNameWithoutExtension(path)}：AlchemyManager が見つからない（反応は登録していない）");
+                    continue;
+                }
                 var so = new SerializedObject(am);
                 SerializedProperty list = so.FindProperty("reactions");
                 var have = new HashSet<UnityEngine.Object>();
                 for (int i = 0; i < list.arraySize; i++) have.Add(list.GetArrayElementAtIndex(i).objectReferenceValue);
                 int added = 0;
-                foreach (ReactionData r in reactions)
+                foreach (string reactionPath in reactionPaths)
                 {
+                    ReactionData r = AssetDatabase.LoadAssetAtPath<ReactionData>(reactionPath);
                     if (r == null || have.Contains(r)) continue;
                     list.InsertArrayElementAtIndex(list.arraySize);
                     list.GetArrayElementAtIndex(list.arraySize - 1).objectReferenceValue = r;
@@ -439,9 +472,89 @@ namespace PotionFrontier.Game2D.EditorTools
                     so.ApplyModifiedPropertiesWithoutUndo();
                     EditorSceneManager.MarkSceneDirty(scene);
                     EditorSceneManager.SaveScene(scene);
-                    log.AppendLine($"・{Path.GetFileNameWithoutExtension(path)} の AlchemyManager に反応を {added} つ登録した");
+                    log.AppendLine($"・{Path.GetFileNameWithoutExtension(path)} の AlchemyManager に反応を {added} つ登録した（全部で {list.arraySize} 個）");
+                }
+                else log.AppendLine($"・{Path.GetFileNameWithoutExtension(path)}：反応はもう全部登録してある（{list.arraySize} 個）");
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 光（Light2D）がすべての描く順番を照らすように
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 描く順番（Sorting Layer）の番号を直したあと、光の側の「照らす順番」が古い番号（0）のままだと、
+        /// Flask・Items・Held などの順番の絵（トレイの素材・手に持った物）に光が当たらず、真っ黒に沈む。
+        /// Art2D の Prefab と2つのシーンの光を、すべての順番を照らすように直す（もう直っていれば何もしない）
+        /// </summary>
+        internal static void RepairLightLayers(StringBuilder log)
+        {
+            int[] ids = AllLayerIds();
+            int lights = 0, prefabs = 0;
+            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Art2D" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameObject root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    int n = FixLights(root.GetComponentsInChildren<Light2D>(true), ids);
+                    if (n > 0)
+                    {
+                        PrefabUtility.SaveAsPrefabAsset(root, path);
+                        lights += n;
+                        prefabs++;
+                    }
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
                 }
             }
+            foreach (string path in Scenes)
+            {
+                if (!File.Exists(path)) continue;
+                var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                int n = FixLights(UnityEngine.Object.FindObjectsByType<Light2D>(FindObjectsInactive.Include, FindObjectsSortMode.None), ids);
+                if (n > 0)
+                {
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    EditorSceneManager.SaveScene(scene);
+                    lights += n;
+                }
+            }
+            log.AppendLine(lights > 0
+                ? $"・光（Light2D）{lights} 個を、すべての描く順番を照らすように直した（Prefab {prefabs} 個・シーン。トレイの素材が黒く沈まないように）"
+                : "・光（Light2D）：もう全部の描く順番を照らしている");
+        }
+
+        private static int[] AllLayerIds()
+        {
+            UnityEngine.SortingLayer[] layers = UnityEngine.SortingLayer.layers;
+            var ids = new int[layers.Length];
+            for (int i = 0; i < layers.Length; i++) ids[i] = layers[i].id;
+            return ids;
+        }
+
+        private static int FixLights(IEnumerable<Light2D> lights, int[] ids)
+        {
+            int changed = 0;
+            foreach (Light2D light in lights)
+            {
+                if (light == null) continue;
+                var so = new SerializedObject(light);
+                SerializedProperty prop = so.FindProperty("m_ApplyToSortingLayers");
+                if (prop == null || !prop.isArray) continue;
+                var have = new HashSet<int>();
+                for (int i = 0; i < prop.arraySize; i++) have.Add(prop.GetArrayElementAtIndex(i).intValue);
+                bool ok = prop.arraySize == ids.Length;
+                foreach (int id in ids) ok &= have.Contains(id);
+                if (ok) continue;
+                prop.arraySize = ids.Length;
+                for (int i = 0; i < ids.Length; i++) prop.GetArrayElementAtIndex(i).intValue = ids[i];
+                so.ApplyModifiedPropertiesWithoutUndo();
+                changed++;
+            }
+            return changed;
         }
 
         private static IEnumerable<string> Names(IEnumerable<IngredientData> list)

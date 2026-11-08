@@ -96,6 +96,8 @@ namespace PotionFrontier.Game2D
         public bool PageVisible => popups != null && popups.PageVisible;
         /// <summary>結果カードに「新発見」のスタンプが押されている</summary>
         public bool NewStampVisible => popups != null && popups.NewStampVisible;
+        public bool NewHeaderVisible => popups != null && popups.NewHeaderVisible;
+        public int PageTurnCount => popups != null ? popups.PageTurnCount : 0;
         public int TargetRows { get; private set; }
         public int ReactionCount { get; private set; }
         public string Status => model.status;
@@ -129,6 +131,7 @@ namespace PotionFrontier.Game2D
             thermo = new BrewThermoUI2D(back, thermometerPosition, thermometerSize, thermometerTube);
             popups = new BrewPopupsUI2D(front, resultCenter, stirRing);
             popups.StarShown = OnStarShown;
+            popups.PageTurnStarted = OnPageTurn;
             foreach (UnityEngine.UI.Graphic g in back.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)) g.raycastTarget = false;
             foreach (UnityEngine.UI.Graphic g in front.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)) g.raycastTarget = false;
 
@@ -762,6 +765,13 @@ namespace PotionFrontier.Game2D
                 if (effects == null) effects = FindFirstObjectByType<FlaskEffects2D>();
                 if (effects != null) effects.Sparkle(record.color, 30);
             }
+        }
+
+        /// <summary>ページめくりの「ぱらっ」（SoundLibrary の page。空ならコードで作った音）</summary>
+        private void OnPageTurn()
+        {
+            SoundLibrary lib = AudioManager.Lib;
+            Play(lib != null ? lib.page : null, SfxSynth.PageTurn, 0.75f, Random.Range(0.96f, 1.05f));
         }
 
         private void OnStarShown(int index)

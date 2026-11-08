@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: main_gale_feather
   displayName: "\u75BE\u98A8\u306E\u7FBD\u6839"
   description: "\u98A8\u3092\u547C\u3076\u9CE5\u306E\u7FBD\u6839\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 834fe6086648da545b7b3a0fbaac7ac9, type: 3}
   category: 1
   color: {r: 0.55, g: 0.95, b: 0.85, a: 1}
   attributes:
@@ -32,6 +32,8 @@ MonoBehaviour:
   rarity: 2
   buyPrice: 7
   stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u7FBD\u6839"
   - "\u98A8"
@@ -41,6 +43,12 @@ MonoBehaviour:
   heatSensitivity: -1
   activationTemp: 0
   activationBonus: 0
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: fa0f68f2eaa3bef4a8beee2c2eafca76, type: 3}
   worldPrefab: {fileID: 0}
   container: 0
   dropPiecePrefab: {fileID: 0}

@@ -15,7 +15,7 @@ MonoBehaviour:
   ingredientId: main_sun_petal
   displayName: "\u967D\u5149\u306E\u82B1\u3073\u3089"
   description: "\u65E5\u306E\u5149\u3092\u305F\u304F\u308F\u3048\u305F\u82B1\u3073\u3089\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: d1fb5ff5cd949564eaeee6f50a617a6f, type: 3}
   category: 1
   color: {r: 1, g: 0.9, b: 0.45, a: 1}
   attributes:
@@ -32,6 +32,8 @@ MonoBehaviour:
   rarity: 2
   buyPrice: 7
   stockPolicy: 0
+  unlockPrice: -1
+  requiredReputation: 0
   tags:
   - "\u82B1"
   - "\u5149"
@@ -41,6 +43,12 @@ MonoBehaviour:
   heatSensitivity: 0.4
   activationTemp: 0
   activationBonus: 0
+  meltTemp: 0
+  fragileTurns: 0
+  volatility: 0
+  coolTemp: 0
+  dissolveDirection: 0
+  pieceSprite: {fileID: 21300000, guid: c8e2f94bc6c23884fbbb86dfb5e7dbde, type: 3}
   worldPrefab: {fileID: 0}
   container: 0
   dropPiecePrefab: {fileID: 0}

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a3347e7820b8ae4fab80b163c6edb7b, type: 3}
+  m_Name: Reaction_StarSpiral
+  m_EditorClassIdentifier: 
+  reactionId: reaction_star_spiral
+  displayName: "\u6D41\u308C\u661F\u306E\u6E26"
+  description: "\u661F\u306E\u82B1\u3073\u3089\u3068\u6E26\u5DFB\u304D\u8C9D\u3092\u3001\u305D\u3063\u3068\u53CD\u6642\u8A08\u56DE\u308A\u306B\u6DF7\u305C\u308B\u3068\u3001\u5149\u304C\u98A8\u306B\u4E57\u3063\u3066\u6D41\u308C\u661F\u306E\u3088\u3046\u306B\u8D70\u308B\u3002"
+  requiredIngredients:
+  - {fileID: 11400000, guid: 86d9eb7fb5d29a145972ee69a2da2af8, type: 2}
+  - {fileID: 11400000, guid: 0bcbd959e4aef874fac06d737edb57b7, type: 2}
+  minDissolvedUnits: 0.3
+  minTemperature: -100
+  maxTemperature: 60
+  stirDirection: 2
+  minRecentTurns: 2
+  attributeConditions: []
+  duration: 2
+  conversions:
+  - from: 6
+    to: 7
+    percent: 40
+    efficiency: 1.3
+  multipliers:
+  - attribute: 7
+    multiplier: 1.1
+  traits:
+  - traitId: shimmer
+    strength: 0.5
