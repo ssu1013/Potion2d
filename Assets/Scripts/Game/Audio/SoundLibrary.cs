@@ -53,6 +53,11 @@ namespace PotionFrontier.Game
         [Tooltip("反応が起きた瞬間の音")] public AudioClip reactionSting;
         [Tooltip("焦げはじめた・目標から外れたなどの、やさしい注意の音")] public AudioClip softWarning;
 
+        [Header("夜の環境音（空ならコードで作った静かな音）")]
+        [Tooltip("ランプの火が静かに燃える音（ループ。部屋でも調合台でも、ずっと小さく鳴る）")] public AudioClip lampFireLoop;
+        [Tooltip("お湯が温まると、泡でフラスコが台に当たる「コト」（いくつか入れるとランダムに選ぶ）")] public AudioClip[] kotoKnock = new AudioClip[0];
+        [Tooltip("沸きはじめたフラスコのガラスが、軽く触れ合う「ちん」（空ならガラス棒の音を高く小さく使う）")] public AudioClip[] glassTouch = new AudioClip[0];
+
         [Header("お店・相談")]
         public AudioClip doorBell;
         public AudioClip voiceBlip;

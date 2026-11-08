@@ -595,7 +595,7 @@ MonoBehaviour:
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 0.5
-  m_PointLightOuterRadius: 3.4
+  m_PointLightOuterRadius: 4.6
   m_ShapeLightParametricSides: 5
   m_ShapeLightParametricAngleOffset: 0
   m_ShapeLightParametricRadius: 1
@@ -749,4 +749,4 @@ MonoBehaviour:
   flameMinScale: 0.35
   flameMaxScale: 1.15
   heaterLight: {fileID: 3120547681223955955}
-  lightMax: 2.2
+  lightMax: 2.8

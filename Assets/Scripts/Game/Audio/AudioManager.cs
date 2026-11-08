@@ -13,8 +13,8 @@ namespace PotionFrontier.Game
         public static AudioManager Instance { get; private set; }
 
         [SerializeField] private SoundLibrary library;
-        [SerializeField, Range(0f, 1f), Tooltip("BGMの基本音量（設定の音量と掛け合わせる）")] private float bgmBase = 0.55f;
-        [SerializeField, Range(0f, 1f)] private float ambientBase = 0.35f;
+        [SerializeField, Range(0f, 1f), Tooltip("BGMの基本音量（設定の音量と掛け合わせる）。夜の空気感では小さめ（BGM より環境音）")] private float bgmBase = 0.18f;
+        [SerializeField, Range(0f, 1f), Tooltip("部屋の環境音の基本音量（設定の効果音の音量と掛け合わせる）")] private float ambientBase = 0.55f;
 
         private AudioSource bgmA;
         private AudioSource bgmB;

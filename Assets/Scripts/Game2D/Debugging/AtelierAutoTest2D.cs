@@ -176,6 +176,14 @@ namespace PotionFrontier.Game2D
             Check(UIFactory.Skin != null && UIFactory.Skin.stampNew != null && UIFactory.Skin.discoveryPage != null && UIFactory.Skin.pageTurn != null,
                   "発見の絵（Art2D/UI/Discovery。page_turn も）が UISkin に割り当てられている");
             Log($"所持金 {progress.Gold} G ／ 素材 {(db != null ? db.Count : 0)} 種類のうち {(stock != null ? stock.CountKinds(db) : 0)} 種類を持っている ／ いる所 {AtelierView2D.StopNames[view.Stop]}");
+            // 夜の空気感（Step6）：部屋全体の光は深い夜の暗さ、ランプの火の音がずっと小さく鳴る
+            float globalLight = -1f;
+            foreach (UnityEngine.Rendering.Universal.Light2D l in FindObjectsByType<UnityEngine.Rendering.Universal.Light2D>(FindObjectsSortMode.None))
+                if (l.lightType == UnityEngine.Rendering.Universal.Light2D.LightType.Global) globalLight = l.intensity;
+            Log($"[夜の空気感] 部屋全体の光 {globalLight:0.00}");
+            Check(globalLight >= 0f && globalLight <= 0.15f, "部屋全体の光（Global Light 2D）が、深い夜の暗さになっている");
+            NightSoundscape2D night = NightSoundscape2D.Current;
+            Check(night != null && night.FirePlaying, "ランプの火が静かに燃える音（夜の環境音）が鳴っている");
             yield return Shot("room_start");
             yield return Measure("部屋");
             CheckWords("部屋");
@@ -329,6 +337,12 @@ namespace PotionFrontier.Game2D
             yield return Wait(0.95f);
             yield return Shot("bottled");
             LiquidRecord bottled = lastBottled;
+            FlaskEffects2D fx = FindFirstObjectByType<FlaskEffects2D>();
+            if (flask != null)
+            {
+                Log($"[発見の光] 強さ {flask.BloomLevel:0.00}");
+                Check(flask.Blooming && flask.BloomLevel > 0.3f, "新発見のとき、温かい光がフラスコからフワッと漏れる");
+            }
             if (feedback != null)
             {
                 Check(feedback.ResultVisible, "瓶詰めの結果カードが出る");
@@ -342,6 +356,7 @@ namespace PotionFrontier.Game2D
                 yield return Shot("reaction_moment");
                 yield return Wait(1.2f);
                 Check(Mathf.Approximately(Time.timeScale, 1f), "反応のスローのあと、時間の速さが元に戻る");
+                Check(fx == null || fx.SparkleCount == 0, "新発見・反応のときに、きらきらの粒は出ない（夜の空気感）");
             }
             Check(bottled != null, "ボタンで瓶に詰められる");
             PotionStack stack = bottled != null ? potions.Find(bottled.id) : null;
@@ -363,6 +378,11 @@ namespace PotionFrontier.Game2D
             yield return Shot("fact_slip");
             yield return Wait(0.8f);
             yield return Shot("heat");
+            if (fx != null)
+            {
+                Log($"[夜の環境音] お湯のコト {fx.KnockCount} 回 ／ ガラスのちん {fx.GlassCount} 回（{session.Flask.Temperature:0}℃）");
+                Check(fx.KnockCount > 0, "お湯が温まると、コトコトと音がする");
+            }
             session.SetHeat(0f);
             session.FastForward = false;
             session.ResetFlask();

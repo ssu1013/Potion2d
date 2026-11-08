@@ -41,6 +41,13 @@ namespace PotionFrontier.Game2D
         [SerializeField] private float glowRadiusMin = 1.4f;
         [SerializeField] private float glowRadiusMax = 2.8f;
 
+        [Header("発見の光（温かい光がフラスコからフワッと漏れる）")]
+        [SerializeField, Tooltip("発見したときに漏れる光の色")] private Color bloomColor = new Color(1f, 0.68f, 0.36f, 1f);
+        [SerializeField, Min(0f), Tooltip("いちばん明るいときの光（1 を超えるとブルームでにじむ）")] private float bloomIntensity = 1.9f;
+        [SerializeField, Min(0.1f), Tooltip("いちばん広がったときの光の届く範囲")] private float bloomRadius = 5.5f;
+        [SerializeField, Min(0.1f), Tooltip("ふくらむまでの秒数")] private float bloomRise = 0.9f;
+        [SerializeField, Min(0.5f), Tooltip("ふくらんで消えるまでの、全部の秒数")] private float bloomSeconds = 3.4f;
+
         [Header("色")]
         [SerializeField, Tooltip("液体がないときの色（注いだ瞬間の色）")] private Color emptyColor = new Color(0.75f, 0.88f, 1f, 1f);
         [SerializeField, Range(0f, 1f)] private float liquidAlpha = 0.92f;
@@ -50,8 +57,15 @@ namespace PotionFrontier.Game2D
         private Color shownColor;
         private float wobble;
         private float flashTime = 10f;
+        private float bloomTime = 100f;
+        private float bloomStrength;
         private Color flashColor = Color.white;
         private float splash;
+
+        /// <summary>発見の光がふくらんでいる最中か</summary>
+        public bool Blooming => bloomTime < bloomSeconds;
+        /// <summary>今の発見の光の強さ（0〜1）</summary>
+        public float BloomLevel { get; private set; }
 
         public Vector3 MouthWorld => mouth != null ? mouth.position : transform.position + Vector3.up * 1.7f;
         public Vector3 BottomWorld => liquidBottom != null ? liquidBottom.position : transform.position + Vector3.down * 1.4f;
@@ -165,14 +179,26 @@ namespace PotionFrontier.Game2D
                 // ゆっくり息をするように
                 target *= 1f + 0.06f * Mathf.Sin(Time.time * 2.1f) + 0.04f * Mathf.Sin(Time.time * 5.3f);
             }
-            // 瓶に詰めた瞬間の光
+            // 瓶に詰めた瞬間の光（夜の空気感：パッとではなく、ふわっと）
             flashTime += dt;
-            float flash = flashTime < 1.2f ? Mathf.Sin(Mathf.Clamp01(flashTime / 1.2f) * Mathf.PI) * 2.5f : 0f;
+            float flash = flashTime < 1.6f ? Mathf.Sin(Mathf.Clamp01(flashTime / 1.6f) * Mathf.PI) * 1.2f : 0f;
+            // 発見の光：ゆっくりふくらんで、ゆっくり消える
+            bloomTime += dt;
+            float b = 0f;
+            if (bloomTime < bloomSeconds)
+            {
+                float rise = Mathf.SmoothStep(0f, 1f, bloomTime / bloomRise);
+                float fall = bloomTime <= bloomRise ? 1f : 1f - Mathf.SmoothStep(0f, 1f, (bloomTime - bloomRise) / Mathf.Max(0.1f, bloomSeconds - bloomRise));
+                b = rise * fall * bloomStrength;
+            }
+            BloomLevel = b;
 
             float intensity = Mathf.Lerp(glow.intensity, target, 1f - Mathf.Exp(-3f * dt)) ;
-            glow.intensity = Mathf.Max(intensity, flash);
-            glow.color = flash > intensity ? flashColor : Saturate(shownColor);
-            glow.pointLightOuterRadius = Mathf.Lerp(glowRadiusMin, glowRadiusMax, Mathf.Max(k, flash * 0.4f));
+            glow.intensity = Mathf.Max(Mathf.Max(intensity, flash), b * bloomIntensity);
+            Color baseColor = flash > intensity ? flashColor : Saturate(shownColor);
+            glow.color = Color.Lerp(baseColor, bloomColor, Mathf.Clamp01(b * 1.4f));
+            float radius = Mathf.Lerp(glowRadiusMin, glowRadiusMax, Mathf.Max(k, flash * 0.4f));
+            glow.pointLightOuterRadius = Mathf.Lerp(radius, bloomRadius, b);
             glow.pointLightInnerRadius = glow.pointLightOuterRadius * 0.2f;
             glow.transform.position = Vector3.Lerp(BottomWorld, SurfaceWorld, 0.5f);
             bool on = glow.intensity > 0.01f;
@@ -211,16 +237,26 @@ namespace PotionFrontier.Game2D
             if (PieceLanded != null) PieceLanded(SurfaceWorld, color, powder);
         }
 
-        /// <summary>液体をパッと光らせる（反応が起きた瞬間など）</summary>
+        /// <summary>液体をふわっと光らせる（液体の色に、少し温かい色を混ぜる）</summary>
         public void Flash(Color color)
         {
-            flashColor = Saturate(color);
+            flashColor = Color.Lerp(Saturate(color), bloomColor, 0.4f);
             flashTime = 0f;
+        }
+
+        /// <summary>
+        /// 温かい光がフラスコからフワッと漏れる（新しい液体・新しい反応を見つけたとき）。
+        /// strength 0〜1。色・明るさ・広がり・秒数は Inspector の「発見の光」
+        /// </summary>
+        public void WarmBloom(float strength = 1f)
+        {
+            bloomStrength = Mathf.Clamp(strength, 0f, 1.5f);
+            bloomTime = 0f;
         }
 
         private void OnBottled(LiquidRecord record, bool isNew, float ml, int bottles)
         {
-            flashColor = record != null ? Saturate(record.color) : Color.white;
+            flashColor = record != null ? Color.Lerp(Saturate(record.color), bloomColor, 0.4f) : bloomColor;
             flashTime = record != null && record.kind == LiquidKind.Unknown ? 0.6f : 0f;
         }
 

@@ -528,8 +528,8 @@ MonoBehaviour:
   m_LightType: 4
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.5
-  m_Color: {r: 1, g: 0.84, b: 0.66, a: 1}
-  m_Intensity: 0.32
+  m_Color: {r: 0.52, g: 0.58, b: 0.86, a: 1}
+  m_Intensity: 0.1
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
   m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f101a4152bdb76224b820352d2f3836609ed09d24b347d36c
@@ -610,8 +610,8 @@ MonoBehaviour:
   m_LightType: 3
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.5
-  m_Color: {r: 0.55, g: 0.68, b: 1, a: 1}
-  m_Intensity: 0.7
+  m_Color: {r: 0.48, g: 0.6, b: 1, a: 1}
+  m_Intensity: 0.48999998
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
   m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f101a4152bdb76224b820352d2f3836609ed09d24b347d36c
@@ -914,6 +914,55 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1831118570
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1831118572}
+  - component: {fileID: 1831118571}
+  m_Layer: 0
+  m_Name: "NightSoundscape\uFF08\u591C\u306E\u74B0\u5883\u97F3\uFF09"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1831118571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831118570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07cb7c742b4e830418c4592a96ef4b63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fireLoop: {fileID: 0}
+  fireVolumeBrew: 0.34
+  fireVolumeRoom: 0.22
+  fireVolumeQuiet: 0.12
+  fadeSpeed: 0.4
+--- !u!4 &1831118572
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831118570}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1852267108
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1344,6 +1393,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2015408012}
   - component: {fileID: 2015408013}
+  - component: {fileID: 2015408014}
   m_Layer: 0
   m_Name: "FocusLight\uFF08\u8ABF\u5408\u53F0\u3092\u7167\u3089\u3059\u706F\u308A\uFF09"
   m_TagString: Untagged
@@ -1382,8 +1432,8 @@ MonoBehaviour:
   m_LightType: 3
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.5
-  m_Color: {r: 1, g: 0.92, b: 0.78, a: 1}
-  m_Intensity: 0.65
+  m_Color: {r: 1, g: 0.7, b: 0.42, a: 1}
+  m_Intensity: 0.55
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
   m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f101a4152bdb76224b820352d2f3836609ed09d24b347d36c
@@ -1405,7 +1455,7 @@ MonoBehaviour:
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 1.2
-  m_PointLightOuterRadius: 4.6
+  m_PointLightOuterRadius: 5.6
   m_ShapeLightParametricSides: 5
   m_ShapeLightParametricAngleOffset: 0
   m_ShapeLightParametricRadius: 1
@@ -1416,6 +1466,22 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
+--- !u!114 &2015408014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015408011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8563d68f9a800b248829d9f15de64496, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  intensityAmount: 0.08
+  radiusAmount: 0.03
+  speed: 1.6
+  flameArt: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1429,3 +1495,4 @@ SceneRoots:
   - {fileID: 612026278}
   - {fileID: 1852267108}
   - {fileID: 362223116}
+  - {fileID: 1831118572}

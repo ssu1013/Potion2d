@@ -271,10 +271,9 @@ namespace PotionFrontier.Game2D
             SoundLibrary lib = AudioManager.Lib;
             if (lib != null)
             {
-                AudioManager.Se(lib.corkPop, 0.8f);
-                if (record.IsSpecial) AudioManager.Se(lib.brewSpecial);
-                else if (record.kind == LiquidKind.Potion) AudioManager.Se(lib.brewSuccess);
-                else AudioManager.Se(lib.brewSuccess, 0.6f, 0.85f);
+                // 夜の空気感：ファンファーレはやめて、栓の「ぽん」だけ（新発見のときは BrewFeedback2D がギターを鳴らす）
+                AudioManager.Se(lib.corkPop, 0.6f);
+                if (record.IsSpecial) AudioManager.Se(lib.brewSpecial, 0.3f);
             }
             if (Bottled != null) Bottled(record, isNew, bottledMl, filled);
             if (GameFlow.Instance != null) GameFlow.Instance.Save();
