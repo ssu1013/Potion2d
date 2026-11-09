@@ -142,7 +142,7 @@ namespace PotionFrontier.Alchemy
     }
 
     /// <summary>
-    /// できた液体の記録（中間液体・失敗作も含む）。瓶詰めした液体・レシピ本のページ・相談の判定は、すべてこれを使う。
+    /// できた液体の記録（中間液体・失敗作も含む）。瓶詰めした液体・レシピ本のページ・特別な薬の判定は、すべてこれを使う。
     /// 属性は「100ml あたりの濃さ」。同じ結果の液体は同じ ID（fingerprint から作る）になる。
     /// </summary>
     [Serializable]
@@ -172,8 +172,6 @@ namespace PotionFrontier.Alchemy
         [Tooltip("作り方（最初に作った方法と、ちがう方法を最大3つまで）")] public List<ProcessRecipe> recipes = new List<ProcessRecipe>();
         [Tooltip("作った回数")] public int madeCount;
         [Tooltip("レシピ本でまだ見ていない（新しく記録した）ページ")] public bool unread;
-        [Tooltip("この液体を分け与えて力になった相手（相談した人の名前）")] public List<string> sharedWith = new List<string>();
-        [Tooltip("この液体の作り方を教えた相手（相談した人の名前）")] public List<string> taughtTo = new List<string>();
 
         public string DisplayName => !string.IsNullOrEmpty(customName) ? customName : autoName;
         public AttributeVector Attributes => AttributeVector.FromArray(attributes);
@@ -188,9 +186,6 @@ namespace PotionFrontier.Alchemy
             }
             return 0f;
         }
-
-        /// <summary>この液体で力になった回数（分け与えた＋教えた）</summary>
-        public int HelpedCount => (sharedWith != null ? sharedWith.Count : 0) + (taughtTo != null ? taughtTo.Count : 0);
 
         /// <summary>作り方の記録があるか（フェーズ4までに作った古い瓶には作り方がない）</summary>
         public bool HasRecipe => recipes != null && recipes.Count > 0 && recipes[0].steps.Count > 0;
@@ -225,8 +220,6 @@ namespace PotionFrontier.Alchemy
             c.reactionIds = new List<string>(reactionIds);
             c.recipes = new List<ProcessRecipe>();
             foreach (ProcessRecipe r in recipes) c.recipes.Add(new ProcessRecipe(r.steps));
-            c.sharedWith = sharedWith != null ? new List<string>(sharedWith) : new List<string>();
-            c.taughtTo = taughtTo != null ? new List<string>(taughtTo) : new List<string>();
             return c;
         }
 

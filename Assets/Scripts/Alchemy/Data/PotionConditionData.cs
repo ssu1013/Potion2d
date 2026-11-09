@@ -68,7 +68,7 @@ namespace PotionFrontier.Alchemy
 
     /// <summary>
     /// ポーションの完成条件データ（特殊レシピ）。
-    /// 相談の決め手になる薬・伝説の特効薬など「探求の目標になる」ものだけをこれで定義する。
+    /// 特別な薬・伝説の特効薬など「探求の目標になる」ものだけをこれで定義する。
     /// どれにも当てはまらない場合は、属性値から名前・効果・色が自動生成される。
     /// </summary>
     [CreateAssetMenu(fileName = "Potion_New", menuName = "Potion Frontier/ポーション完成条件 (Potion Condition)", order = 1)]

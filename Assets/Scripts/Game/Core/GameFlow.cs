@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using PotionFrontier.Alchemy;
 using PotionFrontier.Game2D;
 using UnityEngine;
@@ -9,19 +10,19 @@ namespace PotionFrontier.Game
     public enum GameMode { Title, Playing }
 
     /// <summary>
-    /// ゲーム全体の流れ（2D 版）：タイトル ⇄ プレイ、ポーズ、セーブ／ロード。シーンの GameSystems に付ける。
-    /// セーブは自動（瓶に詰めたとき・相談が解決したとき・タイトルに戻るとき・終了するとき）。
-    /// 中身：所持金・解決した相談・素材の在庫と取引中の素材・瓶の棚・作った液体（レシピ本）・フラスコの中身。
-    /// （3D 版 GameFlow の流れをそのまま移し、カメラ・プレイヤーの部分を 2D のアトリエ（AtelierView2D）に替えた）
+    /// ゲーム全体の流れ（1画面版）：タイトル ⇄ 調合机、ポーズ、セーブ／ロード。シーンの GameSystems に付ける。
+    /// 画面は1つだけ。タイトルも本も、同じ調合机の上に重ねて出す（暗転・カメラの移動はない）。
+    /// 発見が進むと、新しい素材が自動で机に届く（DiscoveryProgress）。伝説の特効薬を初めて作るとクリア。
+    /// セーブは自動（瓶に詰めたとき・素材が届いたとき・タイトルに戻るとき・終了するとき）。
     /// </summary>
     public class GameFlow : MonoBehaviour
     {
+        public const string FinalPotionId = "special_legendary_cure";
+
         public static GameFlow Instance { get; private set; }
 
         [Header("参照（空ならシーンから探す）")]
         [SerializeField] private PotionInventory inventory;
-        [SerializeField] private PlayerProgress progress;
-        [SerializeField] private QuestManager quests;
         [SerializeField] private IngredientInventory ingredients;
         [SerializeField] private AlchemyManager alchemy;
         [SerializeField] private BrewSession2D session;
@@ -29,25 +30,54 @@ namespace PotionFrontier.Game
         [SerializeField] private AtelierView2D view;
 
         private bool transitioning;
+        private bool checkArrivals;
         private FlaskSaveData pendingFlask;
 
         public GameMode Mode { get; private set; } = GameMode.Title;
         public bool IsPaused { get; private set; }
-        public PlayerProgress Progress => progress;
+        /// <summary>伝説の特効薬を作った</summary>
+        public bool GameCleared { get; private set; }
 
         public event Action<GameMode> ModeChanged;
+
+        /// <summary>今の発見のポイント（性質1・反応2・新しい液体1）</summary>
+        public int DiscoveryPoints => DiscoveryProgress.Points(GameContext.Ingredients, alchemy != null ? alchemy.Liquids : null);
+
+        /// <summary>次に届く素材と、それまでの残りのポイント（すべて届いていれば null）</summary>
+        public IngredientData NextArrival(out int remaining)
+        {
+            return DiscoveryProgress.NextArrival(GameContext.Ingredients, ingredients, DiscoveryPoints, out remaining);
+        }
 
         private void Awake()
         {
             Instance = this;
             if (inventory == null) inventory = FindFirstObjectByType<PotionInventory>();
-            if (progress == null) progress = FindFirstObjectByType<PlayerProgress>();
-            if (quests == null) quests = FindFirstObjectByType<QuestManager>();
             if (ingredients == null) ingredients = FindFirstObjectByType<IngredientInventory>();
             if (alchemy == null) alchemy = FindFirstObjectByType<AlchemyManager>();
             if (session == null) session = FindFirstObjectByType<BrewSession2D>();
             if (brewInput == null) brewInput = FindFirstObjectByType<BrewInput2D>();
             if (view == null) view = FindFirstObjectByType<AtelierView2D>();
+        }
+
+        private void OnEnable()
+        {
+            DiscoveryJournal.Changed += OnDiscovery;
+            if (alchemy != null)
+            {
+                alchemy.Liquids.Discovered += OnLiquidDiscovered;
+                alchemy.Bottled += OnBottled;
+            }
+        }
+
+        private void OnDisable()
+        {
+            DiscoveryJournal.Changed -= OnDiscovery;
+            if (alchemy != null)
+            {
+                alchemy.Liquids.Discovered -= OnLiquidDiscovered;
+                alchemy.Bottled -= OnBottled;
+            }
         }
 
         private void OnDestroy()
@@ -63,22 +93,43 @@ namespace PotionFrontier.Game
             if (hud != null) yield return hud.Fader.FadeIn(1.2f);
         }
 
+        private void LateUpdate()
+        {
+            // 発見のあと、同じフレームにまとめて届ける（性質と液体が同時に増えても、お知らせは1回ずつ）
+            if (!checkArrivals) return;
+            checkArrivals = false;
+            if (Mode != GameMode.Playing || transitioning) return;
+            List<IngredientData> arrived = DiscoveryProgress.Deliver(GameContext.Ingredients, ingredients, DiscoveryPoints);
+            if (arrived.Count > 0) Save();
+        }
+
+        private void OnDiscovery() => checkArrivals = true;
+        private void OnLiquidDiscovered(LiquidRecord record) => checkArrivals = true;
+
+        private void OnBottled(LiquidRecord record, bool isNew)
+        {
+            if (record == null || GameCleared || Mode != GameMode.Playing || record.specialPotionId != FinalPotionId) return;
+            GameCleared = true;
+            Save();
+            AtelierHUD hud = AtelierHUD.Instance;
+            if (hud != null) hud.ShowClear();
+        }
+
         // ------------------------------------------------------------------
-        // タイトル ⇄ プレイ
+        // タイトル ⇄ 調合机
         // ------------------------------------------------------------------
 
         public void StartNewGame()
         {
             if (transitioning) return;
             SaveSystem.Delete();
-            GameBalance balance = GameContext.Balance;
-            if (progress != null) progress.ResetAll(balance != null ? balance.startingGold : 0);
             if (inventory != null) inventory.Clear();
-            if (ingredients != null) ingredients.ResetToStarter(balance);
+            if (ingredients != null) ingredients.ResetToStarter(GameContext.Balance);
             if (alchemy != null) alchemy.Liquids.Clear();
             DiscoveryJournal.Clear();
+            GameCleared = false;
             pendingFlask = null;
-            StartCoroutine(BeginPlay("アトリエへようこそ！ 自由に調合を探求して、町の人の相談に乗ろう"));
+            StartCoroutine(BeginPlay("静かな夜の調合机へ、ようこそ。発見が進むと、新しい素材が届く"));
         }
 
         public void ContinueGame()
@@ -90,12 +141,14 @@ namespace PotionFrontier.Game
                 StartNewGame();
                 return;
             }
-            if (progress != null) progress.ReadFrom(data);
             if (inventory != null) inventory.Import(data.potions);
             if (ingredients != null)
             {
                 if (data.version < 2) ingredients.ResetToStarter(GameContext.Balance);
-                else ingredients.Import(data.ingredients, data.version >= 4 ? data.unlockedIngredients : null);
+                else ingredients.Import(data.version >= 4 ? data.unlockedIngredients : null, data.version < 7 ? data.ingredients : null);
+                // 古いセーブでも、はじめから机にある素材は必ずある
+                GameBalance balance = GameContext.Balance;
+                if (balance != null) foreach (IngredientAmount e in balance.startingIngredients) if (e != null && e.ingredient != null) ingredients.Unlock(e.ingredient, false);
             }
             if (alchemy != null)
             {
@@ -112,15 +165,18 @@ namespace PotionFrontier.Game
                     foreach (string id in r.ingredientIds) DiscoveryJournal.Learn(db != null ? db.Get(id) : null, IngredientFact.Used);
                 }
             }
+            // 発見のポイントで届くはずの素材は、お知らせなしで机に並べておく（届く時期を調整したとき・古いセーブ）
+            DiscoveryProgress.Deliver(GameContext.Ingredients, ingredients, DiscoveryPoints, false);
+            GameCleared = data.gameCleared;
             pendingFlask = data.version >= 3 && data.flaskState != null && data.flaskState.version > 0 ? data.flaskState : null;
-            StartCoroutine(BeginPlay($"おかえりなさい！（{data.savedAt} のつづき）"));
+            StartCoroutine(BeginPlay($"おかえりなさい（{data.savedAt} のつづき）"));
         }
 
         public void ReturnToTitle()
         {
             if (transitioning) return;
             Save();
-            StartCoroutine(BackToTitle());
+            EnterTitleImmediate();
         }
 
         public void Pause()
@@ -151,18 +207,13 @@ namespace PotionFrontier.Game
         /// <summary>今の状態をセーブする（プレイ中だけ）</summary>
         public void Save()
         {
-            if (Mode != GameMode.Playing || progress == null) return;
-            var data = new SaveData();
-            progress.WriteTo(data);
-            data.potions = inventory != null ? inventory.Export() : new System.Collections.Generic.List<PotionStack>();
-            // 手に持っている瓶は、棚に戻したことにして保存する
+            if (Mode != GameMode.Playing) return;
+            var data = new SaveData { gameCleared = GameCleared };
+            data.potions = inventory != null ? inventory.Export() : new List<PotionStack>();
+            // 手に持っている瓶は、トレイに戻したことにして保存する
             PotionStack held = brewInput != null && brewInput.Held != null ? brewInput.Held.Potion : null;
             if (held != null && held.ml >= PotionStack.EmptyMl) data.potions.Add(held.CloneWith(held.ml));
-            if (ingredients != null)
-            {
-                data.ingredients = ingredients.Export();
-                data.unlockedIngredients = ingredients.ExportUnlocked();
-            }
+            if (ingredients != null) data.unlockedIngredients = ingredients.ExportUnlocked();
             if (session != null) data.flaskState = session.ExportFlask();
             if (alchemy != null) data.liquids = alchemy.Liquids.Export();
             data.notes = DiscoveryJournal.ExportNotes();
@@ -175,14 +226,13 @@ namespace PotionFrontier.Game
             Save();
         }
 
+        /// <summary>タイトルの紙がすっと消えて、そのまま同じ机で遊びはじめる（暗転しない）</summary>
         private IEnumerator BeginPlay(string welcome)
         {
             transitioning = true;
             AtelierHUD hud = AtelierHUD.Instance;
             SoundLibrary lib = AudioManager.Lib;
-            if (lib != null) AudioManager.Se(lib.startGame);
-            if (hud != null) yield return hud.Fader.FadeOut(0.8f);
-
+            if (lib != null) AudioManager.Se(lib.startGame, 0.6f);
             if (brewInput != null) brewInput.ReturnHeld();
             if (session != null)
             {
@@ -190,7 +240,7 @@ namespace PotionFrontier.Game
                 else session.ResetFlask();
             }
             pendingFlask = null;
-            if (view != null) view.EnterRoomImmediate();
+            if (view != null) view.Place();
             Mode = GameMode.Playing;
             if (ModeChanged != null) ModeChanged(Mode);
             if (lib != null)
@@ -198,38 +248,24 @@ namespace PotionFrontier.Game
                 AudioManager.PlayBgm(lib.bgmAtelier, 2f);
                 AudioManager.PlayAmbient(lib.ambientRoom);
             }
-            if (quests != null) quests.StartFlow();
-
             if (hud != null)
             {
                 hud.ShowGameplay();
-                yield return hud.Fader.FadeIn(0.9f);
+                yield return new WaitForSecondsRealtime(0.4f);
                 hud.ShowToast(welcome);
             }
             transitioning = false;
-        }
-
-        private IEnumerator BackToTitle()
-        {
-            transitioning = true;
-            AtelierHUD hud = AtelierHUD.Instance;
-            Resume();
-            if (hud != null) yield return hud.Fader.FadeOut(0.7f);
-            EnterTitleImmediate();
-            if (hud != null) yield return hud.Fader.FadeIn(0.9f);
-            transitioning = false;
+            checkArrivals = true;
         }
 
         private void EnterTitleImmediate()
         {
             Resume();
-            if (quests != null) quests.StopFlow();
             if (brewInput != null) brewInput.ReturnHeld();
             AudioManager.SetPourLoop(false);
-            if (view != null) view.EnterTitle();
+            if (view != null) view.Place();
             Mode = GameMode.Title;
             if (ModeChanged != null) ModeChanged(Mode);
-
             SoundLibrary lib = AudioManager.Lib;
             if (lib != null)
             {

@@ -26,7 +26,7 @@ namespace PotionFrontier.Game2D
         [SerializeField, Min(50f), Tooltip("入れられる量（ml）")] private float capacityMl = 600f;
         [SerializeField, Min(10f), Tooltip("瓶1本の量（ml）")] private float bottleMl = 100f;
         [SerializeField, Min(1f), Tooltip("早送りのときの、フラスコの中の時間の速さ")] private float fastForwardSpeed = 4f;
-        [SerializeField, Tooltip("はじめに素材の在庫が空なら、GameBalance の「はじめから持っている素材」を配る")] private bool giveStarterIngredients = true;
+        [SerializeField, Tooltip("机に素材が1つもなければ、GameBalance の「はじめから机にある素材」を並べる（GameFlow がないときだけ）")] private bool giveStarterIngredients = true;
 
         private FlaskSimulation flask;
         private LiquidRecord preview;
@@ -77,9 +77,8 @@ namespace PotionFrontier.Game2D
 
         private void Start()
         {
-            // ゲームの流れ（GameFlow）がないシーン（調合画面だけの Brew2D）では、在庫が空なら最初の素材を配る
-            if (giveStarterIngredients && GameFlow.Instance == null && ingredients != null &&
-                ingredients.Export().Count == 0 && ingredients.ExportUnlocked().Count == 0)
+            // ゲームの流れ（GameFlow）がないとき（調合机だけを試すとき）は、机が空なら最初の素材を並べる
+            if (giveStarterIngredients && GameFlow.Instance == null && ingredients != null && ingredients.UnlockedCount == 0)
             {
                 GameBalance balance = GameContext.Balance;
                 if (balance != null) ingredients.ResetToStarter(balance);

@@ -160,7 +160,7 @@ namespace PotionFrontier.Game2D.EditorTools
         {
             if (!File.Exists(BrewHudPath))
             {
-                log.AppendLine("！ " + BrewHudPath + " がありません（「調合画面を作る」を先に実行）");
+                log.AppendLine("！ " + BrewHudPath + " がありません（「アトリエを作る」を先に実行）");
                 return;
             }
             if (!AssetDatabase.IsValidFolder(BackupDir)) AssetDatabase.CreateFolder(Brew2DBuilder.PrefabDir, "Backup");
@@ -224,7 +224,7 @@ namespace PotionFrontier.Game2D.EditorTools
                 {
                     Place(fast, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(260f, 52f));
                     FitLabel(fast);
-                    notes.Add("右上は早送りだけ（相談メモが上に詰まる）");
+                    notes.Add("右上は早送りだけ");
                 }
 
                 if (root.GetComponent<BrewFeedback2D>() == null)

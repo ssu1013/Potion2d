@@ -19,7 +19,7 @@ namespace PotionFrontier.Game2D.EditorTools
     public static class Step6Night2D
     {
         private const string Menu = "Tools/Potion Frontier 2D/";
-        private static readonly string[] Scenes = { "Assets/Scenes/Atelier2D.unity", "Assets/Scenes/Brew2D.unity" };
+        private static readonly string[] Scenes = { "Assets/Scenes/Atelier2D.unity" };
         private const string PrefabDir = "Assets/Art2D/Brewing/Prefabs/";
         public const string SoundscapeName = "NightSoundscape（夜の環境音）";
 
@@ -110,12 +110,6 @@ namespace PotionFrontier.Game2D.EditorTools
                 }
                 foreach (HeaterKnob2D knob in root.GetComponentsInChildren<HeaterKnob2D>(true))
                     c += SetFloat(knob, "lightMax", OldHeaterMax, WarmHeaterMax, "Heater / 加熱台の光の強さ", kept);
-                return c;
-            });
-            changes += EditPrefab(PrefabDir + "Room.prefab", root =>
-            {
-                int c = 0;
-                foreach (Light2D l in root.GetComponentsInChildren<Light2D>(true)) c += TuneMoon(l, kept);
                 return c;
             });
             return changes;

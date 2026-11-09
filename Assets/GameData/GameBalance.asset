@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 249f2a2a99d51314aa27e3959b51e78a, type: 3}
   m_Name: GameBalance
   m_EditorClassIdentifier: 
-  startingGold: 50
   startingIngredients:
   - ingredient: {fileID: 11400000, guid: d0dece20f4cee4b48b7677183ea01a99, type: 2}
     amount: 1
@@ -36,7 +35,4 @@ MonoBehaviour:
     amount: 2
   - ingredient: {fileID: 11400000, guid: add5205e991d4d3449097db6b12084de, type: 2}
     amount: 2
-  infiniteRarityMax: 2
-  unlockPriceMultiplier: 8
-  containerFullAmount: 8
   version: 2

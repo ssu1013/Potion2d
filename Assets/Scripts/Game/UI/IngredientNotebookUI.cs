@@ -12,6 +12,8 @@ namespace PotionFrontier.Game
     /// まだの性質は「？？？」で数だけ見える。かかわる反応も、見つけたら書き足される。
     /// まだ出会っていない素材は影絵。性質と反応をすべて見つけると、ページに「すべて発見」のスタンプ。
     /// 絵：素材の絵は素材データのアイコン（Assets/CustomAssets/Images/Ingredients）、カード・影絵・スタンプは UISkin（Assets/CustomAssets/Images/UI/Discovery）。
+    /// 画面は切り替えず、調合机の上にノートを広げるように出す（後ろは少しだけ暗く、ランプの火のゆらぎは見えたまま）。
+    /// まだ机にない素材には、発見があといくつで届くかを書いておく。
     /// </summary>
     public sealed class IngredientNotebookUI
     {
@@ -31,7 +33,9 @@ namespace PotionFrontier.Game
         }
 
         private readonly GameObject root;
+        private readonly Image overlay;
         private readonly RectTransform panel;
+        private readonly Vector2 panelRest;
         private readonly IngredientInventory stock;
         private readonly Func<AlchemyManager> alchemy;
         private readonly Text subtitle;
@@ -51,6 +55,7 @@ namespace PotionFrontier.Game
         private int page;
         private int selected;
         private float stampTime = -1f;
+        private int points;
         private readonly PageFlipUI gridFlip;
 
         public bool IsOpen => root.activeSelf;
@@ -60,13 +65,19 @@ namespace PotionFrontier.Game
         public IngredientData Selected => selected >= 0 && selected < list.Count ? list[selected] : null;
         /// <summary>今のページの、性質の行（自動テスト用）</summary>
         public string FactsText => detailFacts.text;
+        /// <summary>今のページの説明（まだ机にない素材なら、届くまでの発見。自動テスト用）</summary>
+        public string DescriptionText => detailDescription.text;
+        /// <summary>ノートが机の上に置かれきった（開くアニメーションが終わった）</summary>
+        public bool FullyOpen => IsOpen && appear >= 1f;
 
         public IngredientNotebookUI(RectTransform parent, IngredientInventory stock, Func<AlchemyManager> alchemy, Action onClose)
         {
             this.stock = stock;
             this.alchemy = alchemy;
-            Image paper = MenuPanel.Create(parent, "IngredientNotebook", "素材ノート", new Vector2(1660f, 930f), out root, 0.62f);
+            Image paper = MenuPanel.Create(parent, "IngredientNotebook", "素材ノート", new Vector2(1660f, 930f), out root, MenuPanel.DeskDim);
+            overlay = root.GetComponent<Image>();
             panel = paper.rectTransform;
+            panelRest = panel.anchoredPosition;
 
             subtitle = UIFactory.Label(panel, "Subtitle", "", 22, Muted, TextAnchor.MiddleCenter, FontStyle.Bold);
             UIFactory.Place(subtitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -54f), new Vector2(1400f, 32f));
@@ -170,8 +181,15 @@ namespace PotionFrontier.Game
             page = list.Count > 0 ? selected / PerPage : 0;
             root.SetActive(true);
             appear = 0f;
+            MenuPanel.Rise(panel, panelRest, ref appear, 0f);
+            MenuPanel.Shade(overlay, 0f);
             DiscoveryJournal.Changed -= Refresh;
             DiscoveryJournal.Changed += Refresh;
+            if (stock != null)
+            {
+                stock.Changed -= OnStockChanged;
+                stock.Changed += OnStockChanged;
+            }
             Refresh();
             SoundLibrary lib = AudioManager.Lib;
             if (lib != null) AudioManager.Se(lib.page, 0.7f);
@@ -181,6 +199,7 @@ namespace PotionFrontier.Game
         {
             if (!IsOpen) return;
             DiscoveryJournal.Changed -= Refresh;
+            if (stock != null) stock.Changed -= OnStockChanged;
             root.SetActive(false);
             SoundLibrary lib = AudioManager.Lib;
             if (lib != null) AudioManager.Se(lib.uiClose, 0.7f);
@@ -189,7 +208,8 @@ namespace PotionFrontier.Game
         public void Tick(float dt, bool allowInput)
         {
             if (!IsOpen) return;
-            MenuPanel.Pop(panel, ref appear, dt);
+            MenuPanel.Rise(panel, panelRest, ref appear, dt);
+            MenuPanel.Shade(overlay, appear);
             gridFlip.Tick(dt);
             if (stampTime >= 0f)
             {
@@ -289,11 +309,17 @@ namespace PotionFrontier.Game
 
         // ------------------------------------------------------------------
 
+        private void OnStockChanged(IngredientData _) => Refresh();
+
+        /// <summary>まだ机にない素材が届くまでの、残りの発見</summary>
+        private int Remaining(IngredientData d) => d != null ? Mathf.Max(0, d.DiscoveriesToUnlock - points) : 0;
+
         private void Refresh()
         {
             if (!IsOpen) return;
             AlchemyManager am = alchemy != null ? alchemy() : null;
             IReadOnlyList<ReactionData> reactions = am != null ? am.Reactions : null;
+            points = DiscoveryProgress.Points(GameContext.Ingredients, am != null ? am.Liquids : null);
 
             int met = 0, known = 0, total = 0;
             foreach (IngredientData d in list)
@@ -303,7 +329,7 @@ namespace PotionFrontier.Game
                 total += DiscoveryJournal.TotalCount(d);
             }
             int reactionTotal = reactions != null ? reactions.Count : 0;
-            subtitle.text = $"出会った素材 {met} / {list.Count}　　見つけた性質 {known} / {total}　　見つけた反応 {DiscoveryJournal.KnownReactionCount} / {reactionTotal}";
+            subtitle.text = $"出会った素材 {met} / {list.Count}　　見つけた性質 {known} / {total}　　見つけた反応 {DiscoveryJournal.KnownReactionCount} / {reactionTotal}　　発見 {points}";
 
             int pages = Mathf.Max(1, Mathf.CeilToInt(list.Count / (float)PerPage));
             pageLabel.text = $"{page + 1} / {pages}";
@@ -323,7 +349,7 @@ namespace PotionFrontier.Game
                 c.icon.color = isMet ? Color.white : new Color(0.15f, 0.1f, 0.08f, 0.85f);
                 c.name.text = isMet ? d.DisplayName : "？？？";
                 int k = DiscoveryJournal.KnownCount(d), t = DiscoveryJournal.TotalCount(d);
-                c.count.text = !isMet ? "まだ出会っていない" : t > 0 ? $"性質 {k} / {t}" : "性質なし";
+                c.count.text = !isMet ? $"発見あと {Remaining(d)} で届く" : t > 0 ? $"性質 {k} / {t}" : "性質なし";
                 c.stamp.gameObject.SetActive(isMet && Complete(d, reactions));
             }
             RefreshDetail(reactions, am != null ? am.Settings : null);
@@ -345,9 +371,10 @@ namespace PotionFrontier.Game
             {
                 detailName.text = "？？？";
                 detailMeta.text = "まだ出会っていない素材";
-                detailDescription.text = d.RequiredReputation > 0
-                    ? $"町の人の相談を {d.RequiredReputation} 件解決すると、取引先帳に載るらしい。"
-                    : "取引先帳で取引すると、使えるようになる。";
+                int left = Remaining(d);
+                detailDescription.text = left > 0
+                    ? $"発見をあと {left} 重ねると、調合机に届く。\n<size=18><color=#8A6A45>素材の性質は 1、新しい反応は 2、新しい液体は 1 の発見になる</color></size>"
+                    : "もうすぐ調合机に届く。";
                 detailAttributes.text = "";
                 detailFacts.text = $"<color=#A08060>？？？　性質が {DiscoveryJournal.TotalCount(d)} つありそうだ</color>";
                 detailReactions.text = "";

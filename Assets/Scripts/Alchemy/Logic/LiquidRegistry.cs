@@ -6,7 +6,7 @@ namespace PotionFrontier.Alchemy
     /// <summary>
     /// これまでに作った液体の一覧（遊ぶと増えるデータ。セーブに入る）。
     /// 同じ結果の液体は同じ記録にまとめ、作った回数とちがう作り方（最大3つ）を足していく。
-    /// レシピ本・瓶の在庫・相談の判定は、ここの記録を ID で参照する。
+    /// レシピ本・瓶の在庫は、ここの記録を ID で参照する。
     /// </summary>
     public sealed class LiquidRegistry
     {
@@ -15,7 +15,7 @@ namespace PotionFrontier.Alchemy
 
         /// <summary>新しい液体ができたとき（レシピ本の「新発見」演出など）</summary>
         public event Action<LiquidRecord> Discovered;
-        /// <summary>名前などが変わったとき（作った回数・見た印・相談の記録も）</summary>
+        /// <summary>名前などが変わったとき（作った回数・見た印も）</summary>
         public event Action<LiquidRecord> Changed;
         /// <summary>プレイヤーが名前を付けたとき（棚の瓶・手に持っている瓶の名前を合わせる）</summary>
         public event Action<LiquidRecord> Renamed;
@@ -113,18 +113,6 @@ namespace PotionFrontier.Alchemy
             return true;
         }
 
-        /// <summary>この液体で相談に乗った（taught = 作り方を教えた。false なら瓶を分け与えた）</summary>
-        public void NoteHelped(string id, string who, bool taught)
-        {
-            LiquidRecord r = Get(id);
-            if (r == null || string.IsNullOrEmpty(who)) return;
-            if (r.sharedWith == null) r.sharedWith = new List<string>();
-            if (r.taughtTo == null) r.taughtTo = new List<string>();
-            List<string> list = taught ? r.taughtTo : r.sharedWith;
-            if (!list.Contains(who)) list.Add(who);
-            if (Changed != null) Changed(r);
-        }
-
         /// <summary>この液体を混ぜて作った液体（系譜の「ここから生まれた液体」）</summary>
         public void CollectChildren(string id, List<LiquidRecord> result)
         {
@@ -163,8 +151,6 @@ namespace PotionFrontier.Alchemy
             foreach (LiquidRecord r in saved)
             {
                 if (r == null || string.IsNullOrEmpty(r.id) || byId.ContainsKey(r.id)) continue;
-                if (r.sharedWith == null) r.sharedWith = new List<string>();
-                if (r.taughtTo == null) r.taughtTo = new List<string>();
                 byId[r.id] = r;
                 ordered.Add(r);
             }

@@ -33,7 +33,7 @@ namespace PotionFrontier.Game2D
         [SerializeField, Range(0f, 2f)] private float stirVolume = 1f;
         [SerializeField, Range(0f, 2f)] private float boilVolume = 1f;
         [SerializeField, Range(0f, 2f)] private float burnerVolume = 1f;
-        [SerializeField, Range(0f, 1f), Tooltip("部屋にいるとき（調合台に向かっていないとき）の、ループの音の大きさ")] private float roomVolume = 0.35f;
+        [SerializeField, Range(0f, 1f), Tooltip("本（レシピ本・素材ノート）を開いている間の、ループの音の大きさ（途切れさせず、少しだけ遠くする）")] private float bookVolume = 0.7f;
 
         [Header("夜の環境音（お湯がコトコト・ガラスが触れ合う）")]
         [SerializeField, Range(0f, 2f), Tooltip("お湯が温まると、泡でフラスコが台に当たる「コト」の大きさ（50℃ から増える）")] private float kotoVolume = 1f;
@@ -364,7 +364,7 @@ namespace PotionFrontier.Game2D
             if (lib == null || lib.stirTink == null || lib.stirTink.Length == 0) return;
             float pitch = Mathf.Clamp(0.86f + stirSpeed * 0.12f + Random.Range(-0.05f, 0.05f), 0.8f, 1.5f);
             float volume = (0.16f + Mathf.Clamp01(stirSpeed / 2.2f) * 0.26f) * stirVolume;
-            AudioManager.Se(lib.stirTink[Random.Range(0, lib.stirTink.Length)], volume * RoomFactor, pitch);
+            AudioManager.Se(lib.stirTink[Random.Range(0, lib.stirTink.Length)], volume * BookFactor, pitch);
         }
 
         private void UpdateSurface(bool wet, float dt)
@@ -527,7 +527,7 @@ namespace PotionFrontier.Game2D
         {
             GameFlow flow = GameFlow.Instance;
             bool silent = flow != null && (flow.Mode != GameMode.Playing || flow.IsPaused);
-            float room = RoomFactor;
+            float room = BookFactor;
             float heat = sim.HeatLevel;
 
             // 注ぐ：細い音と太い音を速さで混ぜ、フラスコが満ちるほど音が高くなる（瓶に水を注ぐときの「とくとく」）
@@ -621,13 +621,13 @@ namespace PotionFrontier.Game2D
             return fallback;
         }
 
-        /// <summary>部屋にいる間は、ループの音を小さくする</summary>
-        private float RoomFactor
+        /// <summary>本を開いている間は、ループの音を少しだけ小さくする（画面は切り替わらないので、音も途切れない）</summary>
+        private float BookFactor
         {
             get
             {
-                AtelierView2D view = AtelierView2D.Current;
-                return view == null || view.InBrew ? 1f : roomVolume;
+                AtelierHUD hud = AtelierHUD.Instance;
+                return hud != null && (hud.IsRecipeBookOpen || hud.IsNotebookOpen) ? bookVolume : 1f;
             }
         }
 

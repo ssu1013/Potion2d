@@ -184,13 +184,12 @@ namespace PotionFrontier.Game2D.EditorTools
                     Pair("button", UIFactory.WoodPanel),
                     Pair("slot", () => UIFactory.SlotSprite(false)),
                     Pair("slot_selected", () => UIFactory.SlotSprite(true)),
-                    Pair("coin", UIWidgets.Coin),
                     Pair("knob", UIWidgets.Knob),
                     Pair("vignette", UIWidgets.Vignette),
                     Pair("sparkle", UIWidgets.Sparkle),
                     Pair("soft_dot", UIWidgets.SoftDot),
                 };
-                string[] skinFields = { "parchment", "woodPanel", "button", "slot", "slotSelected", "coin", "knob", "vignette", "sparkle", "softDot" };
+                string[] skinFields = { "parchment", "woodPanel", "button", "slot", "slotSelected", "knob", "vignette", "sparkle", "softDot" };
                 var skin = AssetDatabase.LoadAssetAtPath<UISkin>(SkinPath);
                 SerializedObject skinSo = skin != null ? new SerializedObject(skin) : null;
                 for (int i = 0; i < common.Count; i++)
@@ -304,7 +303,7 @@ namespace PotionFrontier.Game2D.EditorTools
             var singles = new (string dir, string file, Func<AudioClip> make, string field)[]
             {
                 (CustomAssetPaths.SeFeedback, "se_star_chime", () => SfxSynth.Chime, "starChime"),
-                (CustomAssetPaths.SeFeedback, "se_goal", () => SfxSynth.Goal, "goalReached"),
+                (CustomAssetPaths.SeFeedback, "se_letter", () => SfxSynth.LetterArrive, "ingredientArrived"),
                 (CustomAssetPaths.SeFeedback, "se_discovery", () => SfxSynth.Discovery, "discovery"),
                 (CustomAssetPaths.SeFeedback, "se_reaction", () => SfxSynth.Reaction, "reactionSting"),
                 (CustomAssetPaths.SeFeedback, "se_soft_warning", () => SfxSynth.SoftWarning, "softWarning"),
@@ -417,7 +416,7 @@ namespace PotionFrontier.Game2D.EditorTools
         // 4. つながりの確認
         // ==================================================================
 
-        private static void Report(StringBuilder log)
+        internal static void Report(StringBuilder log)
         {
             // どこからも使われていない絵・音（_Unused・フォントの太さ違いは除く）
             var roots = new List<string>();

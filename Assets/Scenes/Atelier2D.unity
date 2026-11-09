@@ -414,7 +414,7 @@ GameObject:
   m_Component:
   - component: {fileID: 426245050}
   m_Layer: 0
-  m_Name: Room
+  m_Name: "Desk\uFF08\u80CC\u666F\u30FB\u30E9\u30F3\u30D7\uFF09"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -499,122 +499,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8647913665198278701, guid: b4489a7ab5454f64887c384ca08fc780, type: 3}
   m_PrefabInstance: {fileID: 532300214}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &579811157
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 783958827276552865, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 783958827276552865, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.22
-      objectReference: {fileID: 0}
-    - target: {fileID: 4391108433127471353, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4391108433127471353, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.21
-      objectReference: {fileID: 0}
-    - target: {fileID: 4842222303429647415, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_Name
-      value: Room
-      objectReference: {fileID: 0}
-    - target: {fileID: 6555143257696192477, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6555143257696192477, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.21000099
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7889604042631140995, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: e66b970867645bd46984d148329a6a3e, type: 3}
---- !u!4 &579811158 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5557818854941504224, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-  m_PrefabInstance: {fileID: 579811157}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &579811159 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8043223835376945555, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-  m_PrefabInstance: {fileID: 579811157}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &579811160 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2305412900470742170, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-  m_PrefabInstance: {fileID: 579811157}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &579811161 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 49075661112585802, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-  m_PrefabInstance: {fileID: 579811157}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &579811162 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4842673219613177479, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-  m_PrefabInstance: {fileID: 579811157}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &579811163 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3067132917998171462, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-  m_PrefabInstance: {fileID: 579811157}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &579811164 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5440431421876139968, guid: e66b970867645bd46984d148329a6a3e, type: 3}
-  m_PrefabInstance: {fileID: 579811157}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &821773217
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -690,10 +574,8 @@ GameObject:
   - component: {fileID: 837726253}
   - component: {fileID: 837726252}
   - component: {fileID: 837726251}
-  - component: {fileID: 837726250}
   - component: {fileID: 837726249}
   - component: {fileID: 837726248}
-  - component: {fileID: 837726247}
   - component: {fileID: 837726246}
   - component: {fileID: 837726245}
   - component: {fileID: 837726244}
@@ -732,8 +614,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inventory: {fileID: 0}
-  progress: {fileID: 0}
-  quests: {fileID: 0}
   ingredients: {fileID: 0}
   alchemy: {fileID: 0}
   session: {fileID: 0}
@@ -752,56 +632,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   viewCamera: {fileID: 967811985}
-  roomStart: {fileID: 579811164}
-  boundsLeft: {fileID: 579811163}
-  boundsRight: {fileID: 579811162}
-  roomSize: 5.4
-  slideSeconds: 0.5
-  workbenchFocus: {fileID: 579811158}
-  zoomSize: 1.9
-  zoomSeconds: 0.55
   brewView: {fileID: 1105233734}
   brewSize: 5.4
-  switchFadeOut: 0.12
-  switchFadeIn: 0.28
-  titleSway: 2.5
---- !u!114 &837726247
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 837726243}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2b479b3cdb20e64ab21814967e5db8b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  quests:
-  - {fileID: 11400000, guid: 58a2f98cdb104e8458b48809f919aa69, type: 2}
-  - {fileID: 11400000, guid: 2bdba0078889b93449ab3c0440ada2c6, type: 2}
-  - {fileID: 11400000, guid: 5c22b4bbfe7730e4e85622caf7185596, type: 2}
-  - {fileID: 11400000, guid: f69c319c51bc5d745a13119cc774cdd2, type: 2}
-  - {fileID: 11400000, guid: f875991f9d55e534982894933bb252de, type: 2}
-  - {fileID: 11400000, guid: e813fac9bb8c6cf4198d0ed4b5a62b17, type: 2}
-  - {fileID: 11400000, guid: 9f6746fae7f6c2040ba4bd1850f4f681, type: 2}
-  - {fileID: 11400000, guid: c9390a83350c4ba4586b4f366a0852f5, type: 2}
-  - {fileID: 11400000, guid: f02da1ac7dbf8284ba8e926231d9ad05, type: 2}
-  - {fileID: 11400000, guid: 004de22047a074c4fa1acb19a8d9529c, type: 2}
-  - {fileID: 11400000, guid: 9335b8afcc0540744bc4b8b6e21f3505, type: 2}
-  tutorialQuest: {fileID: 11400000, guid: 58a2f98cdb104e8458b48809f919aa69, type: 2}
-  finalQuest: {fileID: 11400000, guid: 9335b8afcc0540744bc4b8b6e21f3505, type: 2}
-  finalQuestAfter: 6
-  teachRewardRate: 0.7
-  outsidePoint: {fileID: 579811161}
-  counterPoint: {fileID: 579811160}
-  customerParent: {fileID: 579811159}
-  progress: {fileID: 0}
-  potions: {fileID: 0}
-  alchemy: {fileID: 0}
-  firstDelay: 3
-  nextDelay: 8
-  walkSpeed: 2.4
 --- !u!114 &837726248
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -846,24 +678,6 @@ MonoBehaviour:
   bottleMl: 100
   fastForwardSpeed: 4
   giveStarterIngredients: 1
---- !u!114 &837726250
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 837726243}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3996950b87c8d704f9bbd72bad5eff51, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gold: 0
-  completedQuests: 0
-  sharedCount: 0
-  taughtCount: 0
-  completedQuestIds: []
-  gameCleared: 0
 --- !u!114 &837726251
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1135,7 +949,7 @@ Transform:
   m_GameObject: {fileID: 967811984}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 20, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1151,7 +965,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1105233734}
   m_Layer: 0
-  m_Name: "BrewView\uFF08\u8ABF\u5408\u53F0\u306E\u30AB\u30E1\u30E9\u306E\u4F4D\u7F6E\uFF09"
+  m_Name: "BrewView\uFF08\u8ABF\u5408\u673A\u306E\u30AB\u30E1\u30E9\u306E\u4F4D\u7F6E\uFF09"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1377,7 +1191,7 @@ GameObject:
   - component: {fileID: 1778386859}
   - component: {fileID: 1778386858}
   m_Layer: 0
-  m_Name: "AtelierHUD\uFF08\u30BF\u30A4\u30C8\u30EB\u30FB\u4F1A\u8A71\u30FB\u30EC\u30B7\u30D4\u672C\u30FB\u76F8\u8AC7\u30E1\u30E2\uFF09"
+  m_Name: "AtelierHUD\uFF08\u30BF\u30A4\u30C8\u30EB\u30FB\u30EC\u30B7\u30D4\u672C\u30FB\u7D20\u6750\u30CE\u30FC\u30C8\u30FB\u304A\u77E5\u3089\u305B\uFF09"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1397,11 +1211,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inventory: {fileID: 0}
   ingredients: {fileID: 0}
-  progress: {fileID: 0}
-  quests: {fileID: 0}
   alchemy: {fileID: 0}
   brewInput: {fileID: 0}
-  view: {fileID: 0}
   skin: {fileID: 11400000, guid: 1cb222d649010ad4b88d698406429a2a, type: 2}
 --- !u!4 &1778386859
 Transform:
@@ -1449,7 +1260,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fireLoop: {fileID: 0}
   fireVolumeBrew: 0.34
-  fireVolumeRoom: 0.22
   fireVolumeQuiet: 0.12
   fadeSpeed: 0.4
 --- !u!4 &1831118572
@@ -1749,7 +1559,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2104026281}
   m_Layer: 0
-  m_Name: "BrewArea\uFF08\u8ABF\u5408\u53F0\u306E\u753B\u9762\uFF09"
+  m_Name: "BrewArea\uFF08\u8ABF\u5408\u673A\uFF09"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1843,7 +1653,6 @@ SceneRoots:
   - {fileID: 967811988}
   - {fileID: 2091964910}
   - {fileID: 2069506487}
-  - {fileID: 579811157}
   - {fileID: 2104026281}
   - {fileID: 1974095115}
   - {fileID: 837726255}

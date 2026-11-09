@@ -13,7 +13,7 @@ namespace PotionFrontier.Game.EditorTools
     /// フラスコの工程の計算（FlaskSimulation）を、サンプル素材でまとめて確かめる（エディタ専用）。
     /// メニュー Tools > Potion Frontier > 開発 > 調合の計算をテスト。結果は Logs/claude_simtest.txt にも書き出す。
     /// 薄める・煮詰める・焦げる・熱で弱まる・目覚める・入れる順番・混ぜる向き・反応・多段調合・名前・同じ液体の判定・
-    /// 時間の進め方で結果が変わらないこと・セーブと読み込み・相談がすべて解決できること、を見る。
+    /// 時間の進め方で結果が変わらないこと・セーブと読み込み・発見で素材が届くこと・伝説の特効薬が作れること、を見る。
     /// </summary>
     public static class FlaskSimulationTests
     {
@@ -36,7 +36,6 @@ namespace PotionFrontier.Game.EditorTools
             passed = 0;
             failed = 0;
             d = AlchemySampleDataGenerator.CreateOrUpdateAssets();
-            QuestSampleData.Result quests = QuestSampleData.CreateOrUpdate(d);
             analyzer = new LiquidAnalyzer(d.settings, d.Recipes);
 
             try
@@ -56,7 +55,8 @@ namespace PotionFrontier.Game.EditorTools
                 PartialAndResidue();
                 SaveLoad();
                 Inventories();
-                Quests(quests);
+                Arrivals();
+                FinalPotion();
             }
             catch (Exception e)
             {
@@ -414,41 +414,42 @@ namespace PotionFrontier.Game.EditorTools
             Check("水を注ぐと、溶け残りが溶けて次の液体に入る", next.UsesIngredient(d.sproutSeed.IngredientId) && next.TotalPotency > 1f, $"{next.autoName}");
         }
 
-        /// <summary>素材の在庫（使い放題・希少）と、瓶詰めした液体の棚（ml）</summary>
+        /// <summary>調合机の素材（届いた素材は使い放題）と、瓶詰めした液体（ml）</summary>
         private static void Inventories()
         {
-            Section("素材の在庫と瓶の棚");
+            Section("調合机の素材と瓶");
             var go = new GameObject("InventoryTest") { hideFlags = HideFlags.HideAndDontSave };
             try
             {
                 IngredientInventory stock = go.AddComponent<IngredientInventory>();
-                stock.Add(d.water, 1f);
-                stock.Add(d.amplifyCrystal, 2f);
-                Check("よく使う素材は、一度手に入れたら使い放題", stock.IsUnlimited(d.water) && float.IsInfinity(stock.Get(d.water)) && Mathf.Approximately(stock.Consume(d.water, 50f), 50f) && stock.Has(d.water),
+                int arrivedEvents = 0;
+                stock.Arrived += _ => arrivedEvents++;
+                stock.Unlock(d.water, false);
+                Check("机にある素材は使い放題", float.IsInfinity(stock.Get(d.water)) && Mathf.Approximately(stock.Consume(d.water, 50f), 50f) && stock.Has(d.water),
                       $"水 {IngredientInventory.Format(d.water, stock.Get(d.water))}");
-                float used = stock.Consume(d.amplifyCrystal, 1f);
-                float rest = stock.Get(d.amplifyCrystal);
-                float overUse = stock.Consume(d.amplifyCrystal, 5f);
-                Check("希少な素材（レア度3）は使った分だけ減り、なくなると使えない", Mathf.Approximately(used, 1f) && Mathf.Approximately(rest, 1f) && Mathf.Approximately(overUse, 1f) && !stock.Has(d.amplifyCrystal),
-                      $"2 → {rest} → 0");
-                Check("まだ取引していない素材は使えない", !stock.Has(d.mistFlower) && !stock.IsUnlimited(d.mistFlower), d.mistFlower.DisplayName);
-                stock.Unlock(d.mistFlower);
-                Check("入手ルートを開拓すると使い放題", stock.IsUnlimited(d.mistFlower), d.mistFlower.DisplayName);
+                Check("まだ届いていない素材は使えない", !stock.Has(d.mistFlower) && stock.Consume(d.mistFlower, 1f) <= 0f, d.mistFlower.DisplayName);
+                bool first = stock.Unlock(d.mistFlower);
+                bool second = stock.Unlock(d.mistFlower);
+                Check("素材が届くと使い放題になり、届いたお知らせは1回だけ", first && !second && arrivedEvents == 1 && stock.Has(d.mistFlower),
+                      $"お知らせ {arrivedEvents} 回");
+                stock.Unlock(d.nightshade, false);
+                Check("つづきから始めたとき（お知らせなし）は、静かに机に並ぶ", stock.Has(d.nightshade) && arrivedEvents == 1, $"お知らせ {arrivedEvents} 回");
 
-                // 版3までのセーブ：在庫の量だけ → 使い放題の素材は取引済みに、希少な素材は量のまま
+                // 版6までのセーブ：素材の量 → 量があった素材は、机にある素材として使える（お金・仕入れはもうない）
                 var legacy = new List<IngredientStockEntry>
                 {
                     new IngredientStockEntry { id = d.herb.IngredientId, amount = 6f },
                     new IngredientStockEntry { id = d.sunStone.IngredientId, amount = 2f },
+                    new IngredientStockEntry { id = d.galeFeather.IngredientId, amount = 0f },
                 };
-                stock.Import(legacy, null, FindIngredient);
-                Check("古いセーブの在庫：よく使う素材は使い放題、希少な素材は量のまま", stock.IsUnlimited(d.herb) && Mathf.Approximately(stock.Get(d.sunStone), 2f) && !stock.Has(d.water),
-                      $"薬草 {IngredientInventory.Format(d.herb, stock.Get(d.herb))} ／ 陽だまりの石 {stock.Get(d.sunStone)}");
-                List<string> unlocked = stock.ExportUnlocked();
-                List<IngredientStockEntry> entries = stock.Export();
                 stock.Clear();
-                stock.Import(entries, unlocked, FindIngredient);
-                Check("取引済みの素材はセーブに残る", stock.IsUnlimited(d.herb) && Mathf.Approximately(stock.Get(d.sunStone), 2f), string.Join(",", unlocked));
+                stock.Import(null, legacy);
+                Check("古いセーブの素材（量）は、机にある素材としてそのまま使える", stock.Has(d.herb) && stock.Has(d.sunStone) && !stock.Has(d.galeFeather) && !stock.Has(d.water),
+                      string.Join(",", stock.ExportUnlocked()));
+                List<string> unlocked = stock.ExportUnlocked();
+                stock.Clear();
+                stock.Import(unlocked);
+                Check("机にある素材はセーブに残る", stock.Has(d.herb) && stock.Has(d.sunStone) && stock.UnlockedCount == unlocked.Count, string.Join(",", unlocked));
 
                 // 瓶の棚（ml）
                 PotionInventory shelf = go.AddComponent<PotionInventory>();
@@ -512,46 +513,87 @@ namespace PotionFrontier.Game.EditorTools
                   ra.recipes.Count > 0 ? string.Join(" → ", ra.recipes[0].steps.ConvertAll(s => s.Describe())) : "");
         }
 
-        private static void Quests(QuestSampleData.Result quests)
+        /// <summary>発見のポイントで、素材が調合机に届く（届く時期の表と、はじめから机にある素材）</summary>
+        private static void Arrivals()
         {
-            Section("相談がすべて解決できる（お手本の作り方）");
-            var cases = new List<KeyValuePair<QuestData, Action<FlaskSimulation>>>
+            Section("発見で素材が調合机に届く");
+            var db = AssetDatabase.LoadAssetAtPath<IngredientDatabase>("Assets/GameData/Alchemy/IngredientDatabase.asset");
+            var balance = AssetDatabase.LoadAssetAtPath<GameBalance>("Assets/GameData/GameBalance.asset");
+            if (db == null || balance == null)
             {
-                Case(quests.tutorial, f => { f.Pour(d.water, 100f); f.AddSolid(d.herb, 2f); Stir(f, 8f, true, 5f); f.Tick(3f); }),
-            };
-            var recipes = new Dictionary<string, Action<FlaskSimulation>>
-            {
-                ["q_gald_forge"] = f => { f.Pour(d.oil, 100f); f.AddSolid(d.fireGrass, 2f); Stir(f, 8f, true, 4f); f.SetHeat(0.65f); f.Tick(20f); f.SetHeat(0f); f.Tick(2f); },
-                ["q_sora_desert"] = f => { f.Pour(d.water, 100f); f.AddSolid(d.frostMint, 2f); Stir(f, 8f, true, 4f); f.Tick(3f); },
-                ["q_bell_farm"] = f => { f.Pour(d.honey, 100f); f.AddSolid(d.sunStone, 1f); f.SetHeat(0.5f); Stir(f, 14f, true, 8f); f.Tick(6f); f.AddSolid(d.sproutSeed, 2f); Stir(f, 14f, true, 8f); f.Tick(6f); f.SetHeat(0f); },
-                ["q_luka_hide"] = f => { f.Pour(d.water, 100f); f.AddSolid(d.moonDust, 1f); f.AddSolid(d.mistFlower, 2f); Stir(f, 8f, false, 4f); f.Tick(4f); },
-                ["q_emma_bakery"] = f => { f.Pour(d.water, 100f); f.AddSolid(d.amplifyCrystal, 1f); Stir(f, 15f, true, 6f); f.Tick(8f); f.AddSolid(d.herb, 2f); Stir(f, 10f, true, 5f); f.Tick(3f); },
-                ["q_noah_night"] = f => { f.Pour(d.spiritWater, 100f); f.AddSolid(d.sunPetal, 2f); Stir(f, 8f, true, 4f); f.Tick(3f); },
-                ["q_pipi_windmill"] = f => { f.Pour(d.water, 100f); f.AddSolid(d.galeFeather, 2f); f.SetHeat(0.5f); Stir(f, 14f, true, 8f); f.Tick(6f); f.SetHeat(0f); },
-                ["q_tom_pests"] = f => { f.Pour(d.water, 100f); f.AddSolid(d.nightshade, 2f); Stir(f, 8f, true, 4f); f.Tick(3f); },
-                ["q_hanna_cold"] = f => { f.Pour(d.water, 100f); f.AddSolid(d.herb, 2f); f.AddSolid(d.fireGrass, 1f); Stir(f, 10f, true, 5f); f.Tick(3f); },
-                ["q_olga_legend"] = f => { f.Pour(d.spiritWater, 100f); f.AddSolid(d.amplifyCrystal, 1f); Stir(f, 15f, true, 6f); f.Tick(10f); f.AddSolid(d.herb, 4f); f.AddSolid(d.sunPetal, 1f); Stir(f, 14f, true, 6f); f.Tick(4f); },
-            };
-            var all = new List<QuestData>(quests.regular) { quests.final };
-            foreach (QuestData q in all)
-            {
-                if (q != null && recipes.TryGetValue(q.QuestId, out Action<FlaskSimulation> recipe)) cases.Add(Case(q, recipe));
-                else if (q != null) Check($"{q.ClientName}：お手本がない", false, q.QuestId);
+                Check("素材の一覧と GameBalance がある", false, "Assets/GameData/Alchemy/IngredientDatabase.asset ／ Assets/GameData/GameBalance.asset");
+                return;
             }
-            foreach (KeyValuePair<QuestData, Action<FlaskSimulation>> c in cases)
+            var go = new GameObject("ArrivalTest") { hideFlags = HideFlags.HideAndDontSave };
+            try
             {
-                LiquidRecord r = Make(c.Value);
-                Show(c.Key.ClientName, r);
-                Check($"{c.Key.ClientName}（{c.Key.GoalSummary}）", c.Key.IsSatisfiedBy(r), r.ToDebugString(d.settings));
+                IngredientInventory stock = go.AddComponent<IngredientInventory>();
+                stock.ResetToStarter(balance);
+                int starters = stock.UnlockedCount;
+                var late = new List<string>();
+                int maxNeed = 0;
+                foreach (IngredientData x in db.All)
+                {
+                    if (x == null || stock.IsUnlocked(x)) continue;
+                    if (x.DiscoveriesToUnlock <= 0) late.Add(x.DisplayName);
+                    maxNeed = Mathf.Max(maxNeed, x.DiscoveriesToUnlock);
+                }
+                Check("はじめから机にある素材がある", starters >= 8, $"{starters} 種類");
+                Check("はじめにない素材には、届くのに必要な発見が決まっている", late.Count == 0, late.Count > 0 ? string.Join("・", late) : $"最後の素材は 発見 {maxNeed}");
+
+                List<IngredientData> none = DiscoveryProgress.Deliver(db, stock, 0, false);
+                List<IngredientData> two = DiscoveryProgress.Deliver(db, stock, 2, false);
+                IngredientData next = DiscoveryProgress.NextArrival(db, stock, 2, out int remaining);
+                Check("発見 0 では何も届かない", none.Count == 0, $"{none.Count} 種類");
+                Check("発見 2 で火山の灰が届く（泡雪の粉はまだ）", two.Contains(d.volcanoAsh) && !stock.IsUnlocked(d.fizzPowder),
+                      string.Join("・", two.ConvertAll(x => x.DisplayName)));
+                Check("次に届く素材と、残りの発見がわかる", next == d.fizzPowder && remaining == 1, next != null ? $"{next.DisplayName}（あと {remaining}）" : "なし");
+                List<IngredientData> all = DiscoveryProgress.Deliver(db, stock, maxNeed, false);
+                Check("発見を重ねると、すべての素材が机にそろう", stock.CountKinds(db) == db.Count && DiscoveryProgress.NextArrival(db, stock, maxNeed, out _) == null,
+                      $"{stock.CountKinds(db)} / {db.Count}");
+
+                // 性質と反応だけでも（新しい液体を数えなくても）、いちばん遅い素材まで届く
+                int facts = 0;
+                foreach (IngredientData x in db.All) if (x != null) facts += DiscoveryJournal.TotalCount(x);
+                var reactions = AssetDatabase.FindAssets("t:ReactionData");
+                int reachable = facts * DiscoveryProgress.PointsPerFact + reactions.Length * DiscoveryProgress.PointsPerReaction;
+                Check("性質と反応を見つけるだけでも、いちばん遅い素材まで届く", reachable >= maxNeed, $"性質 {facts}・反応 {reactions.Length} → 発見 {reachable}（必要 {maxNeed}）");
+
+                // ポイントの数え方（性質 1）
+                DiscoveryJournal.Clear();
+                int p0 = DiscoveryProgress.Points(db, null);
+                IngredientFact fact = IngredientFact.None;
+                foreach (IngredientFact f in DiscoveryJournal.Order)
+                {
+                    if (f != IngredientFact.Used && (DiscoveryJournal.FactsOf(d.herb) & f) != 0) { fact = f; break; }
+                }
+                DiscoveryJournal.Learn(d.herb, IngredientFact.Used);
+                int pUsed = DiscoveryProgress.Points(db, null);
+                if (fact != IngredientFact.None) DiscoveryJournal.Learn(d.herb, fact);
+                int p1 = DiscoveryProgress.Points(db, null);
+                Check("性質を1つ見つけると発見 +1（使っただけでは増えない）", p0 == 0 && pUsed == 0 && p1 == DiscoveryProgress.PointsPerFact, $"{p0} → {pUsed} → {p1}");
+                DiscoveryJournal.Clear();
             }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+                DiscoveryJournal.Clear();
+            }
+        }
+
+        /// <summary>ゲームの目標：伝説の特効薬が、届く素材だけで作れる</summary>
+        private static void FinalPotion()
+        {
+            Section("伝説の特効薬（クリア）");
+            LiquidRecord r = Make(f => { f.Pour(d.spiritWater, 100f); f.AddSolid(d.amplifyCrystal, 1f); Stir(f, 15f, true, 6f); f.Tick(10f); f.AddSolid(d.herb, 4f); f.AddSolid(d.sunPetal, 1f); Stir(f, 14f, true, 6f); f.Tick(4f); });
+            Show("お手本", r);
+            Check("お手本の作り方で、伝説の特効薬になる", r.specialPotionId == GameFlow.FinalPotionId, r.ToDebugString(d.settings));
+            int need = 0;
+            foreach (IngredientData x in new[] { d.spiritWater, d.amplifyCrystal, d.herb, d.sunPetal }) need = Mathf.Max(need, x.DiscoveriesToUnlock);
+            Check("使う素材は、早めに机にそろう", need <= 6, $"いちばん遅い素材まで 発見 {need}");
         }
 
         // ------------------------------------------------------------------
-
-        private static KeyValuePair<QuestData, Action<FlaskSimulation>> Case(QuestData q, Action<FlaskSimulation> recipe)
-        {
-            return new KeyValuePair<QuestData, Action<FlaskSimulation>>(q, recipe);
-        }
 
         private static FlaskSimulation New()
         {

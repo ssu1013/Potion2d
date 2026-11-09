@@ -18,7 +18,7 @@ namespace PotionFrontier.Game2D.EditorTools
             public Sprite heaterStand, flame, knobBase, knobDial, tray, stirRod, dropPiece, pourStream, lamp;
             public Sprite tallBottle, tallBottleContent, jar, jarContent, roundFlask, roundFlaskContent;
             public Sprite pouch, pouchContent, crystal, crystalContent, potionBottle, potionBottleContent;
-            public Sprite fxSteam, fxBubble, fxDroplet, fxSwirl, fxRipple, ledgerBook;
+            public Sprite fxSteam, fxBubble, fxDroplet, fxSwirl, fxRipple;
         }
 
         internal static readonly Color Glass = new Color(0.82f, 0.92f, 1f, 0.16f);
@@ -65,7 +65,6 @@ namespace PotionFrontier.Game2D.EditorTools
             s.fxDroplet = Ensure(dir, "fx_droplet", 32, 32, (x, y) => White(Mathf.Clamp01(1f - Mathf.Sqrt(x * x + y * y) / 13f) * 1.4f));
             s.fxSwirl = Ensure(dir, "fx_swirl", 256, 256, Swirl);
             s.fxRipple = Ensure(dir, "fx_ripple", 256, 256, (x, y) => White(Stroke(Circle(x, y, 0f, 0f, 112f), 9f) * 0.9f));
-            s.ledgerBook = Ensure(dir, "ledger_book", 160, 90, LedgerBook);
             return s;
         }
 
@@ -88,19 +87,6 @@ namespace PotionFrontier.Game2D.EditorTools
             arms = Mathf.Pow(arms, 3f);
             float fade = Mathf.Clamp01(r * 3f) * Mathf.Clamp01((1f - r) * 4f);
             return White(arms * fade * 0.85f);
-        }
-
-        /// <summary>取引先帳（カウンターの上の台帳）</summary>
-        internal static Color LedgerBook(float x, float y)
-        {
-            float cover = Box(x, y, 0f, -6f, 72f, 30f, 6f);
-            Color c = Paint(new Color(0.32f, 0.2f, 0.12f, 1f), Fill(cover));
-            Color pages = Paint(new Color(0.95f, 0.9f, 0.76f, 1f), Fill(Box(x, y, 0f, 2f, 66f, 22f, 3f)));
-            Color spine = Paint(new Color(0.22f, 0.13f, 0.08f, 1f), Fill(Box(x, y, 0f, 2f, 3f, 24f, 1f)));
-            float lines = Mathf.Repeat(y + 40f, 7f) < 1.2f && Mathf.Abs(x) > 8f && Mathf.Abs(x) < 58f && Mathf.Abs(y - 2f) < 16f ? 0.5f : 0f;
-            Color ink = Paint(new Color(0.45f, 0.32f, 0.2f, 1f), lines);
-            Color quill = Paint(new Color(0.92f, 0.92f, 0.88f, 1f), Fill(Box(x, y, 50f, 30f, 3f, 22f, 3f)));
-            return Over(quill, Over(ink, Over(spine, Over(pages, c))));
         }
 
         // ------------------------------------------------------------------

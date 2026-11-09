@@ -54,17 +54,6 @@ namespace PotionFrontier.Alchemy
         [InspectorName("結晶")] Crystal = 5,
     }
 
-    /// <summary>
-    /// 素材の在庫の扱い。
-    /// 自動 … レア度が「無限になるレア度」（GameBalance）以下なら無限、それより上なら消費
-    /// </summary>
-    public enum StockPolicy
-    {
-        [InspectorName("自動（レア度で決める）")] Auto = 0,
-        [InspectorName("無限（一度手に入れたら減らない）")] Infinite = 1,
-        [InspectorName("消費（使った分だけ減る）")] Consumable = 2,
-    }
-
     /// <summary>できた液体の分類（レシピ本のタブ・名前の付け方に使う）</summary>
     public enum LiquidKind
     {

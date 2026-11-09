@@ -4,7 +4,7 @@ namespace PotionFrontier.Game2D.EditorTools
 {
     /// <summary>
     /// 差し替え用の絵・音・フォントの置き場所（Assets/CustomAssets）を1か所にまとめた表。
-    /// 仮の絵・仮の音を作るツール（Step4〜7・シーンを作るメニュー）は、すべてここに書いた場所を使う。
+    /// 仮の絵・仮の音を作るツール（Step4〜8・シーンを作るメニュー）は、すべてここに書いた場所を使う。
     /// 場所を変えたいときは、ここだけ直せばよい（ファイルの移動は「Step7：差し替え用フォルダに整理」が行う）。
     /// </summary>
     public static class CustomAssetPaths
@@ -14,7 +14,6 @@ namespace PotionFrontier.Game2D.EditorTools
         // ---- 絵 ----
         public const string Images = Root + "/Images";
         public const string Ingredients = Images + "/Ingredients";
-        public const string Room = Images + "/Room";
         public const string Workbench = Images + "/Workbench";
         public const string Liquid = Images + "/Liquid";
         public const string Containers = Images + "/Containers";
@@ -23,6 +22,7 @@ namespace PotionFrontier.Game2D.EditorTools
         public const string UICommon = UI + "/Common";
         public const string UIBrew = UI + "/Brew";
         public const string UIDiscovery = UI + "/Discovery";
+        public const string UnusedImages = Images + "/_Unused";
 
         // ---- 音 ----
         public const string Sounds = Root + "/Sounds";
@@ -32,16 +32,15 @@ namespace PotionFrontier.Game2D.EditorTools
         public const string SeUI = SE + "/UI";
         public const string SeBrewing = SE + "/Brewing";
         public const string SeFeedback = SE + "/Feedback";
-        public const string SeShop = SE + "/Shop";
         public const string UnusedSounds = Sounds + "/_Unused";
 
         // ---- フォント ----
         public const string Fonts = Root + "/Fonts";
 
-        /// <summary>調合台・部屋の絵（ファイル名 → 置き場所）</summary>
+        /// <summary>調合机の絵（ファイル名 → 置き場所）</summary>
         public static readonly Dictionary<string, string> ImageFolders = new Dictionary<string, string>
         {
-            { "room_left", Room }, { "room_center", Room }, { "room_right", Room }, { "lamp", Room }, { "ledger_book", Room },
+            { "lamp", Workbench },
             { "brew_background", Workbench }, { "flask_back", Workbench }, { "flask_front", Workbench }, { "flask_mask", Workbench },
             { "heater_stand", Workbench }, { "knob_base", Workbench }, { "knob_dial", Workbench }, { "flame", Workbench },
             { "stir_rod", Workbench }, { "tray", Workbench },
@@ -53,6 +52,9 @@ namespace PotionFrontier.Game2D.EditorTools
             { "container_crystal", Containers }, { "container_crystal_content", Containers },
             { "potion_bottle", Containers }, { "potion_bottle_content", Containers },
             { "fx_steam", Effects }, { "fx_bubble", Effects }, { "fx_droplet", Effects }, { "fx_swirl", Effects }, { "fx_ripple", Effects },
+            // 1画面（調合机だけ）になって使わなくなった絵（予備）
+            { "room_left", UnusedImages }, { "room_center", UnusedImages }, { "room_right", UnusedImages }, { "ledger_book", UnusedImages },
+            { "coin", UnusedImages }, { "stamp_helped", UnusedImages }, { "stamp_taught", UnusedImages },
         };
 
         /// <summary>音（ファイル名 → 置き場所）</summary>
@@ -71,12 +73,13 @@ namespace PotionFrontier.Game2D.EditorTools
             { "se_brew_special", SeBrewing },
             { "se_koto_knock_1", SeBrewing }, { "se_koto_knock_2", SeBrewing }, { "se_koto_knock_3", SeBrewing },
             { "se_glass_touch_1", SeBrewing }, { "se_glass_touch_2", SeBrewing },
-            { "se_star_chime", SeFeedback }, { "se_goal", SeFeedback }, { "se_discovery", SeFeedback },
+            { "se_star_chime", SeFeedback }, { "se_discovery", SeFeedback }, { "se_letter", SeFeedback },
             { "se_reaction", SeFeedback }, { "se_soft_warning", SeFeedback },
-            { "se_door_bell", SeShop }, { "se_voice_blip", SeShop }, { "se_coins", SeShop }, { "se_quest_accept", SeShop },
-            { "se_quest_complete", SeShop }, { "se_step_1", SeShop }, { "se_step_2", SeShop }, { "se_step_3", SeShop }, { "se_step_4", SeShop },
-            // 今のゲームでは鳴らない（予備）
+            // 今のゲームでは鳴らない（予備。お店・相談・足音は1画面になって使わなくなった）
             { "amb_cauldron", UnusedSounds }, { "se_brew_success", UnusedSounds }, { "se_brew_fail", UnusedSounds }, { "se_discard", UnusedSounds },
+            { "se_goal", UnusedSounds }, { "se_door_bell", UnusedSounds }, { "se_voice_blip", UnusedSounds }, { "se_coins", UnusedSounds },
+            { "se_quest_accept", UnusedSounds }, { "se_quest_complete", UnusedSounds },
+            { "se_step_1", UnusedSounds }, { "se_step_2", UnusedSounds }, { "se_step_3", UnusedSounds }, { "se_step_4", UnusedSounds },
         };
 
         /// <summary>仮の絵の置き場所（表にある名前なら表の場所、なければ fallback）</summary>

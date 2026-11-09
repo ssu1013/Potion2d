@@ -26,7 +26,6 @@ namespace PotionFrontier.Game
 
         [Header("アイコン・小物（Assets/CustomAssets/Images/UI/Common）")]
         [Tooltip("照準（3D 版の名残り。2D 版では使っていない）")] public Sprite crosshair;
-        [Tooltip("coin.png：お金のアイコン")] public Sprite coin;
         [Tooltip("knob.png：スライダーのつまみ")] public Sprite knob;
         [Tooltip("vignette.png：タイトル画面のふちの暗がり")] public Sprite vignette;
         [Tooltip("sparkle.png：タイトルのロゴのきらめき")] public Sprite sparkle;
@@ -40,9 +39,8 @@ namespace PotionFrontier.Game
         [Tooltip("stamp_new.png：新しい液体を発見")] public Sprite stampNew;
         [Tooltip("stamp_fact.png：素材の性質を発見")] public Sprite stampFact;
         [Tooltip("stamp_reaction.png：新しい反応を発見")] public Sprite stampReaction;
-        [Tooltip("stamp_helped.png：レシピ本「役に立った」（分け与えた）")] public Sprite stampHelped;
-        [Tooltip("stamp_taught.png：レシピ本「作り方を教えた」")] public Sprite stampTaught;
         [Tooltip("stamp_complete.png：素材ノート「すべて発見」")] public Sprite stampComplete;
-        [Tooltip("スタンプの上に文字（新発見・役に立った など）を重ねる。スタンプの絵に文字を描き込んだらオフにする")] public bool drawStampLabels = true;
+        [Tooltip("letter.png：新しい素材が調合机に届いたときの、小さなお知らせの手紙")] public Sprite letter;
+        [Tooltip("スタンプの上に文字（新発見・新しい反応 など）を重ねる。スタンプの絵に文字を描き込んだらオフにする")] public bool drawStampLabels = true;
     }
 }

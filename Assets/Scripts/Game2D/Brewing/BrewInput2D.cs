@@ -81,15 +81,13 @@ namespace PotionFrontier.Game2D
             pointer = lastPointer = Pointer2D.Position;
         }
 
-        /// <summary>調合台の操作を受け付けてよいか（タイトル・ポーズ・ウィンドウ表示中・部屋にいる間は止める）</summary>
+        /// <summary>調合机の操作を受け付けてよいか（タイトル・ポーズ・本やウィンドウの表示中は止める）</summary>
         private bool InputAllowed
         {
             get
             {
                 GameFlow flow = GameFlow.Instance;
                 if (flow != null && (flow.Mode != GameMode.Playing || flow.IsPaused)) return false;
-                AtelierView2D view = AtelierView2D.Current;
-                if (view != null && (!view.InBrew || view.Transitioning)) return false;
                 AtelierHUD hud = AtelierHUD.Instance;
                 return hud == null || !hud.BlocksPlayerActions;
             }
@@ -183,7 +181,7 @@ namespace PotionFrontier.Game2D
             if (e.potion != null) return $"自作の液体　{e.potion.DescribeAmount()}";
             if (e.ingredient == null) return "";
             string form = e.ingredient.IsPoured ? "液体（注ぐ）" : (e.ingredient.Form == IngredientForm.Powder ? "粉（振り入れる）" : "固体（入れる）");
-            return $"{form}　在庫 {session.AmountLabel(e.ingredient)}" + FactLine(e.ingredient);
+            return $"{form}　何度でも使える" + FactLine(e.ingredient);
         }
 
         /// <summary>素材ノートで見つけた性質（まだの物は「？？？」の数だけ）</summary>
@@ -219,7 +217,7 @@ namespace PotionFrontier.Game2D
             }
             if (Input.GetKeyDown(KeyCode.H)) session.CycleHeat();
             if (Input.GetKeyDown(KeyCode.Space)) session.FastForward = !session.FastForward;
-            // Esc はアトリエの画面（AtelierHUD）があればそちらで扱う（持っている物を戻す → 部屋に戻る）
+            // Esc はアトリエの画面（AtelierHUD）があればそちらで扱う（持っている物を戻す → ひとやすみ）
             bool escape = Input.GetKeyDown(KeyCode.Escape) && AtelierHUD.Instance == null;
             if (Input.GetKeyDown(KeyCode.Q) || escape || (Pointer2D.RightPressed && Current == Activity.None))
             {
@@ -433,7 +431,7 @@ namespace PotionFrontier.Game2D
             {
                 if (!session.Has(entry.ingredient))
                 {
-                    session.Say($"{entry.ingredient.DisplayName}は在庫がありません");
+                    session.Say($"{entry.ingredient.DisplayName}は、まだ机に届いていない");
                     return;
                 }
                 Held = new HeldThing2D(entry.ingredient);

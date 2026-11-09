@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PotionFrontier.Alchemy
 {
     /// <summary>
-    /// 調合マネージャー。シーンに1つ置き、UI・注ぐ操作・相談システムからはここを呼ぶ。
+    /// 調合マネージャー。シーンに1つ置き、UI・注ぐ操作からはここを呼ぶ。
     ///   ・フラスコの工程の計算 … CreateFlask で FlaskSimulation を作る（反応データもここで渡す）
     ///   ・瓶詰め              … Bottle でフラスコの中身から液体の記録を作り、これまでに作った液体の一覧（Liquids）に登録する
     ///   ・旧方式の一発調合    … Brew（フェーズ4までの計算。テスト用に残してある）
@@ -33,7 +33,7 @@ namespace PotionFrontier.Alchemy
 
         public IReadOnlyList<ReactionData> Reactions => reactions;
 
-        /// <summary>調合が行われるたびに呼ばれる（UI表示・レシピ本への記録・相談の判定などをここにつなぐ）</summary>
+        /// <summary>調合が行われるたびに呼ばれる（UI表示・レシピ本への記録・発見の判定などをここにつなぐ）</summary>
         public event Action<BrewResult> Brewed;
 
         private PotionBrewer brewer;

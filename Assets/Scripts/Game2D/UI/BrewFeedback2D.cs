@@ -8,17 +8,15 @@ namespace PotionFrontier.Game2D
 {
     /// <summary>
     /// 調合台の手ごたえ（Step4 の A「見える化」と B「音と演出」）。BrewHUD の Prefab のルートに付ける（なければ BrewHUD2D が自分に付ける）。
-    ///   A：見立てカード（属性の棒・溶かしきったときの予告・相談の目標の点線・条件の ○△×・ひとこと）／温度計／
+    ///   A：見立てカード（属性の棒・溶かしきったときの予告・ひとこと＝次の素材が届くまでの発見の数）／温度計／
     ///      かき混ぜている間の溶け具合の輪／注いだ量・火加減の数字／値が変わったときの「回復 +3」
-    ///   B：目標に届いた瞬間（和音・きらきら・カードが光る）／反応の瞬間（光・きらきら・スロー・音）／
+    ///   B：反応の瞬間（光・スロー・音）／
     ///      瓶詰めの結果カード（★ が1つずつ「ちりん」・新発見）／沸騰・焦げ・溶けきった・素材が弱まった/目覚めたのお知らせ
     /// 見た目は「置き場所」「絵」の欄で変えられる（空の絵はコードで描いた仮の絵）。音は SoundLibrary の「調合の手ごたえ」。
     /// </summary>
     [DisallowMultipleComponent]
     public class BrewFeedback2D : MonoBehaviour
     {
-        public enum GoalState { None, Short, Projected, Met }
-
         [Header("置き場所（1920×1080 の画面で、左下が 0,0）")]
         [SerializeField, Tooltip("見立てカードの左下")] private Vector2 meterPosition = new Vector2(340f, 352f);
         [SerializeField] private Vector2 meterSize = new Vector2(360f, 470f);
@@ -49,7 +47,6 @@ namespace PotionFrontier.Game2D
         private BrewInput2D input;
         private Flask2D flask;
         private HeldItem2D held;
-        private QuestManager quests;
         private Canvas canvas;
 
         private BrewMeterUI2D meter;
@@ -69,8 +66,6 @@ namespace PotionFrontier.Game2D
         // このフラスコで、もう知らせたこと（「素材ID:性質」）。フラスコが空になったら忘れる
         private readonly HashSet<string> noticed = new HashSet<string>();
 
-        private GoalState goal = GoalState.None;
-        private QuestData lastQuest;
         private bool primed;
         private bool wasBoiling;
         private bool wasScorching;
@@ -81,8 +76,6 @@ namespace PotionFrontier.Game2D
 
         public static BrewFeedback2D Current { get; private set; }
 
-        /// <summary>相談の見立て（目標に届いているか）</summary>
-        public GoalState Goal => goal;
         /// <summary>瓶詰めの結果カードを出す（BrewHUD2D は下の文字のお知らせを出さない）</summary>
         public bool ShowsBottleResult => showBottleResult;
         public bool ResultVisible => popups != null && popups.ResultVisible;
@@ -96,7 +89,6 @@ namespace PotionFrontier.Game2D
         public bool NewStampVisible => popups != null && popups.NewStampVisible;
         public bool NewHeaderVisible => popups != null && popups.NewHeaderVisible;
         public int PageTurnCount => popups != null ? popups.PageTurnCount : 0;
-        public int TargetRows { get; private set; }
         public int ReactionCount { get; private set; }
         public string Status => model.status;
         public float CurrentValue(PotionAttribute a) => current[(int)a];
@@ -113,7 +105,6 @@ namespace PotionFrontier.Game2D
             input = FindFirstObjectByType<BrewInput2D>();
             flask = FindFirstObjectByType<Flask2D>();
             held = FindFirstObjectByType<HeldItem2D>();
-            quests = FindFirstObjectByType<QuestManager>();
             canvas = GetComponent<Canvas>();
             ViewportFit2D fit = GetComponent<ViewportFit2D>();
             RectTransform parent = fit != null ? fit.SafeRoot : (RectTransform)transform;
@@ -148,7 +139,6 @@ namespace PotionFrontier.Game2D
             }
             // コードで作る音は、最初に鳴らすときに引っかからないよう、先に作っておく
             _ = SfxSynth.Chime;
-            _ = SfxSynth.Goal;
             Refresh();
         }
 
@@ -382,7 +372,6 @@ namespace PotionFrontier.Game2D
             AlchemySettings settings = sim.Settings;
             if (settings == null) return;
             LiquidRecord preview = session.Preview;
-            QuestData quest = ActiveQuest();
             bool wet = session.HasLiquid;
             bool solids = sim.SolidUnits > 0.001f;
             float dissolved = sim.DissolvedFraction;
@@ -394,19 +383,10 @@ namespace PotionFrontier.Game2D
             }
             if (wet) sim.ProjectConcentration(projected);
             else System.Array.Copy(current, projected, Count);
-            AttributeVector cur = AttributeVector.FromArray(current);
-            AttributeVector proj = AttributeVector.FromArray(projected);
 
-            // 棒に出す属性：相談の条件の属性 → 入っている属性（多い順）
+            // 棒に出す属性：入っている属性（多い順）
             rowAttrs.Clear();
             candidates.Clear();
-            if (quest != null)
-            {
-                foreach (AttributeCondition c in quest.Conditions)
-                {
-                    if (c != null && !rowAttrs.Contains(c.attribute)) rowAttrs.Add(c.attribute);
-                }
-            }
             for (int i = 0; i < Count; i++)
             {
                 var a = (PotionAttribute)i;
@@ -417,7 +397,6 @@ namespace PotionFrontier.Game2D
             if (sim.IsEmpty) rowAttrs.Clear();
 
             model.rows.Clear();
-            int targetRows = 0;
             for (int n = 0; n < rowAttrs.Count && n < BrewMeterUI2D.MaxRows; n++)
             {
                 PotionAttribute a = rowAttrs[n];
@@ -429,35 +408,18 @@ namespace PotionFrontier.Game2D
                     current = current[(int)a],
                     projected = projected[(int)a],
                 };
-                if (quest != null)
-                {
-                    foreach (AttributeCondition c in quest.Conditions)
-                    {
-                        if (c == null || c.attribute != a) continue;
-                        if (c.type == ConditionType.AtLeast || c.type == ConditionType.Between) { r.hasMin = true; r.min = c.min; }
-                        if (c.type == ConditionType.AtMost || c.type == ConditionType.Between) { r.hasMax = true; r.max = c.max; }
-                    }
-                }
-                if (r.hasMin || r.hasMax)
-                {
-                    targetRows++;
-                    r.met = Within(r, r.current);
-                    r.metProjected = Within(r, r.projected);
-                }
                 model.rows.Add(r);
             }
-            TargetRows = targetRows;
 
-            model.target = quest != null ? $"◆ {quest.ClientName}さんの悩みに合う液体" : "◆ 相談なし（自由に探求）";
+            model.target = "◆ フラスコの見立て";
             model.showDissolve = solids && !sim.IsEmpty;
             model.dissolveFraction = dissolved;
             model.dissolve = solids ? $"溶け具合 {Mathf.FloorToInt(dissolved * 100f)}%" : "";
-            model.conditions = quest != null ? ConditionLines(quest, settings, cur, proj, preview) : "";
+            model.conditions = "";
 
-            GoalState next = GoalState.None;
             if (sim.IsEmpty)
             {
-                model.status = "素材を入れると、見立てが出ます";
+                model.status = "素材を入れると、見立てが出ます\n<size=17><color=#8A6A45>" + ArrivalHint(true) + "</color></size>";
                 model.statusColor = UIColors.InkLight;
             }
             else if (!wet)
@@ -465,47 +427,39 @@ namespace PotionFrontier.Game2D
                 model.status = "液体を注ぐと、溶けはじめます";
                 model.statusColor = UIColors.InkLight;
             }
-            else if (quest == null)
+            else if (solids && dissolved < 0.99f)
             {
-                model.status = solids && dissolved < 0.99f ? "円を描いてかき混ぜると、\n溶け残りが溶けていく" : "相談を受けると、目標の線が出ます";
+                model.status = "円を描いてかき混ぜると、\n溶け残りが溶けていく";
                 model.statusColor = UIColors.InkLight;
-            }
-            else if (quest.IsSatisfiedBy(preview))
-            {
-                next = GoalState.Met;
-                model.status = $"○ 今のままで、{quest.ClientName}さんの\n悩みに合いそう！ 瓶に詰めよう";
-                model.statusColor = new Color(0.18f, 0.48f, 0.16f, 1f);
-            }
-            else if (ProjectedSatisfies(quest, settings, proj, preview))
-            {
-                next = GoalState.Projected;
-                model.status = solids && dissolved < 0.99f ? "△ 溶かしきれば、合いそう！\n円を描いて、よくかき混ぜよう" : "△ もう少しで合いそう";
-                model.statusColor = new Color(0.62f, 0.44f, 0.04f, 1f);
             }
             else
             {
-                next = GoalState.Short;
-                model.status = "まだ合わない：\n" + Gap(quest, settings, proj, preview);
-                model.statusColor = new Color(0.55f, 0.3f, 0.18f, 1f);
+                model.status = ArrivalHint();
+                model.statusColor = new Color(0.45f, 0.33f, 0.2f, 1f);
             }
             meter.Apply(model);
 
-            // 目標に届いた／外れた（入ったばかり・相談が変わったときは鳴らさない）
-            if (!primed || quest != lastQuest)
+            // 入ったばかりのときは「+3」を出さない
+            if (!primed)
             {
-                goal = next;
-                lastQuest = quest;
                 primed = true;
                 for (int i = 0; i < Count; i++) lastCurrent[i] = current[i];
                 return;
             }
-            if (next != goal)
-            {
-                if (next == GoalState.Met) OnGoalReached(quest);
-                else if (goal == GoalState.Met && (next == GoalState.Short || next == GoalState.Projected)) OnGoalLost(quest);
-                goal = next;
-            }
             ValuePops(settings, preview);
+        }
+
+        /// <summary>次の素材が届くまでの発見の数（自由に探求している間の、静かなひとこと）</summary>
+        public static string ArrivalHint(bool oneLine = false)
+        {
+            GameFlow flow = GameFlow.Instance;
+            if (flow == null) return "自由に探求しよう";
+            IngredientData next = flow.NextArrival(out int remaining);
+            if (oneLine) return next == null ? "すべての素材が机にそろった" : remaining > 0 ? $"新しい素材まで：発見あと {remaining}" : "新しい素材が、もうすぐ届く";
+            if (next == null) return "すべての素材が机にそろった\n自由に探求しよう";
+            return remaining > 0
+                ? $"新しい素材まで：発見あと {remaining}\n<size=17>性質・反応・新しい液体を見つけよう</size>"
+                : "新しい素材が、もうすぐ届く";
         }
 
         /// <summary>属性の値が変わったら「回復 +3」をフラスコから浮かべる（同じ属性は少し間をあける）</summary>
@@ -533,107 +487,6 @@ namespace PotionFrontier.Game2D
             }
         }
 
-        private static bool Within(MeterModel.Row r, float v)
-        {
-            if (r.hasMin && v < r.min) return false;
-            if (r.hasMax && v > r.max) return false;
-            return true;
-        }
-
-        private static string ConditionLines(QuestData quest, AlchemySettings settings, AttributeVector cur, AttributeVector proj, LiquidRecord preview)
-        {
-            var sb = new System.Text.StringBuilder();
-            int lines = 0;
-            foreach (AttributeCondition c in quest.Conditions)
-            {
-                if (c == null || lines >= 3) continue;
-                bool now = preview != null && c.Evaluate(cur);
-                bool soon = c.Evaluate(proj);
-                if (sb.Length > 0) sb.Append('\n');
-                sb.Append(Icon(now, soon)).Append(' ').Append(Describe(c, settings));
-                lines++;
-            }
-            if (quest.MinStars > 0 && lines < 3)
-            {
-                int s = preview != null ? preview.stars : 0;
-                if (sb.Length > 0) sb.Append('\n');
-                sb.Append(Icon(s >= quest.MinStars, ProjectedStars(settings, proj, preview) >= quest.MinStars))
-                  .Append($" ★{quest.MinStars} 以上（今 ★{s}）");
-                lines++;
-            }
-            if (quest.RequiredPotion != null && lines < 3)
-            {
-                bool ok = preview != null && preview.specialPotionId == quest.RequiredPotion.PotionId;
-                if (sb.Length > 0) sb.Append('\n');
-                sb.Append(Icon(ok, ok)).Append($" 特別な液体「{quest.RequiredPotion.PotionName}」");
-            }
-            return sb.ToString();
-        }
-
-        private static string Icon(bool now, bool soon)
-        {
-            if (now) return "<color=#2E7D32>○</color>";
-            return soon ? "<color=#B8860B>△</color>" : "<color=#A0522D>×</color>";
-        }
-
-        /// <summary>条件の説明（記号 ≥ はフォントにないことがあるので、言葉で書く）</summary>
-        private static string Describe(AttributeCondition c, AlchemySettings settings)
-        {
-            string n = settings.GetDisplayName(c.attribute);
-            switch (c.type)
-            {
-                case ConditionType.AtLeast: return $"{n} {c.min:0.#} 以上";
-                case ConditionType.AtMost: return $"{n} {c.max:0.#} 以下";
-                case ConditionType.Between: return $"{n} {c.min:0.#}〜{c.max:0.#}";
-                case ConditionType.IsDominant: return $"{n}がいちばん強い";
-                case ConditionType.ShareAtLeast: return $"{n}の割合 {c.min:0.#}% 以上";
-                default: return n;
-            }
-        }
-
-        private static bool ProjectedSatisfies(QuestData quest, AlchemySettings settings, AttributeVector proj, LiquidRecord preview)
-        {
-            if (quest.RequiredPotion != null) return false;
-            if (quest.MinStars > ProjectedStars(settings, proj, preview)) return false;
-            foreach (AttributeCondition c in quest.Conditions)
-            {
-                if (c != null && !c.Evaluate(proj)) return false;
-            }
-            return true;
-        }
-
-        /// <summary>溶かしきったときの ★ の見込み（属性の合計から。名前や特性による変化は入らないので、だいたい）</summary>
-        private static int ProjectedStars(AlchemySettings settings, AttributeVector proj, LiquidRecord preview)
-        {
-            if (preview != null && preview.kind == LiquidKind.Unknown) return 0;
-            float potency = proj.TotalPotency;
-            if (potency <= 0f) return 0;
-            GradeTier tier = settings.GetGrade(potency, out _);
-            return tier != null ? Mathf.Clamp(tier.stars, 1, 5) : 1;
-        }
-
-        /// <summary>何が足りないかを、ひとことで（溶かしきったときの見込みで比べる）</summary>
-        private static string Gap(QuestData quest, AlchemySettings settings, AttributeVector proj, LiquidRecord preview)
-        {
-            foreach (AttributeCondition c in quest.Conditions)
-            {
-                if (c == null || c.Evaluate(proj)) continue;
-                string n = settings.GetDisplayName(c.attribute);
-                float v = proj[c.attribute];
-                switch (c.type)
-                {
-                    case ConditionType.AtLeast: return $"{n}があと {Mathf.Max(0.1f, c.min - v):0.#} 足りない";
-                    case ConditionType.AtMost: return $"{n}が {Mathf.Max(0.1f, v - c.max):0.#} 多すぎる";
-                    case ConditionType.Between: return v < c.min ? $"{n}があと {c.min - v:0.#} 足りない" : $"{n}が {v - c.max:0.#} 多すぎる";
-                    case ConditionType.IsDominant: return $"{n}を、いちばん強くしよう";
-                    case ConditionType.ShareAtLeast: return $"{n}の割合が足りない";
-                }
-            }
-            if (quest.MinStars > ProjectedStars(settings, proj, preview)) return $"★が足りない（★{quest.MinStars} 以上）";
-            if (quest.RequiredPotion != null) return $"特別な液体「{quest.RequiredPotion.PotionName}」が必要";
-            return "悩みに合う液体を探そう";
-        }
-
         private static Color AttributeColor(AlchemySettings settings, PotionAttribute a)
         {
             Color c = settings.GetInfo(a).color;
@@ -644,31 +497,9 @@ namespace PotionFrontier.Game2D
             return c;
         }
 
-        private QuestData ActiveQuest()
-        {
-            if (quests == null) return null;
-            return quests.Phase == CustomerPhase.Waiting ? quests.CurrentQuest : null;
-        }
-
         // ==================================================================
         // 瞬間の演出
         // ==================================================================
-
-        private void OnGoalReached(QuestData quest)
-        {
-            SoundLibrary lib = AudioManager.Lib;
-            Play(lib != null ? lib.goalReached : null, SfxSynth.Goal, 0.45f, 1f);
-            popups.ShowPop($"{quest.ClientName}さんの悩みに合いそう！", MouthScreen() + new Vector2(0f, 70f), new Color(1f, 0.9f, 0.5f, 1f), true);
-            meter.Glow(new Color(1f, 0.82f, 0.3f, 1f));
-            if (flask != null) flask.WarmBloom(0.35f);
-        }
-
-        private void OnGoalLost(QuestData quest)
-        {
-            SoundLibrary lib = AudioManager.Lib;
-            Play(lib != null ? lib.softWarning : null, SfxSynth.SoftWarning, 0.55f, 1f);
-            popups.ShowPop("悩みに合わなくなった…", MouthScreen() + new Vector2(0f, 70f), new Color(1f, 0.6f, 0.5f, 1f));
-        }
 
         private void OnReacted(ReactionData reaction)
         {
@@ -736,7 +567,6 @@ namespace PotionFrontier.Game2D
         private void OnBottled(LiquidRecord record, bool isNew, float ml, int bottles)
         {
             if (record == null || popups == null) return;
-            QuestData quest = ActiveQuest();
             var m = new ResultModel
             {
                 record = record,
@@ -745,11 +575,6 @@ namespace PotionFrontier.Game2D
                 isNew = isNew,
                 detail = $"No.{(session.Alchemy != null ? session.Alchemy.Liquids.NumberOf(record) : 0)}　{KindLabel(record.kind)}　{Mathf.RoundToInt(ml)}ml（{bottles}本）",
             };
-            if (quest != null)
-            {
-                m.questMatch = quest.IsSatisfiedBy(record);
-                m.quest = m.questMatch ? $"○ {quest.ClientName}さんの悩みに合う！" : $"× {quest.ClientName}さんの悩みには合わない";
-            }
             if (showBottleResult) popups.ShowResult(m);
             if (isNew)
             {

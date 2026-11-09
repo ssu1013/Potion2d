@@ -180,7 +180,9 @@ namespace PotionFrontier.Game
             if (saveExists && save != null)
             {
                 string clear = save.gameCleared ? "　<color=#F4C95D>★クリア済み</color>" : "";
-                saveInfo.text = $"つづきから：{save.savedAt}　所持金 {save.gold} G　解決した相談 {save.completedQuests} 件{clear}";
+                int liquids = save.liquids != null ? save.liquids.Count : 0;
+                int onDesk = save.unlockedIngredients != null ? save.unlockedIngredients.Count : 0;
+                saveInfo.text = $"つづきから：{save.savedAt}　見つけた液体 {liquids} 種類　机の素材 {onDesk} 種類{clear}";
             }
             else
             {

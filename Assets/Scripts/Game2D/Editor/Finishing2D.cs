@@ -224,7 +224,7 @@ namespace PotionFrontier.Game2D.EditorTools
             var where = new Dictionary<char, string>();
             int sources = 0;
 
-            // ゲームのデータ（相談・素材・反応など）の文字
+            // ゲームのデータ（素材・反応など）の文字
             foreach (string guid in AssetDatabase.FindAssets("t:ScriptableObject", new[] { "Assets/GameData" }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
