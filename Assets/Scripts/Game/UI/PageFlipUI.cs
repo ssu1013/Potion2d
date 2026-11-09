@@ -6,7 +6,7 @@ namespace PotionFrontier.Game
     /// <summary>
     /// 紙が1枚めくれていく演出（図鑑の「新発見！」ページ・素材ノートのページ送り）。
     /// めくりたい物（結果カード・ページ・カードの並び）の上に紙を1枚かぶせ、とじ目を軸に裏返して、下の中身を見せる。
-    /// 紙の絵は UISkin の page_turn.png（Assets/Art2D/UI/Discovery/）。空なら page.png → 羊皮紙。
+    /// 紙の絵は UISkin の page_turn.png（Assets/CustomAssets/Images/UI/Discovery/）。空なら page.png → 羊皮紙。
     /// </summary>
     public sealed class PageFlipUI
     {

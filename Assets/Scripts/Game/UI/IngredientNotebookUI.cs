@@ -11,7 +11,7 @@ namespace PotionFrontier.Game
     /// 素材ノート（発見の記録）。素材ごとに1ページ。調合しているうちにわかった性質が書き足されていき、
     /// まだの性質は「？？？」で数だけ見える。かかわる反応も、見つけたら書き足される。
     /// まだ出会っていない素材は影絵。性質と反応をすべて見つけると、ページに「すべて発見」のスタンプ。
-    /// 絵：素材の絵は素材データのアイコン（Assets/Art2D/Ingredients）、カード・影絵・スタンプは UISkin（Assets/Art2D/UI/Discovery）。
+    /// 絵：素材の絵は素材データのアイコン（Assets/CustomAssets/Images/Ingredients）、カード・影絵・スタンプは UISkin（Assets/CustomAssets/Images/UI/Discovery）。
     /// </summary>
     public sealed class IngredientNotebookUI
     {

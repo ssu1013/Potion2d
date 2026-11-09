@@ -359,7 +359,7 @@ namespace PotionFrontier.Game2D
             Vector3 from = held != null && held.HasItem ? held.MouthWorld : (flask != null ? flask.MouthWorld + Vector3.up * 0.5f : pointerWorld);
             if (!session.AddSolid(data)) return;
             if (held != null) held.Shake();
-            // 素材ごとの欠片の絵（Art2D/Ingredients/<ID>_piece.png）があれば、それをそのままの色で落とす
+            // 素材ごとの欠片の絵（CustomAssets/Images/Ingredients/<ID>_piece.png）があれば、それをそのままの色で落とす
             if (flask != null && session.Art != null)
             {
                 bool own = data.PieceSprite != null;

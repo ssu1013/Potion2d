@@ -24,7 +24,7 @@ namespace PotionFrontier.Alchemy
         [SerializeField, TextArea(2, 4)]
         private string description = "";
 
-        [SerializeField, Tooltip("素材の絵（2D 版：トレイ・手に持ったとき・取引先帳・レシピ本・素材ノート）。Assets/Art2D/Ingredients/<ID>.png を同じ名前で上書きすると差し替わる。空なら色と容器から自動で描く")]
+        [SerializeField, Tooltip("素材の絵（2D 版：トレイ・手に持ったとき・取引先帳・レシピ本・素材ノート）。Assets/CustomAssets/Images/Ingredients/<ID>.png を同じ名前で上書きすると差し替わる。空なら色と容器から自動で描く")]
         private Sprite icon;
 
         [SerializeField, Tooltip("ベース液体は必ず1種類、主素材は1種類以上、触媒は任意")]
@@ -113,7 +113,7 @@ namespace PotionFrontier.Alchemy
         [SerializeField, Tooltip("かき混ぜて溶かせる向き（どちらでも／時計回りだけ／反時計回りだけ）")]
         private StirDirection dissolveDirection = StirDirection.Any;
 
-        [Header("2D の絵（Assets/Art2D/Ingredients。同じ名前で上書きすると差し替わる）")]
+        [Header("2D の絵（Assets/CustomAssets/Images/Ingredients。同じ名前で上書きすると差し替わる）")]
         [SerializeField, Tooltip("フラスコに入れたときに落ちる欠片・底に沈む溶け残りの絵（<ID>_piece.png）。空なら共通の欠片を素材の色で塗る")]
         private Sprite pieceSprite;
 

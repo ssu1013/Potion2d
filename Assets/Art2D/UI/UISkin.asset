@@ -14,17 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   font: {fileID: 12800000, guid: 437eabe4183d6ec4791f77505c0b0ccc, type: 3}
   fontBold: {fileID: 12800000, guid: 46da96e0ce30b5f4c85b2db35694337f, type: 3}
-  parchment: {fileID: 0}
-  woodPanel: {fileID: 0}
-  button: {fileID: 0}
-  slot: {fileID: 0}
-  slotSelected: {fileID: 0}
+  parchment: {fileID: 21300000, guid: c58cf3d4da4f3af42a7d97cd4ad3a5c5, type: 3}
+  woodPanel: {fileID: 21300000, guid: e9a2f31fe61d32a479fa382cb2590529, type: 3}
+  button: {fileID: 21300000, guid: 87232a6560e459e44bdff2721653ea65, type: 3}
+  slot: {fileID: 21300000, guid: 05cc4e00b98660044a23022460a26aac, type: 3}
+  slotSelected: {fileID: 21300000, guid: d858af4fe5c5dff488a86278135043b4, type: 3}
   crosshair: {fileID: 0}
-  coin: {fileID: 0}
-  knob: {fileID: 0}
-  vignette: {fileID: 0}
-  sparkle: {fileID: 0}
-  softDot: {fileID: 0}
+  coin: {fileID: 21300000, guid: f50b17f3c46483d4d8b076e7e4d7263a, type: 3}
+  knob: {fileID: 21300000, guid: fd7b5e6e3c7051441a9ae22a99329c86, type: 3}
+  vignette: {fileID: 21300000, guid: a1d1fc11cb30d2a4a9d3a8bc17f365c4, type: 3}
+  sparkle: {fileID: 21300000, guid: 3d157db061d196a4aa39363fbd79dfd3, type: 3}
+  softDot: {fileID: 21300000, guid: 9fdf782b7425bda48989338bc20d5678, type: 3}
   discoveryPage: {fileID: 21300000, guid: 33fa5059afda2d643a8f207b1af5a0be, type: 3}
   pageTurn: {fileID: 21300000, guid: a63992f05395c1c47901c2beb46e8a65, type: 3}
   notebookCard: {fileID: 21300000, guid: 0c2b5837c2a528a4e93e715289376deb, type: 3}

@@ -6,7 +6,7 @@ namespace PotionFrontier.Game
 {
     /// <summary>
     /// 発見のスタンプ（新発見・性質を発見・反応を発見・役に立った・教えた・すべて発見）。
-    /// 絵は UISkin の「発見・素材ノート」（Assets/Art2D/UI/Discovery/stamp_*.png）。空ならコードで描いた赤い輪。
+    /// 絵は UISkin の「発見・素材ノート」（Assets/CustomAssets/Images/UI/Discovery/stamp_*.png）。空ならコードで描いた赤い輪。
     /// 文字はスタンプの上に重ねて出す（スタンプの絵に文字を描き込んだら、UISkin の「スタンプに文字を重ねる」をオフにする）。
     /// </summary>
     public static class StampUI

@@ -6,8 +6,8 @@ using UnityEngine;
 namespace PotionFrontier.Game2D.EditorTools
 {
     /// <summary>
-    /// 仮の絵（PNG）をコードで描いて Assets/Art2D/Brewing/Sprites に保存する。すでにあるファイルには触らない。
-    /// 自分の絵に替えるときは、同じ名前・同じ大きさ（目安）の PNG で上書きするだけでよい。
+    /// 仮の絵（PNG）をコードで描いて Assets/CustomAssets/Images の下（場所は CustomAssetPaths の表）に保存する。すでにあるファイルには触らない。
+    /// 自分の絵に替えるときは、同じ名前の PNG で上書きするだけでよい（大きさが違っても、ゲームの中での大きさは自動でそろう）。
     /// 大きさ（ピクセル）は 100 ピクセル = 1 ワールド単位。
     /// </summary>
     public static class PlaceholderArt2D
@@ -109,6 +109,8 @@ namespace PotionFrontier.Game2D.EditorTools
 
         internal static Sprite Ensure(string dir, string name, int width, int height, Func<float, float, Color> shader)
         {
+            dir = CustomAssetPaths.FolderForImage(name, dir);
+            EnsureFolder(dir);
             string path = $"{dir}/{name}.png";
             if (!File.Exists(path))
             {

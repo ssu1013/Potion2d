@@ -13,7 +13,7 @@ namespace PotionFrontier.Game2D.EditorTools
 {
     /// <summary>
     /// 製品に向けた仕上げのメニュー（Tools/Potion Frontier 2D/仕上げ）。
-    ///   ① フォントを入れる      … Assets/Art2D/Fonts の TTF/OTF を UISkin と調合画面の文字に割り当てる
+    ///   ① フォントを入れる      … Assets/CustomAssets/Fonts の TTF/OTF を UISkin と調合画面の文字に割り当てる
     ///   ② 文字の抜けをチェック  … ゲームの文章に、フォントにない文字（□ になる字）がないか調べる
     ///   ③ プレイヤー設定        … ウィンドウの大きさ変更・二重起動の防止・ビルドに入れるシーンなど
     ///   ④ 通しテスト            … 自動で一通り遊んで、画面写真と記録を AutoTestShots2D/ に残す
@@ -22,7 +22,7 @@ namespace PotionFrontier.Game2D.EditorTools
     public static class Finishing2D
     {
         private const string Menu = "Tools/Potion Frontier 2D/仕上げ/";
-        internal const string FontDir = "Assets/Art2D/Fonts";
+        internal const string FontDir = CustomAssetPaths.Fonts;
         private const string SkinPath = "Assets/Art2D/UI/UISkin.asset";
         private const string BrewHudPath = Brew2DBuilder.PrefabDir + "/BrewHUD.prefab";
         private const string AtelierScene = "Assets/Scenes/Atelier2D.unity";
@@ -40,13 +40,12 @@ namespace PotionFrontier.Game2D.EditorTools
         // ① フォント
         // ==================================================================
 
-        [MenuItem(Menu + "① フォントを入れる（Art2D/Fonts の TTF）", priority = 60)]
+        [MenuItem(Menu + "① フォントを入れる（CustomAssets/Fonts の TTF）", priority = 60)]
         private static void InstallFont()
         {
             if (!AssetDatabase.IsValidFolder(FontDir))
             {
-                if (!AssetDatabase.IsValidFolder("Assets/Art2D")) AssetDatabase.CreateFolder("Assets", "Art2D");
-                AssetDatabase.CreateFolder("Assets/Art2D", "Fonts");
+                PlaceholderArt2D.EnsureFolder(FontDir);
                 EditorUtility.DisplayDialog("フォントを入れる",
                     FontDir + " を作りました。\n\nGoogle Fonts から「M PLUS Rounded 1c」か「Zen Maru Gothic」をダウンロードして、" +
                     "中の .ttf（Medium と Bold があればその2つ）と OFL.txt をこのフォルダに入れてから、もう一度このメニューを実行してください。", "OK");
@@ -550,7 +549,7 @@ namespace PotionFrontier.Game2D.EditorTools
                 if (sum.result == BuildResult.Succeeded)
                 {
                     int copied = CopyLicenses(dir);
-                    log.AppendLine(copied > 0 ? $"フォントのライセンスの文 {copied} 個を Licenses/ に入れました" : "△ 同梱するライセンスの文がない（Assets/Art2D/Fonts に OFL.txt）");
+                    log.AppendLine(copied > 0 ? $"フォントのライセンスの文 {copied} 個を Licenses/ に入れました" : "△ 同梱するライセンスの文がない（Assets/CustomAssets/Fonts に OFL.txt）");
                     if (copied == 0) notes++;
                     log.AppendLine("書き出し先：" + exe);
                 }

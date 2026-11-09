@@ -169,12 +169,21 @@ namespace PotionFrontier.Game2D
             Check(wax != null && wax.MeltTemp > 0f && wax.MeltTemp < 60f, "森の蜜蝋（ぬるめで溶ける）がある");
             Check(fern != null && fern.DissolveDirection == StirDirection.Clockwise, "ぜんまい草（時計回りでだけ溶ける）がある");
             Check(fizz != null && fizz.Volatility > 0f && dew != null && dew.Volatility > 0f, "泡雪の粉・月下の夜露（沸騰で力が飛ぶ）がある");
-            Check(wax != null && wax.Icon != null && wax.PieceSprite != null && dew != null && dew.Icon != null, "追加の素材にも絵（Art2D/Ingredients）が割り当てられている");
+            Check(wax != null && wax.Icon != null && wax.PieceSprite != null && dew != null && dew.Icon != null, "追加の素材にも絵（CustomAssets/Images/Ingredients）が割り当てられている");
             Check(db != null && db.Get("main_amber_resin") != null && db.Get("main_amber_resin").MeltTemp > 0f, "琥珀樹脂（溶ける温度）がある");
             Check(water != null && water.Icon != null && herb != null && herb.Icon != null && herb.PieceSprite != null,
-                  "素材の絵（Art2D/Ingredients の <ID>.png・<ID>_piece.png）が割り当てられている");
+                  "素材の絵（CustomAssets/Images/Ingredients の <ID>.png・<ID>_piece.png）が割り当てられている");
             Check(UIFactory.Skin != null && UIFactory.Skin.stampNew != null && UIFactory.Skin.discoveryPage != null && UIFactory.Skin.pageTurn != null,
-                  "発見の絵（Art2D/UI/Discovery。page_turn も）が UISkin に割り当てられている");
+                  "発見の絵（CustomAssets/Images/UI/Discovery。page_turn も）が UISkin に割り当てられている");
+            // 差し替え用の絵・音（Assets/CustomAssets）：どの欄もファイルにつながっている（リンク切れ・空の欄がない）
+            var broken = new List<string>();
+            CheckLinks(UIFactory.Skin, "UISkin", broken, "crosshair");
+            CheckLinks(AudioManager.Lib, "SoundLibrary", broken);
+            foreach (BrewArt2D artSet in Resources.FindObjectsOfTypeAll<BrewArt2D>()) CheckLinks(artSet, "BrewArt2D", broken, "particleMaterial");
+            int missingIcons = 0;
+            if (db != null) foreach (IngredientData d in db.All) if (d != null && (d.Icon == null || (!d.IsPoured && d.PieceSprite == null))) missingIcons++;
+            Check(broken.Count == 0, "差し替え用の絵・音が、すべてファイルにつながっている（UISkin・SoundLibrary・BrewArt2D）" + (broken.Count > 0 ? "：" + string.Join("、", broken) : ""));
+            Check(missingIcons == 0, $"どの素材にも絵（アイコン・欠片）がつながっている（足りない素材 {missingIcons}）");
             Log($"所持金 {progress.Gold} G ／ 素材 {(db != null ? db.Count : 0)} 種類のうち {(stock != null ? stock.CountKinds(db) : 0)} 種類を持っている ／ いる所 {AtelierView2D.StopNames[view.Stop]}");
             // 夜の空気感（Step6）：部屋全体の光は深い夜の暗さ、ランプの火の音がずっと小さく鳴る
             float globalLight = -1f;
@@ -794,6 +803,40 @@ namespace PotionFrontier.Game2D
                 File.AppendAllText(Path.Combine(Folder, "log.txt"), message + "\n", Encoding.UTF8);
             }
             catch (IOException) { }
+        }
+
+        /// <summary>絵・音・フォントの欄が空でないか（ファイルを消した・名前を変えたときに空になる）。入れ子の欄（容器の絵など）も見る</summary>
+        private static void CheckLinks(Object asset, string label, List<string> broken, params string[] skip)
+        {
+            if (asset == null)
+            {
+                broken.Add(label + " がない");
+                return;
+            }
+            CheckLinksIn(asset, label, broken, skip, 0);
+        }
+
+        private static void CheckLinksIn(object target, string label, List<string> broken, string[] skip, int depth)
+        {
+            foreach (System.Reflection.FieldInfo f in target.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                if (System.Array.IndexOf(skip, f.Name) >= 0) continue;
+                object v = f.GetValue(target);
+                if (f.FieldType == typeof(Sprite) || f.FieldType == typeof(AudioClip) || f.FieldType == typeof(Font))
+                {
+                    if (v as Object == null) broken.Add($"{label}.{f.Name}");
+                }
+                else if (f.FieldType == typeof(AudioClip[]))
+                {
+                    var list = v as AudioClip[];
+                    if (list == null || list.Length == 0) broken.Add($"{label}.{f.Name}（空）");
+                    else for (int i = 0; i < list.Length; i++) if (list[i] == null) broken.Add($"{label}.{f.Name}[{i}]");
+                }
+                else if (depth == 0 && v != null && f.FieldType.IsClass && f.FieldType.IsSerializable && !typeof(Object).IsAssignableFrom(f.FieldType))
+                {
+                    CheckLinksIn(v, $"{label}.{f.Name}", broken, skip, depth + 1);
+                }
+            }
         }
 
         private IEnumerator Shot(string name)

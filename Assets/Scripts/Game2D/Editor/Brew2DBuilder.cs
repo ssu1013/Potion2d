@@ -15,14 +15,14 @@ namespace PotionFrontier.Game2D.EditorTools
 {
     /// <summary>
     /// 2D 調合画面を組み立てるメニュー（Tools > Potion Frontier 2D）。
-    /// ・仮の絵（Assets/Art2D/Brewing/Sprites）、絵の一覧（BrewArt2D）、Prefab（Assets/Art2D/Brewing/Prefabs）は「なければ作る」。
+    /// ・仮の絵（Assets/CustomAssets/Images の下）、絵の一覧（BrewArt2D）、Prefab（Assets/Art2D/Brewing/Prefabs）は「なければ作る」。
     ///   すでにある物には触らないので、自分の絵に差し替えたあとで実行しても上書きされない。
     /// ・シーン（Assets/Scenes/Brew2D.unity）は、なければ作る。「作り直す」は控えを取ってから作り直す。
     /// </summary>
     public static class Brew2DBuilder
     {
         internal const string ArtRoot = "Assets/Art2D/Brewing";
-        internal const string SpriteDir = ArtRoot + "/Sprites";
+        internal const string SpriteDir = CustomAssetPaths.Images; // 仮の絵は CustomAssets/Images の下（名前ごとの場所は CustomAssetPaths）
         internal const string PrefabDir = ArtRoot + "/Prefabs";
         private const string ArtSetPath = ArtRoot + "/BrewArt2D.asset";
         private const string ScenePath = "Assets/Scenes/Brew2D.unity";
