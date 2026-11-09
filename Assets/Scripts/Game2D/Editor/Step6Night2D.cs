@@ -112,12 +112,6 @@ namespace PotionFrontier.Game2D.EditorTools
                     c += SetFloat(knob, "lightMax", OldHeaterMax, WarmHeaterMax, "Heater / 加熱台の光の強さ", kept);
                 return c;
             });
-            changes += EditPrefab(PrefabDir + "Room.prefab", root =>
-            {
-                int c = 0;
-                foreach (Light2D l in root.GetComponentsInChildren<Light2D>(true)) c += TuneMoon(l, kept);
-                return c;
-            });
             return changes;
         }
 

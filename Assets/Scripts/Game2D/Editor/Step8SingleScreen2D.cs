@@ -319,10 +319,22 @@ namespace PotionFrontier.Game2D.EditorTools
             {
                 if (root.name.StartsWith("AtelierHUD") && root.name != "AtelierHUD（タイトル・レシピ本・素材ノート・お知らせ）") { root.name = "AtelierHUD（タイトル・レシピ本・素材ノート・お知らせ）"; renamed++; }
                 if (root.name.StartsWith("BrewArea") && root.name != "BrewArea（調合机）") { root.name = "BrewArea（調合机）"; renamed++; }
+                if (root.name.StartsWith("BrewArea"))
+                {
+                    // 机の背景とランプのまとまり（部屋ではないので、名前を机に）
+                    Transform desk = root.transform.Find("Room");
+                    if (desk != null) { desk.name = "Desk（背景・ランプ）"; renamed++; }
+                }
             }
 
             // カメラを調合机に固定
-            AtelierView2D view = Object.FindFirstObjectByType<AtelierView2D>();
+            // 開いたばかりのシーンでは Find が空を返すことがあるので、シーンの中を直接さがす（止めてある物も）
+            AtelierView2D view = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                view = root.GetComponentInChildren<AtelierView2D>(true);
+                if (view != null) break;
+            }
             string cameraNote;
             if (view == null)
             {
@@ -333,12 +345,23 @@ namespace PotionFrontier.Game2D.EditorTools
                 var so = new SerializedObject(view);
                 SerializedProperty camProp = so.FindProperty("viewCamera");
                 SerializedProperty viewProp = so.FindProperty("brewView");
-                if (camProp.objectReferenceValue == null) camProp.objectReferenceValue = Camera.main != null ? Camera.main : Object.FindFirstObjectByType<Camera>();
+                if (camProp.objectReferenceValue == null)
+                {
+                    foreach (GameObject root in scene.GetRootGameObjects())
+                    {
+                        Camera c = root.GetComponentInChildren<Camera>(true);
+                        if (c != null) { camProp.objectReferenceValue = c; break; }
+                    }
+                }
                 if (viewProp.objectReferenceValue == null)
                 {
-                    foreach (Transform t in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+                    foreach (GameObject root in scene.GetRootGameObjects())
                     {
-                        if (t.name.StartsWith("BrewView")) { viewProp.objectReferenceValue = t; break; }
+                        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+                        {
+                            if (t.name.StartsWith("BrewView")) { viewProp.objectReferenceValue = t; break; }
+                        }
+                        if (viewProp.objectReferenceValue != null) break;
                     }
                 }
                 so.ApplyModifiedPropertiesWithoutUndo();

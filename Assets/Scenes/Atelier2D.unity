@@ -414,7 +414,7 @@ GameObject:
   m_Component:
   - component: {fileID: 426245050}
   m_Layer: 0
-  m_Name: Room
+  m_Name: "Desk\uFF08\u80CC\u666F\u30FB\u30E9\u30F3\u30D7\uFF09"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

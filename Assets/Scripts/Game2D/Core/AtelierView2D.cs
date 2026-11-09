@@ -6,7 +6,7 @@ namespace PotionFrontier.Game2D
     /// 調合机の見え方（1画面版）：ゲーム中ずっと、カメラは調合机（フラスコと素材トレイ）から動かない。
     /// タイトルも同じ机の上に重ねて出すので、画面の切り替え・暗転・ズームはない。
     /// 本（レシピ本・素材ノート）も机の上に広げるだけなので、背景のランプの揺らぎや環境音は途切れない。
-    /// シーンの GameSystems に付ける。
+    /// シーンの GameSystems に付ける（ファイル名とクラス名は同じ AtelierView2D のまま）。
     /// </summary>
     public class AtelierView2D : MonoBehaviour
     {

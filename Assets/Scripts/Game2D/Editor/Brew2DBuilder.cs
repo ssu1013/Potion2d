@@ -438,7 +438,7 @@ namespace PotionFrontier.Game2D.EditorTools
             PointLight(lights, "MoonLight（窓の月明かり）", new Vector3(5.8f, 2.6f, 0f), new Color(0.55f, 0.68f, 1f), 0.7f, 5.5f, 0.8f);
             PointLight(lights, "FocusLight（調合台を照らす灯り）", new Vector3(0f, -0.6f, 0f), new Color(1f, 0.92f, 0.78f), 0.65f, 4.6f, 1.2f);
 
-            var room = new GameObject("Room").transform;
+            var room = new GameObject("Desk（背景・ランプ）").transform;
             room.SetParent(parent, false);
             AddSprite(room, "Background（背景の絵）", a.sprites.background, "Background", 0, Vector3.zero);
             Instance(a.lamp, room, o + new Vector3(-6.8f, -2.08f, 0f));
