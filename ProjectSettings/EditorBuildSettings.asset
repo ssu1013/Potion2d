@@ -8,10 +8,4 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Atelier2D.unity
     guid: 2b13e1fadd28b9545af2d749b2b87c5d
-  - enabled: 0
-    path: Assets/Scenes/Brew2D.unity
-    guid: b448655ab8a273d4f96e58b5b91193ef
-  - enabled: 0
-    path: Assets/Scenes/SampleScene.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
   m_configObjects: {}

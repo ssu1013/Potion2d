@@ -19,7 +19,7 @@ namespace PotionFrontier.Game2D.EditorTools
     public static class Step6Night2D
     {
         private const string Menu = "Tools/Potion Frontier 2D/";
-        private static readonly string[] Scenes = { "Assets/Scenes/Atelier2D.unity", "Assets/Scenes/Brew2D.unity" };
+        private static readonly string[] Scenes = { "Assets/Scenes/Atelier2D.unity" };
         private const string PrefabDir = "Assets/Art2D/Brewing/Prefabs/";
         public const string SoundscapeName = "NightSoundscape（夜の環境音）";
 

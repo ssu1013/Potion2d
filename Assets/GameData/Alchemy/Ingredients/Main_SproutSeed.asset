@@ -28,10 +28,7 @@ MonoBehaviour:
   form: 2
   amountPerUse: 1
   rarity: 1
-  buyPrice: 5
-  stockPolicy: 0
-  unlockPrice: -1
-  requiredReputation: 0
+  discoveriesToUnlock: 0
   tags:
   - "\u7A2E"
   - "\u8FB2\u5712"

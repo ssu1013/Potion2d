@@ -30,10 +30,7 @@ MonoBehaviour:
   form: 0
   amountPerUse: 1
   rarity: 2
-  buyPrice: 8
-  stockPolicy: 0
-  unlockPrice: -1
-  requiredReputation: 1
+  discoveriesToUnlock: 9
   tags:
   - "\u6A39\u8102"
   - "\u68EE"

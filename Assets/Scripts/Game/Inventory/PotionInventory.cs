@@ -31,7 +31,7 @@ namespace PotionFrontier.Game
         public List<string> effects = new List<string>();
         /// <summary>作ったときのベース液体のID（瓶のモデルを決めるのに使う）</summary>
         public string baseLiquidId = "";
-        /// <summary>属性値（100ml あたりの濃さ。相談の判定に使う。AttributeVector.ToArray の形）</summary>
+        /// <summary>属性値（100ml あたりの濃さ。特別な薬の判定に使う。AttributeVector.ToArray の形）</summary>
         public float[] attributes = new float[0];
         /// <summary>液体の記録の ID（フェーズ5から。古いセーブの瓶は読み込み時に記録を作って入れる）</summary>
         public string liquidId = "";
@@ -311,7 +311,7 @@ namespace PotionFrontier.Game
 
         /// <summary>
         /// 液体の記録がない瓶（フェーズ4までに作ったポーション）に記録を作る。
-        /// 記録があれば、注ぎ戻す・レシピ本に載せる・相談の判定ができる。
+        /// 記録があれば、注ぎ戻す・レシピ本に載せることができる。
         /// </summary>
         public void EnsureRecords(LiquidRegistry registry)
         {

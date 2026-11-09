@@ -32,10 +32,7 @@ MonoBehaviour:
   form: 0
   amountPerUse: 1
   rarity: 2
-  buyPrice: 6
-  stockPolicy: 0
-  unlockPrice: -1
-  requiredReputation: 0
+  discoveriesToUnlock: 0
   tags:
   - "\u8349"
   - "\u6C37"

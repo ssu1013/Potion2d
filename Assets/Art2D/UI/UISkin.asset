@@ -20,7 +20,6 @@ MonoBehaviour:
   slot: {fileID: 21300000, guid: 05cc4e00b98660044a23022460a26aac, type: 3}
   slotSelected: {fileID: 21300000, guid: d858af4fe5c5dff488a86278135043b4, type: 3}
   crosshair: {fileID: 0}
-  coin: {fileID: 21300000, guid: f50b17f3c46483d4d8b076e7e4d7263a, type: 3}
   knob: {fileID: 21300000, guid: fd7b5e6e3c7051441a9ae22a99329c86, type: 3}
   vignette: {fileID: 21300000, guid: a1d1fc11cb30d2a4a9d3a8bc17f365c4, type: 3}
   sparkle: {fileID: 21300000, guid: 3d157db061d196a4aa39363fbd79dfd3, type: 3}
@@ -32,7 +31,6 @@ MonoBehaviour:
   stampNew: {fileID: 21300000, guid: fcdc0459e137b13458ee54e63257a47f, type: 3}
   stampFact: {fileID: 21300000, guid: 5a75cf801e673724fa83f7c533c454af, type: 3}
   stampReaction: {fileID: 21300000, guid: 854bbe7ae4a7aac42b44804f60869f0d, type: 3}
-  stampHelped: {fileID: 21300000, guid: 46bc7bdab8523964b8b3fc05d00fd237, type: 3}
-  stampTaught: {fileID: 21300000, guid: d82f52c3f79ec7c42b73fb5ad6b79bf2, type: 3}
   stampComplete: {fileID: 21300000, guid: 391c006dfb7eaa94ca9728ad823c0746, type: 3}
+  letter: {fileID: 21300000, guid: 3d4a31726c2811e4b9f2e58552747c51, type: 3}
   drawStampLabels: 1

@@ -38,8 +38,9 @@ namespace PotionFrontier.Game2D
 
     /// <summary>
     /// 見立てカード（Step4-A）：フラスコの中の属性を、棒グラフで見せる。
-    ///   ■ 塗った棒 … 今の値　▨ 斜線 … 溶け残りが溶けきったら、ここまで行く（予告）　┊ 点線 … 相談の目標
-    /// 下に、相談の条件ごとの ○△× と、ひとことの見立てを出す。値の変化は、なめらかに動く。
+    ///   ■ 塗った棒 … 今の値　▨ 斜線 … 溶け残りが溶けきったら、ここまで行く（予告）
+    /// 下に、ひとことの見立て（溶け具合・次の素材が届くまでの発見の数）を出す。値の変化は、なめらかに動く。
+    /// （棒に目標の線を引く仕組み（hasMin・hasMax）も残してある。今のゲームでは使っていない）
     /// </summary>
     public sealed class BrewMeterUI2D
     {
@@ -122,7 +123,6 @@ namespace PotionFrontier.Game2D
             Color legendColor = new Color(0.55f, 0.38f, 0.22f, 1f);
             LegendItem(legend, 0f, UIFactory.RoundedRect(Color.white, Color.white, 3, 0), Image.Type.Sliced, legendColor, new Vector2(16f, 10f), "今");
             LegendItem(legend, 58f, BrewUiSprites2D.Stripes(), Image.Type.Tiled, Color.Lerp(legendColor, Color.white, 0.15f), new Vector2(16f, 10f), "溶かしきると");
-            LegendItem(legend, 182f, BrewUiSprites2D.Dashes(), Image.Type.Tiled, new Color(0.85f, 0.62f, 0.1f, 1f), new Vector2(3f, 16f), "相談の目標");
 
             barFillSprite = barFill != null ? barFill : UIFactory.RoundedRect(Color.white, Color.white, 6, 0);
             Sprite back = barBack != null ? barBack : UIFactory.RoundedRect(new Color(0.22f, 0.14f, 0.08f, 0.9f), new Color(0.55f, 0.4f, 0.24f, 1f), 7, 2);

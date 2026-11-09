@@ -11,12 +11,14 @@ using UnityEngine.UI;
 namespace PotionFrontier.Game2D
 {
     /// <summary>
-    /// 2D 版の通しテスト（エディタ専用。製品版には含まれない）。
+    /// 2D 版（1画面版）の通しテスト（エディタ専用。製品版には含まれない）。
     /// メニュー「Tools/Potion Frontier 2D/仕上げ/④ 通しテストを実行」から始める。
-    ///   タイトル → 設定 → はじめから → お客さんの来店 → お客さんをクリックして相談を聞く → 作業台をクリック
-    ///   → トレイから水を取って傾けて注ぐ → 薬草を2回入れる → 円を描いてかき混ぜる → 「全部詰める」→ レシピ本
-    ///   → 部屋に戻る → 棚・取引先帳 → お客さんに瓶を分け与える → ポーズ → 設定 → タイトルへ（セーブ）→ つづきから（ロードして同じか）
+    ///   タイトル → 設定 → はじめから（暗転なしで、そのまま調合机）→ トレイから水を取って傾けて注ぐ → 薬草を2回入れる
+    ///   → 円を描いてかき混ぜる → 「全部詰める」→ 強火で薬草の「熱に弱い」を見つける → 発見が進んで新しい素材が机に届く
+    ///   （手紙のお知らせ・トレイに並ぶ・手に取れる）→ 素材ノート・レシピ本を机の上で開く（火の音・机はそのまま）
+    ///   → ポーズ → 設定 → タイトルへ（セーブ）→ つづきから（届いた素材・液体・ノートが戻る）
     /// を、マウスの代わりの「指」（Pointer2D）で実際に操作して確かめ、各場面を AutoTestShots2D/ に保存して再生を止める。
+    /// 最初から最後まで、カメラが調合机から動かない（画面が切り替わらない）ことも確かめる。
     /// セーブは autotest.json に書くので、ふだんのセーブデータは消えない。テスト中はマウスでゲーム画面を触らないこと。
     /// </summary>
     public class AtelierAutoTest2D : MonoBehaviour
@@ -34,12 +36,15 @@ namespace PotionFrontier.Game2D
         private bool finished;
         private LiquidRecord lastBottled;
         private bool ringSeen;
+        private readonly List<IngredientData> arrivals = new List<IngredientData>();
+        private float lastArrivalTime = -1f;
+        private Vector3 deskCamera;
+        private float deskSize;
+        private float maxCameraDrift;
 
         private GameFlow flow;
         private AtelierHUD hud;
         private AtelierView2D view;
-        private QuestManager quests;
-        private PlayerProgress progress;
         private IngredientInventory stock;
         private PotionInventory potions;
         private BrewSession2D session;
@@ -71,6 +76,7 @@ namespace PotionFrontier.Game2D
         private void OnDisable()
         {
             Application.logMessageReceived -= OnLog;
+            if (stock != null) stock.Arrived -= OnArrived;
         }
 
         private void OnLog(string message, string stackTrace, LogType type)
@@ -90,6 +96,12 @@ namespace PotionFrontier.Game2D
 
         private void Update()
         {
+            // カメラが調合机から動いていないか、毎フレーム見張る（1画面のゲーム）
+            if (cam != null && deskSize > 0f)
+            {
+                float drift = Vector2.Distance(cam.transform.position, deskCamera) + Mathf.Abs(cam.orthographicSize - deskSize);
+                maxCameraDrift = Mathf.Max(maxCameraDrift, drift);
+            }
             if (finished || Time.realtimeSinceStartup - startTime < Watchdog) return;
             Fail($"{Watchdog:0} 秒たっても終わらないので、途中で止めた（どこかで止まっている）");
             StopAllCoroutines();
@@ -106,26 +118,25 @@ namespace PotionFrontier.Game2D
             Directory.CreateDirectory(Folder);
             foreach (string f in Directory.GetFiles(Folder, "*.png")) File.Delete(f);
             File.WriteAllText(Path.Combine(Folder, "log.txt"), "");
-            Write($"2D 通しテスト {System.DateTime.Now:yyyy/MM/dd HH:mm:ss} ／ Unity {Application.unityVersion}");
+            Write($"2D 通しテスト（1画面版） {System.DateTime.Now:yyyy/MM/dd HH:mm:ss} ／ Unity {Application.unityVersion}");
 
             flow = GameFlow.Instance;
             hud = AtelierHUD.Instance;
             view = AtelierView2D.Current != null ? AtelierView2D.Current : FindFirstObjectByType<AtelierView2D>();
-            quests = FindFirstObjectByType<QuestManager>();
-            progress = FindFirstObjectByType<PlayerProgress>();
             stock = FindFirstObjectByType<IngredientInventory>();
             potions = FindFirstObjectByType<PotionInventory>();
             session = FindFirstObjectByType<BrewSession2D>();
             input = FindFirstObjectByType<BrewInput2D>();
             tray = FindFirstObjectByType<BrewTray2D>();
             flask = FindFirstObjectByType<Flask2D>();
-            if (flow == null || hud == null || view == null || quests == null || session == null || input == null || flask == null)
+            if (flow == null || hud == null || view == null || stock == null || session == null || input == null || flask == null || tray == null)
             {
-                Fail($"シーンに足りない物がある（GameFlow {flow != null} / AtelierHUD {hud != null} / AtelierView2D {view != null} / QuestManager {quests != null} / BrewSession2D {session != null} / BrewInput2D {input != null} / Flask2D {flask != null}）");
+                Fail($"シーンに足りない物がある（GameFlow {flow != null} / AtelierHUD {hud != null} / AtelierView2D {view != null} / IngredientInventory {stock != null} / BrewSession2D {session != null} / BrewInput2D {input != null} / Flask2D {flask != null} / BrewTray2D {tray != null}）");
                 yield return Finish();
                 yield break;
             }
             session.Bottled += OnBottled;
+            stock.Arrived += OnArrived;
 
             // ---- 画面の比率（計算だけ）・描く順番 -----------------------------------
             AspectMath();
@@ -133,13 +144,32 @@ namespace PotionFrontier.Game2D
             foreach (string layer in new[] { "Flask", "Liquid", "Items", "Held", "FX" })
             {
                 Check(SortingLayer.NameToID(layer) != 0 && SortingLayer.GetLayerValueFromName(layer) > workbench,
-                      $"描く順番「{layer}」が、部屋・作業台の絵より手前（番号 {SortingLayer.NameToID(layer)}）");
+                      $"描く順番「{layer}」が、机の絵より手前（番号 {SortingLayer.NameToID(layer)}）");
             }
+
+            // ---- 1画面の作り（シーンは1つ・部屋とお店の物がない）---------------------------
+            int scenes = UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings;
+            Check(scenes == 1, $"ビルドに入るシーンは Atelier2D の1つだけ（{scenes} 個）");
+            int roomThings = 0;
+            foreach (MonoBehaviour m in FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (m == null) continue;
+                string type = m.GetType().Name;
+                if (type.Contains("Quest") || type.Contains("Customer") || type.Contains("Hotspot") || type.Contains("Shelf") || type == "PlayerProgress") roomThings++;
+            }
+            Check(roomThings == 0, $"お店・相談・部屋の仕組みがシーンに残っていない（{roomThings} 個）");
 
             // ---- タイトル ----------------------------------------------------------
             yield return Wait(2.5f);
             cam = Camera.main;
-            Log($"画面 {Screen.width}×{Screen.height} ／ 絵の範囲 {Fmt(CameraAspect2D.ViewRect)} ／ カメラ {(cam != null ? cam.name : "なし")}");
+            if (cam != null)
+            {
+                deskCamera = cam.transform.position;
+                deskSize = cam.orthographicSize;
+            }
+            Log($"画面 {Screen.width}×{Screen.height} ／ 絵の範囲 {Fmt(CameraAspect2D.ViewRect)} ／ カメラ {(cam != null ? $"{cam.name} {deskCamera} 大きさ {deskSize:0.00}" : "なし")}");
+            Check(cam != null && Vector2.Distance(cam.transform.position, view.CameraPosition) < 0.01f && Mathf.Abs(cam.orthographicSize - view.CameraSize) < 0.01f,
+                  "タイトルの間も、カメラは調合机に向いている（後ろに机とランプが見える）");
             Check(hud.Title != null && hud.Title.IsOpen, "タイトル画面が出ている");
             Check(flow.Mode == GameMode.Title, "モードがタイトル");
             CheckFonts("タイトル");
@@ -151,30 +181,50 @@ namespace PotionFrontier.Game2D
             yield return Shot("title_settings");
             hud.CloseSettings();
             yield return Wait(0.3f);
+            CheckWords("タイトル");
 
-            // ---- はじめから --------------------------------------------------------
+            // ---- はじめから（暗転せず、そのまま調合机）---------------------------------
             hud.Title.ForceNewGame();
-            yield return WaitUntil(() => flow.Mode == GameMode.Playing, 8f, "はじめから → プレイ中になる");
-            yield return Wait(1.4f);
+            float faderMax = 0f;
+            float waitStart = Time.realtimeSinceStartup;
+            while (flow.Mode != GameMode.Playing && Time.realtimeSinceStartup - waitStart < 8f)
+            {
+                if (hud.Fader != null) faderMax = Mathf.Max(faderMax, hud.Fader.Alpha);
+                yield return null;
+            }
+            Check(flow.Mode == GameMode.Playing, "はじめから → 遊べるようになる");
+            for (float t = 0f; t < 1.4f; t += Time.unscaledDeltaTime)
+            {
+                if (hud.Fader != null) faderMax = Mathf.Max(faderMax, hud.Fader.Alpha);
+                yield return null;
+            }
+            Check(faderMax < 0.05f, $"はじめるときに画面が暗転しない（暗さ いちばん {faderMax:0.00}）");
+            Check(Drift() < 0.01f, "はじめから遊びはじめても、カメラは調合机のまま");
+            BrewHUD2D brewHud = FindFirstObjectByType<BrewHUD2D>();
+            Canvas brewCanvas = brewHud != null ? brewHud.GetComponent<Canvas>() : null;
+            Check(brewCanvas != null && brewCanvas.enabled, "調合机の操作の画面（トレイ・見立て）が、すぐに出ている");
+            if (brewHud != null && brewHud.LayoutVersion < 4) Warn("調合画面の配置が古いまま（メニュー「Step4：調合画面を新しくする」）");
             Pointer2D.BeginSimulation(new Vector2(Screen.width * 0.5f, Screen.height * 0.5f));
+
             IngredientDatabase db = GameContext.Ingredients;
             IngredientData water = db != null ? db.Get("base_water") : null;
             IngredientData herb = db != null ? db.Get("main_herb") : null;
+            IngredientData ash = db != null ? db.Get("main_volcano_ash") : null;
+            IngredientData dew = db != null ? db.Get("base_night_dew") : null;
             Check(water != null && herb != null, "素材カタログに水と薬草がある");
-            Check(db != null && db.Count >= 25, $"素材カタログに新しい素材が入っている（{(db != null ? db.Count : 0)} 種類）");
+            Check(db != null && db.Count >= 25, $"素材カタログに素材がそろっている（{(db != null ? db.Count : 0)} 種類）");
             IngredientData wax = db != null ? db.Get("main_bees_wax") : null;
             IngredientData fern = db != null ? db.Get("main_fiddlehead") : null;
             IngredientData fizz = db != null ? db.Get("main_fizz_powder") : null;
-            IngredientData dew = db != null ? db.Get("base_night_dew") : null;
             Check(wax != null && wax.MeltTemp > 0f && wax.MeltTemp < 60f, "森の蜜蝋（ぬるめで溶ける）がある");
             Check(fern != null && fern.DissolveDirection == StirDirection.Clockwise, "ぜんまい草（時計回りでだけ溶ける）がある");
             Check(fizz != null && fizz.Volatility > 0f && dew != null && dew.Volatility > 0f, "泡雪の粉・月下の夜露（沸騰で力が飛ぶ）がある");
-            Check(wax != null && wax.Icon != null && wax.PieceSprite != null && dew != null && dew.Icon != null, "追加の素材にも絵（CustomAssets/Images/Ingredients）が割り当てられている");
-            Check(db != null && db.Get("main_amber_resin") != null && db.Get("main_amber_resin").MeltTemp > 0f, "琥珀樹脂（溶ける温度）がある");
             Check(water != null && water.Icon != null && herb != null && herb.Icon != null && herb.PieceSprite != null,
                   "素材の絵（CustomAssets/Images/Ingredients の <ID>.png・<ID>_piece.png）が割り当てられている");
             Check(UIFactory.Skin != null && UIFactory.Skin.stampNew != null && UIFactory.Skin.discoveryPage != null && UIFactory.Skin.pageTurn != null,
                   "発見の絵（CustomAssets/Images/UI/Discovery。page_turn も）が UISkin に割り当てられている");
+            Check(UIFactory.Skin != null && UIFactory.Skin.letter != null, "素材が届いたときの手紙の絵（letter.png）が UISkin に割り当てられている");
+            Check(AudioManager.Lib != null && AudioManager.Lib.ingredientArrived != null, "素材が届いたときの音（se_letter.wav）が SoundLibrary に割り当てられている");
             // 差し替え用の絵・音（Assets/CustomAssets）：どの欄もファイルにつながっている（リンク切れ・空の欄がない）
             var broken = new List<string>();
             CheckLinks(UIFactory.Skin, "UISkin", broken, "crosshair");
@@ -184,89 +234,41 @@ namespace PotionFrontier.Game2D
             if (db != null) foreach (IngredientData d in db.All) if (d != null && (d.Icon == null || (!d.IsPoured && d.PieceSprite == null))) missingIcons++;
             Check(broken.Count == 0, "差し替え用の絵・音が、すべてファイルにつながっている（UISkin・SoundLibrary・BrewArt2D）" + (broken.Count > 0 ? "：" + string.Join("、", broken) : ""));
             Check(missingIcons == 0, $"どの素材にも絵（アイコン・欠片）がつながっている（足りない素材 {missingIcons}）");
-            Log($"所持金 {progress.Gold} G ／ 素材 {(db != null ? db.Count : 0)} 種類のうち {(stock != null ? stock.CountKinds(db) : 0)} 種類を持っている ／ いる所 {AtelierView2D.StopNames[view.Stop]}");
+
+            // はじめの机：はじめから机にある素材だけ。ほかはまだ届いていない
+            int starterKinds = stock.CountKinds(db);
+            Check(starterKinds >= 8 && starterKinds < (db != null ? db.Count : 0), $"はじめは、机にある素材だけがトレイに並ぶ（{starterKinds} / {(db != null ? db.Count : 0)} 種類）");
+            Check(ash != null && !stock.IsUnlocked(ash) && FindTrayItemAnyPage(ash) == null, "まだ届いていない素材（火山の灰）は、トレイにない");
+            Check(water != null && float.IsInfinity(stock.Get(water)), "机にある素材は使い放題（お金・仕入れはない）");
+            IngredientData coming = flow.NextArrival(out int remaining);
+            Log($"[発見] {flow.DiscoveryPoints} ／ 次に届く素材：{(coming != null ? coming.DisplayName : "なし")}（あと {remaining}）");
+            Check(coming != null && remaining > 0, "次に届く素材と、それまでの発見の数がわかる");
+
             // 夜の空気感（Step6）：部屋全体の光は深い夜の暗さ、ランプの火の音がずっと小さく鳴る
             float globalLight = -1f;
             foreach (UnityEngine.Rendering.Universal.Light2D l in FindObjectsByType<UnityEngine.Rendering.Universal.Light2D>(FindObjectsSortMode.None))
                 if (l.lightType == UnityEngine.Rendering.Universal.Light2D.LightType.Global) globalLight = l.intensity;
-            Log($"[夜の空気感] 部屋全体の光 {globalLight:0.00}");
-            Check(globalLight >= 0f && globalLight <= 0.15f, "部屋全体の光（Global Light 2D）が、深い夜の暗さになっている");
+            Log($"[夜の空気感] 全体の光 {globalLight:0.00}");
+            Check(globalLight >= 0f && globalLight <= 0.15f, "全体の光（Global Light 2D）が、深い夜の暗さになっている");
             NightSoundscape2D night = NightSoundscape2D.Current;
             Check(night != null && night.FirePlaying, "ランプの火が静かに燃える音（夜の環境音）が鳴っている");
-            yield return Shot("room_start");
-            yield return Measure("部屋");
-            CheckWords("部屋");
-
-            // ---- 部屋の移動（＜＞と同じ動き）----------------------------------------
-            for (int i = 0; i < AtelierView2D.StopNames.Length; i++)
+            // 画面の中の物は、すべてカメラの中（見えない所に、クリックする物を置いていない）
+            Rect viewRect = DeskRect();
+            int outside = 0;
+            foreach (Collider2D c in FindObjectsByType<Collider2D>(FindObjectsSortMode.None))
             {
-                view.GoToStop(i);
-                yield return WaitUntil(() => !view.Sliding, 4f, "部屋の移動が終わる");
-                yield return Wait(0.2f);
-                Check(view.Stop == i, $"「{AtelierView2D.StopNames[i]}」へ移動できる");
-                yield return Shot("room_" + i);
+                if (c == null || !c.enabled || !c.gameObject.activeInHierarchy) continue;
+                Bounds b = c.bounds;
+                if (!viewRect.Overlaps(new Rect(b.min.x, b.min.y, b.size.x, b.size.y))) outside++;
             }
-
-            // ---- お客さんの来店 ----------------------------------------------------
-            view.GoToStop(0);
-            yield return WaitUntil(() => !view.Sliding, 4f, "カウンターへ移動");
-            quests.SpawnNow();
-            yield return WaitUntil(() => quests.Phase == CustomerPhase.Arriving, 6f, "お客さんが来る");
-            yield return Wait(0.8f);
-            yield return Shot("customer_arriving");
-            yield return WaitUntil(() => quests.Phase == CustomerPhase.Offering, 25f, "お客さんがカウンターに着く");
-            Customer2D customer = quests.CurrentCustomer;
-            if (customer == null)
-            {
-                Fail("お客さんが来ない");
-                yield return Finish();
-                yield break;
-            }
-            QuestData quest = customer.Quest;
-            Log($"来店：{quest.ClientFullName}（{quest.QuestId}）");
-            yield return Wait(0.6f);
-
-            // お客さんを指す → 名前が出る → クリックで話を聞く
-            yield return Hover(ColliderScreen(customer), 0.3f);
-            Check(view.HoverTitle == quest.ClientFullName, $"お客さんを指すと名前が出る（{view.HoverTitle}）");
-            yield return Shot("customer_hover");
-            yield return Click(ColliderScreen(customer));
-            yield return Wait(0.4f);
-            Check(hud.Dialogue.IsOpen, "お客さんをクリックすると会話が始まる");
-            yield return Shot("dialogue");
-            yield return ReadDialogue("力になりたい", "探求してくる");
-            Check(quests.Phase == CustomerPhase.Waiting, "「力になりたい」で相談に乗っている状態になる");
-            yield return Wait(0.4f);
-            yield return Shot("quest_accepted");
-            CheckWords("相談メモ");
-
-            // ---- 作業台をクリック → 調合台 ----------------------------------------
-            view.GoToStop(1);
-            yield return WaitUntil(() => !view.Sliding, 4f, "作業台へ移動");
-            RoomHotspot2D bench = FindHotspot(RoomHotspot2D.Kind.Workbench);
-            Check(bench != null, "作業台のクリックする所がある");
-            if (bench != null)
-            {
-                yield return Hover(SpotScreen(bench), 0.3f);
-                Log($"[部屋] 指している：{view.HoverTitle}（{view.HoverSubtitle}）");
-                yield return Shot("bench_hover");
-                yield return Click(SpotScreen(bench));
-            }
-            else view.EnterBrew();
-            yield return Wait(0.3f);
-            yield return Shot("brew_entering");
-            yield return WaitUntil(() => view.InBrew && !view.Transitioning, 5f, "調合台に寄り終わる");
-            yield return Wait(0.4f);
-            Check(view.InBrew, "作業台をクリックすると調合台に入る");
+            Check(outside == 0, $"クリックできる物は、すべて調合机の画面の中にある（外にある物 {outside}）");
+            yield return Shot("desk_start");
+            yield return Measure("調合机");
+            CheckWords("調合机");
             BrewFeedback2D feedback = BrewFeedback2D.Current;
-            Check(feedback != null, "調合台に手ごたえ（見立てカード・温度計）がある");
-            BrewHUD2D brewHud = FindFirstObjectByType<BrewHUD2D>();
-            if (brewHud != null && brewHud.LayoutVersion < 4) Warn("調合画面の配置が古いまま（メニュー「Step4：調合画面を新しくする」）");
-            yield return Shot("brew_view");
-            yield return Measure("調合台");
+            Check(feedback != null, "調合机に手ごたえ（見立てカード・温度計）がある");
 
             // ---- 調合：水を注ぐ ----------------------------------------------------
-            float waterBefore = stock.Get(water);
             TrayItem2D waterItem = FindTrayItem(water);
             if (waterItem != null)
             {
@@ -280,7 +282,7 @@ namespace PotionFrontier.Game2D
             yield return Shot("held_water");
             float poured = 0f;
             yield return Pour(100f, 5f, ml => poured = ml);
-            Log($"[注ぐ] {poured:0}ml 注いだ（フラスコ {session.Flask.VolumeMl:0}ml）／ 水の在庫 {IngredientInventory.Format(water, waterBefore)} → {IngredientInventory.Format(water, stock.Get(water))}");
+            Log($"[注ぐ] {poured:0}ml 注いだ（フラスコ {session.Flask.VolumeMl:0}ml）");
             Check(poured >= 60f, "押したまま下へ動かすと注げる");
             Pointer2D.RightClick();
             yield return Wait(0.2f);
@@ -307,8 +309,7 @@ namespace PotionFrontier.Game2D
             {
                 float now = feedback.CurrentValue(PotionAttribute.Healing);
                 float soon = feedback.ProjectedValue(PotionAttribute.Healing);
-                Log($"[見立て] 混ぜる前：回復 今 {now:0.0} → 溶かしきると {soon:0.0} ／ 目標の線 {feedback.TargetRows} 本 ／ {feedback.Goal} ／ {feedback.Status.Replace('\n', ' ')}");
-                Check(feedback.TargetRows >= 1, "見立てカードに、相談の目標の線が出る");
+                Log($"[見立て] 混ぜる前：回復 今 {now:0.0} → 溶かしきると {soon:0.0} ／ {feedback.Status.Replace('\n', ' ')}");
                 Check(soon > now + 1f, "溶け残りの「これから増える分」が、今の値の先に予告される");
             }
             yield return Shot("meter_before_stir");
@@ -321,13 +322,13 @@ namespace PotionFrontier.Game2D
             Log($"[混ぜる] {session.Flask.TotalTurns - turnsBefore:0.#} 回転 ／ 溶け具合 {state.dissolvedFraction:P0} ／ {Describe(session.Preview)}");
             Check(session.Flask.TotalTurns - turnsBefore >= 3f, "マウスで円を描くとかき混ぜられる");
             yield return Shot("stirred");
-            bool matches = session.Preview != null && quest.IsSatisfiedBy(session.Preview);
-            Log($"[見立て] 今の液体は{quest.ClientName}さんの悩みに{(matches ? "合う" : "合わない")}");
             if (feedback != null)
             {
-                Log($"[見立て] 混ぜたあと：回復 {feedback.CurrentValue(PotionAttribute.Healing):0.0} ／ {feedback.Goal} ／ {feedback.Status.Replace('\n', ' ')}");
+                string status = feedback.Status.Replace('\n', ' ');
+                Log($"[見立て] 混ぜたあと：回復 {feedback.CurrentValue(PotionAttribute.Healing):0.0} ／ {status}");
                 Check(ringSeen, "かき混ぜている間、カーソルのそばに溶け具合の輪が出る");
-                if (matches) Check(feedback.Goal == BrewFeedback2D.GoalState.Met, "見立てカードが「悩みに合いそう」になる");
+                if (state.dissolvedFraction >= 0.99f)
+                    Check(status.Contains("新しい素材まで") || status.Contains("届く") || status.Contains("そろった"), "溶けきると、見立てカードに「新しい素材まで：発見あと N」が出る");
             }
 
             // ---- 瓶に詰める（「全部詰める」ボタン）------------------------------------
@@ -369,8 +370,9 @@ namespace PotionFrontier.Game2D
             }
             Check(bottled != null, "ボタンで瓶に詰められる");
             PotionStack stack = bottled != null ? potions.Find(bottled.id) : null;
-            Log($"[瓶詰め] {Describe(bottled)} ／ 棚 {(stack != null ? stack.DescribeAmount() : "なし")} ／ フラスコの残り {session.Flask.VolumeMl:0}ml");
-            Check(stack != null && stack.FullBottles >= 1, "満タンの瓶が棚に入る");
+            Log($"[瓶詰め] {Describe(bottled)} ／ 瓶 {(stack != null ? stack.DescribeAmount() : "なし")} ／ フラスコの残り {session.Flask.VolumeMl:0}ml");
+            Check(stack != null && stack.FullBottles >= 1, "満タンの瓶がトレイに入る");
+            Log($"[発見] 瓶詰めのあと {flow.DiscoveryPoints} ／ 届いた素材 {arrivals.Count} 種類");
 
             // ---- 素材ノート：熱に弱い薬草を、強火で温めて「熱で弱まる」を見つける（早送り）----------
             Check(DiscoveryJournal.Knows(herb, IngredientFact.Used) && DiscoveryJournal.Knows(water, IngredientFact.Used), "使った素材が素材ノートに「使った」と記録される");
@@ -397,10 +399,36 @@ namespace PotionFrontier.Game2D
             session.ResetFlask();
             yield return Wait(0.3f);
 
+            // ---- 新しい素材が、調合机に届く（画面は切り替わらない）---------------------------
+            yield return WaitUntil(() => ash != null && stock.IsUnlocked(ash), 4f, "発見が進んで、火山の灰が調合机に届く");
+            Log($"[届いた] 発見 {flow.DiscoveryPoints} ／ {string.Join("・", arrivals.ConvertAll(a => a != null ? a.DisplayName : "?"))}");
+            Check(arrivals.Contains(ash), "火山の灰が届いた（素材が届いたことが、お知らせの仕組みに伝わる）");
+            ArrivalNoticeUI notice = hud.Arrival;
+            Check(notice != null && notice.ShownCount >= 1, $"右下に小さな手紙のお知らせが出る（{(notice != null ? notice.ShownCount : 0)} 回）");
+            if (notice != null && notice.Visible) Log($"[お知らせ] {notice.Text.Replace('\n', ' ')}（届いてから {Time.realtimeSinceStartup - lastArrivalTime:0.0} 秒）");
+            Check(!hud.IsModalOpen && flow.Mode == GameMode.Playing && !flow.IsPaused, "お知らせは小さく出るだけで、手を止めない（ウィンドウ・ポーズにならない）");
+            if (notice != null && !notice.Visible && ash != null)
+            {
+                // お知らせが消えたあとなら、写真用にもう一度だけ出す（届いた記録は変えない）
+                notice.Show(ash);
+                yield return Wait(0.6f);
+            }
+            yield return Shot("arrival_notice");
+            Check(Drift() < 0.01f, "素材が届いても、カメラは調合机のまま");
+            yield return Wait(0.3f);
+            TrayItem2D ashItem = FindTrayItemAnyPage(ash);
+            Check(ashItem != null, "届いた素材（火山の灰）が、自動でトレイに並ぶ");
+            yield return PickFromTray(ash);
+            Check(input.Held != null && input.Held.Ingredient == ash, "届いた素材を、そのままトレイから手に取れる");
+            yield return Shot("arrived_in_hand");
+            input.ReturnHeld();
+            yield return Wait(0.3f);
+            Check(input.Held == null, "手に取った素材をトレイに戻せる");
+
             // 新しい反応を見つけたときのページ（演出だけ。記録は変えない）
             AlchemyManager am = session.Alchemy;
             ReactionData sampleReaction = am != null && am.Reactions.Count > 2 ? am.Reactions[2] : (am != null && am.Reactions.Count > 0 ? am.Reactions[0] : null);
-            Check(am != null && am.Reactions.Count >= 6, $"シーンの調合に新しい反応が登録されている（{(am != null ? am.Reactions.Count : 0)} 個）");
+            Check(am != null && am.Reactions.Count >= 6, $"シーンの調合に反応が登録されている（{(am != null ? am.Reactions.Count : 0)} 個）");
             if (feedback != null && sampleReaction != null)
             {
                 feedback.PreviewDiscoveryPage(sampleReaction);
@@ -410,81 +438,19 @@ namespace PotionFrontier.Game2D
                 yield return Wait(4.6f);
             }
 
-            // ---- レシピ本 ----------------------------------------------------------
-            hud.OpenRecipeBook();
-            yield return Wait(0.6f);
-            Check(hud.IsRecipeBookOpen, "調合台でレシピ本を開ける");
-            if (bottled != null) Check(hud.RecipeBook.SelectById(bottled.id), "作った液体がレシピ本に載っている");
-            yield return Wait(0.3f);
-            yield return Shot("recipe_book");
-            Log("[レシピ本] " + hud.RecipeBook.DetailSummary);
-            hud.CloseRecipeBook();
-            yield return Wait(0.3f);
-
-            // ---- 部屋に戻る → 棚・取引先帳 ------------------------------------------
-            view.ExitBrew();
-            yield return WaitUntil(() => !view.InBrew && !view.Transitioning, 5f, "部屋に戻る");
-            yield return Wait(0.3f);
-            Check(!view.InBrew, "調合台から部屋に戻れる");
-            view.GoToStop(2);
-            yield return WaitUntil(() => !view.Sliding, 4f, "棚へ移動");
-            yield return Wait(0.3f);
-            yield return Shot("shelf_with_bottle");
-            view.GoToStop(0);
-            yield return WaitUntil(() => !view.Sliding, 4f, "カウンターへ移動");
-            RoomHotspot2D ledgerSpot = FindHotspot(RoomHotspot2D.Kind.Ledger);
-            if (ledgerSpot != null) yield return Click(SpotScreen(ledgerSpot));
-            else hud.OpenLedger();
-            yield return Wait(0.6f);
-            Check(hud.IsLedgerOpen, "カウンターの取引先帳をクリックすると開く");
-            yield return Shot("ledger");
-            hud.CloseLedger();
-            yield return Wait(0.3f);
-
-            // ---- 分け与える --------------------------------------------------------
-            int goldBefore = progress.Gold;
-            yield return Click(ColliderScreen(customer));
-            yield return Wait(0.4f);
-            yield return ReadDialogue("棚の瓶を分け与える");
-            yield return WaitUntil(() => hud.IsRecipeBookOpen, 3f, "分け与える瓶を選ぶレシピ本が開く");
-            PotionStack shareable = quests.FindShareable();
-            Log($"[分け与える] 合う瓶：{(shareable != null ? shareable.potionName : "なし")}");
-            if (bottled != null) hud.RecipeBook.SelectById(bottled.id);
-            yield return Wait(0.3f);
-            Log("[分け与える] " + hud.RecipeBook.CheckLine + " ／ ボタンが押せる: " + hud.RecipeBook.ActionInteractable);
-            yield return Shot("share_book");
-            hud.RecipeBook.PrimaryAction();
-            yield return Wait(0.5f);
-            yield return Shot("share_result");
-            yield return ReadDialogue();
-            yield return Wait(0.5f);
-            if (matches)
-            {
-                Check(progress.Gold == goldBefore + quest.RewardGold, $"お礼を受け取る（{goldBefore} → {progress.Gold} G）");
-                Check(progress.CompletedQuests >= 1 && progress.SharedCount >= 1, "解決した数・分け与えた数が増える");
-            }
-            else
-            {
-                Warn("作った液体が相談に合わなかったので、お礼の確認は飛ばした（調合の数値が変わった？）");
-                yield return ReadDialogue("今は力になれない");
-            }
-            yield return WaitUntil(() => quests.Phase == CustomerPhase.None, 10f, "お客さんが帰る");
-            yield return Shot("after_share");
-
-            // ---- レシピ本のスタンプ（役に立った）・素材ノート -------------------------------
-            if (bottled != null)
-            {
-                hud.OpenRecipeBook();
-                yield return Wait(0.5f);
-                hud.RecipeBook.SelectById(bottled.id);
-                yield return Wait(0.4f);
-                yield return Shot("recipe_helped_stamp");
-                hud.CloseRecipeBook();
-                yield return Wait(0.3f);
-            }
+            // ---- 素材ノート：机の上に広げる（火の音・机はそのまま）---------------------------
+            float fireBefore = night != null ? night.FireVolume : 0f;
             hud.OpenNotebook();
+            yield return Wait(0.15f);
+            yield return Shot("notebook_opening");
             yield return Wait(0.6f);
-            Check(hud.IsNotebookOpen, "M（素材ノート）で素材ノートが開く");
+            Check(hud.IsNotebookOpen && hud.Notebook.FullyOpen, "素材ノートが、調合机の上に広がる");
+            Check(Drift() < 0.01f && flow.Mode == GameMode.Playing, "素材ノートを開いても、画面は切り替わらない（カメラ・モードがそのまま）");
+            Check(brewCanvas != null && brewCanvas.enabled, "素材ノートの後ろに、調合机（トレイ・見立て）が見えたまま");
+            Check(night != null && night.FirePlaying && night.FireVolume >= fireBefore * 0.9f, $"素材ノートを開いても、ランプの火の音が途切れない（{fireBefore:0.00} → {(night != null ? night.FireVolume : 0f):0.00}）");
+            Check(flask != null && flask.isActiveAndEnabled, "素材ノートの後ろで、フラスコ・火のゆらぎが動いたまま");
+            yield return Shot("notebook_on_desk");
+            CheckWords("素材ノート");
             if (hud.Notebook != null)
             {
                 Check(hud.Notebook.Count >= 25, $"素材ノートに全部の素材が並ぶ（{hud.Notebook.Count}）");
@@ -494,17 +460,36 @@ namespace PotionFrontier.Game2D
                 yield return Shot("notebook_page_turn");
                 Check(hud.Notebook.PageTurnCount > turned, "素材ノートのページを送ると、紙がめくれる");
                 yield return Wait(0.6f);
-                yield return Shot("notebook_page2");
                 hud.Notebook.SelectById("main_herb");
                 yield return Wait(0.5f);
                 Log("[素材ノート] 薬草のページ：" + hud.Notebook.FactsText.Replace('\n', ' '));
                 Check(hud.Notebook.FactsText.Contains("熱に弱い"), "素材ノートの薬草のページに「熱に弱い」が書いてある");
                 yield return Shot("notebook_herb");
-                hud.Notebook.SelectById("main_spiral_shell");
+                hud.Notebook.SelectById("main_volcano_ash");
+                yield return Wait(0.4f);
+                yield return Shot("notebook_arrived");
+                hud.Notebook.SelectById("base_night_dew");
                 yield return Wait(0.5f);
-                yield return Shot("notebook_unknown");
+                string hint = hud.Notebook.DescriptionText.Replace('\n', ' ');
+                Log("[素材ノート] まだ届いていない素材：" + hint);
+                Check(hint.Contains("発見をあと") && hint.Contains("調合机に届く"), "まだ届いていない素材のページに「発見をあと N で、調合机に届く」と書いてある");
+                yield return Shot("notebook_locked");
             }
             hud.CloseNotebook();
+            yield return Wait(0.3f);
+            Check(!hud.IsNotebookOpen, "素材ノートを閉じられる");
+
+            // ---- レシピ本：机の上に広げる --------------------------------------------
+            hud.OpenRecipeBook();
+            yield return Wait(0.7f);
+            Check(hud.IsRecipeBookOpen && hud.RecipeBook.FullyOpen, "レシピ本が、調合机の上に広がる");
+            Check(Drift() < 0.01f && night != null && night.FirePlaying, "レシピ本を開いても、画面は切り替わらず、火の音も鳴ったまま");
+            if (bottled != null) Check(hud.RecipeBook.SelectById(bottled.id), "作った液体がレシピ本に載っている");
+            yield return Wait(0.3f);
+            yield return Shot("recipe_book_on_desk");
+            Log("[レシピ本] " + hud.RecipeBook.DetailSummary);
+            CheckWords("レシピ本");
+            hud.CloseRecipeBook();
             yield return Wait(0.3f);
 
             // ---- ポーズ・設定 ------------------------------------------------------
@@ -512,6 +497,7 @@ namespace PotionFrontier.Game2D
             yield return Wait(0.5f);
             Check(flow.IsPaused && Time.timeScale == 0f, "Esc のポーズで時間が止まる");
             yield return Shot("pause");
+            CheckWords("ひとやすみ");
             hud.ClosePause();
             yield return Wait(0.2f);
             Check(!flow.IsPaused && Time.timeScale == 1f, "ポーズを閉じると時間が動く");
@@ -522,31 +508,33 @@ namespace PotionFrontier.Game2D
             yield return Wait(0.3f);
 
             // ---- セーブ → タイトル → つづきから ----------------------------------------
-            int gold = progress.Gold;
-            int completed = progress.CompletedQuests;
             int liquids = session.Alchemy != null ? session.Alchemy.Liquids.Count : 0;
             float potionMl = TotalMl();
-            float herbStock = stock.Get(herb);
+            int onDesk = stock.CountKinds(db);
             int knownFacts = DiscoveryJournal.KnownCount(herb);
+            int points = flow.DiscoveryPoints;
             flow.ReturnToTitle();
             yield return WaitUntil(() => flow.Mode == GameMode.Title && hud.Title.IsOpen, 8f, "タイトルへ戻る");
             yield return Wait(1.2f);
             Check(SaveSystem.Exists, "タイトルへ戻るとセーブされる");
             yield return Shot("title_with_save");
+            int noticesBefore = notice != null ? notice.ShownCount : 0;
             flow.ContinueGame();
-            yield return WaitUntil(() => flow.Mode == GameMode.Playing, 8f, "つづきから → プレイ中になる");
+            yield return WaitUntil(() => flow.Mode == GameMode.Playing, 8f, "つづきから → 遊べるようになる");
             yield return Wait(1.5f);
             yield return Shot("continued");
             int liquidsAfter = session.Alchemy != null ? session.Alchemy.Liquids.Count : 0;
-            Log($"[つづきから] 所持金 {gold} → {progress.Gold} ／ 解決 {completed} → {progress.CompletedQuests} ／ 液体 {liquids} → {liquidsAfter} 種類 ／ 瓶 {potionMl:0} → {TotalMl():0}ml ／ 薬草 {herbStock:0.##} → {stock.Get(herb):0.##}");
-            Check(progress.Gold == gold && progress.CompletedQuests == completed, "所持金・解決した数がセーブから戻る");
+            Log($"[つづきから] 液体 {liquids} → {liquidsAfter} 種類 ／ 瓶 {potionMl:0} → {TotalMl():0}ml ／ 机の素材 {onDesk} → {stock.CountKinds(db)} 種類 ／ 発見 {points} → {flow.DiscoveryPoints}");
             Check(liquidsAfter == liquids, "レシピ本の液体がセーブから戻る");
-            Check(Mathf.Abs(TotalMl() - potionMl) < 0.6f, "棚の瓶がセーブから戻る");
-            float herbAfter = stock.Get(herb);
-            bool sameStock = (float.IsInfinity(herbAfter) && float.IsInfinity(herbStock)) || Mathf.Abs(herbAfter - herbStock) < 0.01f;
-            Check(sameStock, "素材の在庫がセーブから戻る");
-            Check(DiscoveryJournal.KnownCount(herb) == knownFacts && DiscoveryJournal.Knows(herb, IngredientFact.Weakens), "素材ノート（見つけた性質）がセーブから戻る");
+            Check(Mathf.Abs(TotalMl() - potionMl) < 0.6f, "瓶がセーブから戻る");
+            Check(stock.CountKinds(db) == onDesk && ash != null && stock.IsUnlocked(ash), "届いた素材（火山の灰も）がセーブから戻る");
+            Check(FindTrayItemAnyPage(ash) != null, "つづきからでも、届いた素材がトレイに並んでいる");
+            Check(notice == null || notice.ShownCount == noticesBefore, "つづきからでは、届いた素材のお知らせを出し直さない");
+            Check(DiscoveryJournal.KnownCount(herb) == knownFacts && DiscoveryJournal.Knows(herb, IngredientFact.Weakens) && flow.DiscoveryPoints == points,
+                  "素材ノート（見つけた性質・発見の数）がセーブから戻る");
             CheckWords("つづきから");
+            Log($"[1画面] テスト中のカメラのずれ いちばん {maxCameraDrift:0.000}");
+            Check(maxCameraDrift < 0.01f, "最初から最後まで、カメラが調合机から一度も動かなかった（画面の切り替えがない）");
 
             yield return Finish();
         }
@@ -654,41 +642,6 @@ namespace PotionFrontier.Game2D
             Pointer2D.Release();
         }
 
-        private IEnumerator ReadDialogue(params string[] picks)
-        {
-            var queue = new Queue<string>(picks);
-            int guard = 0;
-            while (hud.Dialogue.IsOpen && guard++ < 120)
-            {
-                if (hud.Dialogue.IsShowingChoices)
-                {
-                    if (queue.Count == 0)
-                    {
-                        Log("[会話] 選ぶものが残っていないので、ここで止める：" + string.Join(" ／ ", hud.Dialogue.Choices));
-                        yield break;
-                    }
-                    string want = queue.Dequeue();
-                    int index = -1;
-                    IReadOnlyList<string> choices = hud.Dialogue.Choices;
-                    for (int i = 0; choices != null && i < choices.Count; i++)
-                    {
-                        if (choices[i].Contains(want)) { index = i; break; }
-                    }
-                    if (index < 0)
-                    {
-                        Fail($"会話に「{want}」の選択肢がない（{string.Join(" ／ ", choices)}）");
-                        yield break;
-                    }
-                    Log($"[会話] 「{choices[index]}」を選ぶ");
-                    hud.Dialogue.Choose(index);
-                    yield return Wait(0.4f);
-                    continue;
-                }
-                hud.Dialogue.Advance();
-                yield return Wait(0.12f);
-            }
-        }
-
         // ==================================================================
         // 確かめる・記録する
         // ==================================================================
@@ -737,7 +690,9 @@ namespace PotionFrontier.Game2D
 
         private void CheckWords(string where)
         {
-            string[] banned = { "依頼", "納品", "クエスト", "引き受け", "WASD", "E キー", "Eキー", "Tab キー", "Tabキー" };
+            // 1画面版：お店・相談・お金の言葉は出さない（3D 版の操作の説明も）
+            string[] banned = { "依頼", "納品", "クエスト", "引き受け", "相談", "お客", "所持金", "取引", "仕入", "注文", "開拓", "部屋に戻る",
+                                "WASD", "E キー", "Eキー", "Tab キー", "Tabキー" };
             int found = 0;
             foreach (Text t in FindObjectsByType<Text>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             {
@@ -749,7 +704,7 @@ namespace PotionFrontier.Game2D
                     Fail($"画面に「{word}」が残っている（{where}）：{t.text}");
                 }
             }
-            Log($"[言葉] {where}：使わない言葉・3D 版の操作の説明は {found} 件");
+            Log($"[言葉] {where}：使わない言葉（お店・相談・お金・3D 版の操作）は {found} 件");
         }
 
         private IEnumerator Measure(string label)
@@ -874,6 +829,43 @@ namespace PotionFrontier.Game2D
             lastBottled = record;
         }
 
+        private void OnArrived(IngredientData data)
+        {
+            if (data != null && !arrivals.Contains(data)) arrivals.Add(data);
+            lastArrivalTime = Time.realtimeSinceStartup;
+        }
+
+        /// <summary>カメラが、はじめの調合机の位置・大きさからどれだけずれたか（1画面なので、いつも 0）</summary>
+        private float Drift()
+        {
+            if (cam == null) return 0f;
+            return Vector2.Distance(cam.transform.position, deskCamera) + Mathf.Abs(cam.orthographicSize - deskSize);
+        }
+
+        /// <summary>カメラに映っている、調合机の範囲（ワールド座標）</summary>
+        private Rect DeskRect()
+        {
+            if (cam == null) return new Rect();
+            Vector3 a = cam.ViewportToWorldPoint(new Vector3(0f, 0f, 0f));
+            Vector3 b = cam.ViewportToWorldPoint(new Vector3(1f, 1f, 0f));
+            return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+        }
+
+        /// <summary>トレイのページを順に見て、素材を探す（見つかったページのまま）</summary>
+        private TrayItem2D FindTrayItemAnyPage(IngredientData data)
+        {
+            if (data == null || tray == null) return null;
+            tray.Rebuild();
+            for (int page = 0; page < tray.PageCount; page++)
+            {
+                TrayItem2D item = FindTrayItem(data);
+                if (item != null) return item;
+                tray.ChangePage(1);
+                tray.Rebuild();
+            }
+            return null;
+        }
+
         private IEnumerator Wait(float seconds)
         {
             yield return new WaitForSecondsRealtime(seconds);
@@ -905,44 +897,6 @@ namespace PotionFrontier.Game2D
             return WorldToScreen(col != null ? col.bounds.center : c != null ? c.transform.position : Vector3.zero);
         }
 
-        /// <summary>
-        /// 部屋のクリックする所の中で、ほかの小さい所（作業台の上のレシピ本など）やお客さんに重ならない点。
-        /// 重なっているときは小さい方が選ばれるので、真ん中を押すとちがう物が開くことがある
-        /// </summary>
-        private Vector2 SpotScreen(RoomHotspot2D target)
-        {
-            Collider2D col = target.GetComponent<Collider2D>();
-            if (col == null) return ColliderScreen(target);
-            Bounds b = col.bounds;
-            for (int gy = 0; gy < 5; gy++)
-            {
-                for (int gx = 0; gx < 5; gx++)
-                {
-                    // 真ん中から外へ順に試す
-                    float fx = 0.5f + (gx % 2 == 0 ? 1f : -1f) * ((gx + 1) / 2) * 0.17f;
-                    float fy = 0.5f + (gy % 2 == 0 ? 1f : -1f) * ((gy + 1) / 2) * 0.17f;
-                    var p = new Vector2(Mathf.Lerp(b.min.x, b.max.x, fx), Mathf.Lerp(b.min.y, b.max.y, fy));
-                    if (TopSpotAt(p) == target) return WorldToScreen(p);
-                }
-            }
-            return ColliderScreen(target);
-        }
-
-        private static RoomHotspot2D TopSpotAt(Vector2 world)
-        {
-            RoomHotspot2D best = null;
-            float bestArea = float.MaxValue;
-            foreach (Collider2D c in Physics2D.OverlapPointAll(world))
-            {
-                if (c.GetComponentInParent<Customer2D>() != null) return null;
-                RoomHotspot2D h = c.GetComponent<RoomHotspot2D>();
-                if (h == null) continue;
-                float area = c.bounds.size.x * c.bounds.size.y;
-                if (area < bestArea) { best = h; bestArea = area; }
-            }
-            return best;
-        }
-
         /// <summary>フラスコの中の高さ（0=底・1=口）の画面の位置</summary>
         private Vector2 FlaskScreen(float height01)
         {
@@ -954,15 +908,6 @@ namespace PotionFrontier.Game2D
             foreach (TrayItem2D item in FindObjectsByType<TrayItem2D>(FindObjectsSortMode.None))
             {
                 if (item != null && item.isActiveAndEnabled && item.Entry.ingredient == data) return item;
-            }
-            return null;
-        }
-
-        private static RoomHotspot2D FindHotspot(RoomHotspot2D.Kind kind)
-        {
-            foreach (RoomHotspot2D h in FindObjectsByType<RoomHotspot2D>(FindObjectsSortMode.None))
-            {
-                if (h.Type == kind) return h;
             }
             return null;
         }

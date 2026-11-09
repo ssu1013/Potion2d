@@ -48,30 +48,14 @@ namespace PotionFrontier.Game
 
         [Header("調合の手ごたえ（空ならコードで作った音）")]
         [Tooltip("瓶詰めの結果で ★ が1つ付くたびの「ちりん」（★の数だけ高くなる）")] public AudioClip starChime;
-        [Tooltip("相談の目標に届いたときの音")] public AudioClip goalReached;
         [Tooltip("新しい液体を発見したときの音")] public AudioClip discovery;
+        [Tooltip("新しい素材が調合机に届いたときの、手紙が届いたような控えめな音（se_letter.wav）")] public AudioClip ingredientArrived;
         [Tooltip("反応が起きた瞬間の音")] public AudioClip reactionSting;
         [Tooltip("焦げはじめた・目標から外れたなどの、やさしい注意の音")] public AudioClip softWarning;
 
         [Header("夜の環境音（空ならコードで作った静かな音）")]
-        [Tooltip("ランプの火が静かに燃える音（ループ。部屋でも調合台でも、ずっと小さく鳴る）")] public AudioClip lampFireLoop;
+        [Tooltip("ランプの火が静かに燃える音（ループ。調合机で、ずっと小さく鳴る）")] public AudioClip lampFireLoop;
         [Tooltip("お湯が温まると、泡でフラスコが台に当たる「コト」（いくつか入れるとランダムに選ぶ）")] public AudioClip[] kotoKnock = new AudioClip[0];
         [Tooltip("沸きはじめたフラスコのガラスが、軽く触れ合う「ちん」（空ならガラス棒の音を高く小さく使う）")] public AudioClip[] glassTouch = new AudioClip[0];
-
-        [Header("お店・相談")]
-        public AudioClip doorBell;
-        public AudioClip voiceBlip;
-        public AudioClip coins;
-        public AudioClip questAccept;
-        public AudioClip questComplete;
-
-        [Header("足音（ランダムに鳴らす）")]
-        public AudioClip[] footsteps = new AudioClip[0];
-
-        public AudioClip RandomFootstep()
-        {
-            if (footsteps == null || footsteps.Length == 0) return null;
-            return footsteps[Random.Range(0, footsteps.Length)];
-        }
     }
 }

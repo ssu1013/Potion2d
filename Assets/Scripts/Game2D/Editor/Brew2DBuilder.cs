@@ -14,10 +14,10 @@ using UnityEngine.UI;
 namespace PotionFrontier.Game2D.EditorTools
 {
     /// <summary>
-    /// 2D 調合画面を組み立てるメニュー（Tools > Potion Frontier 2D）。
+    /// 2D 調合机の部品を組み立てるメニュー（Tools > Potion Frontier 2D）と、シーン作りの共通の道具。
     /// ・仮の絵（Assets/CustomAssets/Images の下）、絵の一覧（BrewArt2D）、Prefab（Assets/Art2D/Brewing/Prefabs）は「なければ作る」。
     ///   すでにある物には触らないので、自分の絵に差し替えたあとで実行しても上書きされない。
-    /// ・シーン（Assets/Scenes/Brew2D.unity）は、なければ作る。「作り直す」は控えを取ってから作り直す。
+    /// ・シーンは Atelier2D の1つだけ（1画面版。組み立ては Atelier2DBuilder）。
     /// </summary>
     public static class Brew2DBuilder
     {
@@ -25,21 +25,21 @@ namespace PotionFrontier.Game2D.EditorTools
         internal const string SpriteDir = CustomAssetPaths.Images; // 仮の絵は CustomAssets/Images の下（名前ごとの場所は CustomAssetPaths）
         internal const string PrefabDir = ArtRoot + "/Prefabs";
         private const string ArtSetPath = ArtRoot + "/BrewArt2D.asset";
-        private const string ScenePath = "Assets/Scenes/Brew2D.unity";
         private const string BackupDir = "Assets/Scenes/Backup";
         private const string VolumeProfilePath = "Assets/Settings/Rendering/GlobalVolume_Profile.asset";
 
         /// <summary>描く順番（上ほど奥）</summary>
         public static readonly string[] SortingLayers = { "Background", "Room", "Workbench", "Flask", "Liquid", "FlaskFront", "Items", "Held", "FX" };
 
-        [MenuItem("Tools/Potion Frontier 2D/調合画面を作る（足りない物だけ）", priority = 20)]
-        private static void Build() => Run(false);
-
-        [MenuItem("Tools/Potion Frontier 2D/調合画面のシーンを作り直す（控えを取る）", priority = 21)]
-        private static void RebuildScene()
+        /// <summary>調合机の絵・Prefab だけを、足りない物だけ作る（シーンには触らない）</summary>
+        [MenuItem("Tools/Potion Frontier 2D/調合机の絵と部品を作る（足りない物だけ）", priority = 20)]
+        private static void Build()
         {
-            if (!EditorUtility.DisplayDialog("2D 調合画面", "Brew2D シーンを作り直します（今のシーンは Assets/Scenes/Backup に控えを取ります）。\n絵・Prefab はそのまま使います。", "作り直す", "やめる")) return;
-            Run(true);
+            var log = new System.Text.StringBuilder("[2D 調合机] 結果\n");
+            EnsureAssets(log);
+            AssetDatabase.SaveAssets();
+            log.AppendLine("・シーンはそのまま（組み立ては「アトリエを作る」）");
+            Debug.Log(log.ToString());
         }
 
         /// <summary>調合画面の絵・Prefab（アトリエの組み立てからも使う）</summary>
@@ -69,26 +69,6 @@ namespace PotionFrontier.Game2D.EditorTools
             a.lamp = EnsurePrefab("Lamp", () => BuildLamp(s), log);
             a.hud = EnsurePrefab("BrewHUD", BuildHud, log);
             return a;
-        }
-
-        private static void Run(bool rebuildScene)
-        {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-            var log = new System.Text.StringBuilder("[2D 調合画面] 結果\n");
-            BrewAssets a = EnsureAssets(log);
-            bool exists = File.Exists(ScenePath);
-            if (!exists || rebuildScene)
-            {
-                if (exists) Backup(ScenePath, log);
-                BuildScene(a, log);
-            }
-            else
-            {
-                log.AppendLine($"・シーンはすでにあるので、そのまま開きます：{ScenePath}（作り直すときは「調合画面のシーンを作り直す」）");
-                EditorSceneManager.OpenScene(ScenePath);
-            }
-            AssetDatabase.SaveAssets();
-            Debug.Log(log.ToString());
         }
 
         // ------------------------------------------------------------------
@@ -469,39 +449,6 @@ namespace PotionFrontier.Game2D.EditorTools
             Instance(a.flask, bench, o + new Vector3(0f, -0.83f, 0f));
             Instance(a.stirRod, bench, o);
             Instance(a.tray, bench, o + new Vector3(0f, -4.6f, 0f));
-        }
-
-        private static void BuildScene(BrewAssets a, System.Text.StringBuilder log)
-        {
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            CreateCamera(new Vector3(0f, 0f, -10f));
-            CreateGlobalLightAndVolume(log);
-            PlaceBrewArea(a, null);
-            Instance(a.heldItem, null, Vector3.zero);
-            BrewArt2D artSet = a.art;
-            GameObject hud = a.hud;
-
-            // 仕組み
-            var systems = new GameObject("GameSystems");
-            var context = systems.AddComponent<GameContext>();
-            context.Configure(AssetDatabase.LoadAssetAtPath<IngredientDatabase>("Assets/GameData/Alchemy/IngredientDatabase.asset"),
-                              AssetDatabase.LoadAssetAtPath<GameBalance>("Assets/GameData/GameBalance.asset"));
-            var alchemy = systems.AddComponent<AlchemyManager>();
-            var settings = AssetDatabase.LoadAssetAtPath<AlchemySettings>("Assets/GameData/Alchemy/AlchemySettings.asset");
-            if (settings == null) log.AppendLine("！AlchemySettings が見つからない（Assets/GameData/Alchemy/AlchemySettings.asset）");
-            alchemy.EditorSetup(settings, LoadAll<PotionConditionData>(), LoadAll<ReactionData>());
-            systems.AddComponent<IngredientInventory>();
-            systems.AddComponent<PotionInventory>();
-            var session = systems.AddComponent<BrewSession2D>();
-            SetRef(session, "art", artSet);
-            systems.AddComponent<BrewInput2D>();
-
-            Instance(hud, null, Vector3.zero);
-            new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
-
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            AddToBuildSettings(ScenePath, false);
-            log.AppendLine($"・シーンを作った：{ScenePath}（▶ で動かせます）");
         }
 
         /// <summary>ビルドに入れるシーンに足す（first なら一番はじめ＝起動したときのシーンにする）</summary>

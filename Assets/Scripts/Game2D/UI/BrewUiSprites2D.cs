@@ -30,7 +30,7 @@ namespace PotionFrontier.Game2D
             return Store(key, Make(size, size, px, TextureWrapMode.Repeat), Vector4.zero);
         }
 
-        /// <summary>縦の点線（相談の目標の線。縦に並べて敷き詰める）</summary>
+        /// <summary>縦の点線（目標の線。縦に並べて敷き詰める）</summary>
         public static Sprite Dashes()
         {
             const string key = "dashes";

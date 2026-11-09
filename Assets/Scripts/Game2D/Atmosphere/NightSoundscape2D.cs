@@ -13,8 +13,7 @@ namespace PotionFrontier.Game2D
     {
         [Header("ランプの火が静かに燃える音")]
         [SerializeField, Tooltip("空なら SoundLibrary の lampFireLoop → コードで作った音")] private AudioClip fireLoop;
-        [SerializeField, Range(0f, 1f), Tooltip("調合台に向かっているときの大きさ")] private float fireVolumeBrew = 0.34f;
-        [SerializeField, Range(0f, 1f), Tooltip("部屋にいるときの大きさ")] private float fireVolumeRoom = 0.22f;
+        [SerializeField, Range(0f, 1f), Tooltip("遊んでいる間の大きさ（本を開いていても、そのまま鳴り続ける）")] private float fireVolumeBrew = 0.34f;
         [SerializeField, Range(0f, 1f), Tooltip("タイトル・一時停止中の大きさ")] private float fireVolumeQuiet = 0.12f;
         [SerializeField, Min(0.05f), Tooltip("大きさが変わる速さ（1秒あたり）")] private float fadeSpeed = 0.4f;
 
@@ -64,8 +63,7 @@ namespace PotionFrontier.Game2D
             if (fire == null || fire.clip == null) return;
             GameFlow flow = GameFlow.Instance;
             bool quiet = flow == null || flow.Mode != GameMode.Playing || flow.IsPaused;
-            AtelierView2D view = AtelierView2D.Current;
-            float want = quiet ? fireVolumeQuiet : (view != null && view.InBrew ? fireVolumeBrew : fireVolumeRoom);
+            float want = quiet ? fireVolumeQuiet : fireVolumeBrew;
             want *= GameSettings.SeVolume;
             fire.volume = Mathf.MoveTowards(fire.volume, want, Time.unscaledDeltaTime * fadeSpeed);
             if (!fire.isPlaying && want > 0f) fire.Play();

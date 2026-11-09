@@ -6,13 +6,14 @@ namespace PotionFrontier.Game
     /// 音のファイルがないときに、コードで作る静かな音（夜の工房に合う、木と弦と火の音）。
     ///   ・手ごたえ：木琴の「コン」（★・溶けきった）、目標に届いた木琴2音、ギターの「ポロロン…」（新発見）、低い弦の単音（反応）
     ///   ・環境音：ランプの火がぱちぱち燃えるループ、お湯がコトコト当たる音、ガラスが軽く触れ合う音、紙をめくる音
+    ///   ・お知らせ：新しい素材が届いたときの、手紙を置くような「さっ・トン」
     /// 一度作ったら使い回す。SoundLibrary に自分の音を入れると、そちらが使われる。
     /// </summary>
     public static class SfxSynth
     {
         private const int Rate = 44100;
 
-        private static AudioClip chime, goal, discovery, reaction, softWarning, pageTurn, lampFire, knock, glassTap;
+        private static AudioClip chime, goal, discovery, reaction, softWarning, pageTurn, lampFire, knock, glassTap, letter;
 
         /// <summary>木琴の「コン」（★1つ分・溶けきった。pitch を上げて音階にする）</summary>
         public static AudioClip Chime
@@ -226,6 +227,42 @@ namespace PotionFrontier.Game
             }
         }
 
+        /// <summary>
+        /// 新しい素材が届いた：手紙を机にすべらせる「さっ」と、そっと置く木の「トン」、
+        /// 最後に遠くでかすかに木琴が1音（夜の静けさをこわさない小ささ）
+        /// </summary>
+        public static AudioClip LetterArrive
+        {
+            get
+            {
+                if (letter == null)
+                {
+                    var data = new float[(int)(Rate * 1.3f)];
+                    var rng = new System.Random(23);
+                    float fast = 0f, slow = 0f;
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        float t = i / (float)Rate;
+                        float n = (float)rng.NextDouble() * 2f - 1f;
+                        fast += (n - fast) * 0.22f;     // 紙のこすれ（高すぎる音を丸める）
+                        slow += (fast - slow) * 0.04f;  // 低い音を抜く
+                        float slide = t < 0.34f ? Mathf.Pow(Mathf.Sin(Mathf.PI * t / 0.34f), 1.6f) * 0.42f : 0f;
+                        float s = (fast - slow) * slide;
+                        if (t >= 0.31f)
+                        {
+                            float k = t - 0.31f; // 木の机にそっと置く「トン」
+                            s += Mathf.Sin(2f * Mathf.PI * 172f * k) * Mathf.Exp(-k * 30f) * 0.7f;
+                            s += Mathf.Sin(2f * Mathf.PI * 610f * k) * Mathf.Exp(-k * 65f) * 0.12f;
+                        }
+                        data[i] = s;
+                    }
+                    AddMarimba(data, 0.46f, 784f, 0.16f, 0.7f); // ソ（G5）を遠くにかすかに
+                    letter = Make("synth_letter_arrive", data, 0.62f);
+                }
+                return letter;
+            }
+        }
+
         // ------------------------------------------------------------------
 
         /// <summary>木琴（木の板をたたく音）：基音と、木琴らしい高い倍音がすぐ消える。たたいた瞬間の「コッ」も少し</summary>
@@ -312,6 +349,7 @@ namespace PotionFrontier.Game
             lampFire = null;
             knock = null;
             glassTap = null;
+            letter = null;
         }
     }
 }

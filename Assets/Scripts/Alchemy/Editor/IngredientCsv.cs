@@ -35,7 +35,6 @@ namespace PotionFrontier.Alchemy.EditorTools
             new[] { "完成品の形態", "form_name" },
             new[] { "1回の量", "amount_per_use" },
             new[] { "レア度", "rarity" },
-            new[] { "価格", "price" },
             new[] { "タグ", "tags" },
             new[] { "並び順", "sort" },
             new[] { "容器", "container" },
@@ -44,14 +43,12 @@ namespace PotionFrontier.Alchemy.EditorTools
             new[] { "欠片モデル", "piece_model" },
             new[] { "アイコン", "icon" },
             new[] { "説明", "description" },
-            new[] { "在庫の扱い", "stock" },
             new[] { "溶けやすさ", "solubility" },
             new[] { "熱に弱い温度", "heat_limit" },
             new[] { "熱への弱さ", "heat_sensitivity" },
             new[] { "目覚める温度", "activation_temp" },
             new[] { "目覚めの強さ%", "activation_bonus" },
-            new[] { "開拓の費用", "unlock_price" },
-            new[] { "必要な実績", "reputation" },
+            new[] { "届くのに必要な発見", "discoveries", "必要な実績", "reputation" },
         };
 
         private const string Auto = "自動";
@@ -100,7 +97,6 @@ namespace PotionFrontier.Alchemy.EditorTools
                     d.PotionFormName,
                     Num(d.AmountPerUse),
                     d.Rarity.ToString(CultureInfo.InvariantCulture),
-                    d.BuyPrice.ToString(CultureInfo.InvariantCulture),
                     string.Join("; ", d.Tags),
                     d.SortOrder.ToString(CultureInfo.InvariantCulture),
                     EnumText.Label((ContainerStyle)so.FindProperty("container").intValue),
@@ -109,14 +105,12 @@ namespace PotionFrontier.Alchemy.EditorTools
                     AssetPath(d.DropPiecePrefab),
                     AssetPath(d.Icon),
                     d.Description,
-                    EnumText.Label(d.StockPolicySetting),
                     AutoNum(so.FindProperty("solubility").floatValue),
                     AutoNum(so.FindProperty("heatLimit").floatValue),
                     AutoNum(so.FindProperty("heatSensitivity").floatValue),
                     d.ActivationTemp > 0f ? Num(d.ActivationTemp) : "",
                     d.ActivationTemp > 0f ? Num(d.ActivationBonus) : "",
-                    d.UnlockPriceSetting < 0 ? Auto : d.UnlockPriceSetting.ToString(CultureInfo.InvariantCulture),
-                    d.RequiredReputation.ToString(CultureInfo.InvariantCulture),
+                    d.DiscoveriesToUnlock.ToString(CultureInfo.InvariantCulture),
                 };
                 AppendRow(sb, row);
             }
@@ -157,8 +151,7 @@ namespace PotionFrontier.Alchemy.EditorTools
                 string h = head[c].Trim().TrimStart('﻿');
                 for (int k = 0; k < Columns.Length; k++)
                 {
-                    if (string.Equals(h, Columns[k][0], StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(h, Columns[k][1], StringComparison.OrdinalIgnoreCase))
+                    if (Array.Exists(Columns[k], name => string.Equals(h, name, StringComparison.OrdinalIgnoreCase)))
                     {
                         index[c] = k;
                     }
@@ -273,23 +266,6 @@ namespace PotionFrontier.Alchemy.EditorTools
                 if (p.intValue != v) { p.intValue = v; changed = true; }
             }
 
-            // 「自動」は -1、「なし」は 0
-            void SetAutoInt(string prop, string value, int max)
-            {
-                if (string.IsNullOrEmpty(value)) return;
-                int v;
-                if (value == Auto) v = -1;
-                else if (value == Clear) v = 0;
-                else if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)) v = Mathf.Clamp(parsed, 0, max);
-                else
-                {
-                    report.warnings.Add($"{line}: 「{value}」は整数でも「自動」でもありません（{prop}）");
-                    return;
-                }
-                SerializedProperty p = so.FindProperty(prop);
-                if (p.intValue != v) { p.intValue = v; changed = true; }
-            }
-
             void SetFloat(string prop, string value, float min)
             {
                 if (string.IsNullOrEmpty(value)) return;
@@ -369,14 +345,13 @@ namespace PotionFrontier.Alchemy.EditorTools
             SetString("potionFormName", cells[8]);
             SetFloat("amountPerUse", cells[9], 0.05f);
             SetInt("rarity", cells[10], 1, 5);
-            SetInt("buyPrice", cells[11], 0, 999999);
-            if (!string.IsNullOrEmpty(cells[12]))
+            if (!string.IsNullOrEmpty(cells[11]))
             {
                 SerializedProperty p = so.FindProperty("tags");
                 var tags = new List<string>();
-                if (cells[12] != Clear)
+                if (cells[11] != Clear)
                 {
-                    foreach (string t in cells[12].Split(new[] { ';', '；', '、', '|' }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (string t in cells[11].Split(new[] { ';', '；', '、', '|' }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         if (t.Trim().Length > 0) tags.Add(t.Trim());
                     }
@@ -390,21 +365,19 @@ namespace PotionFrontier.Alchemy.EditorTools
                     changed = true;
                 }
             }
-            SetInt("sortOrder", cells[13], -99999, 99999);
-            SetEnum<ContainerStyle>("container", cells[14]);
-            SetObject<GameObject>("worldPrefab", cells[15]);
-            SetObject<GameObject>("potionBottlePrefab", cells[16]);
-            SetObject<GameObject>("dropPiecePrefab", cells[17]);
-            SetObject<Sprite>("icon", cells[18]);
-            SetString("description", cells[19]);
-            SetEnum<StockPolicy>("stockPolicy", cells[20]);
-            SetAutoFloat("solubility", cells[21], 0f, 1f);
-            SetAutoFloat("heatLimit", cells[22], 0f, 1000f);
-            SetAutoFloat("heatSensitivity", cells[23], 0f, 1f);
-            SetFloat("activationTemp", cells[24] == Clear ? "0" : cells[24], 0f);
-            SetFloat("activationBonus", cells[25], -100f);
-            SetAutoInt("unlockPrice", cells[26], 999999);
-            SetInt("requiredReputation", cells[27], 0, 9999);
+            SetInt("sortOrder", cells[12], -99999, 99999);
+            SetEnum<ContainerStyle>("container", cells[13]);
+            SetObject<GameObject>("worldPrefab", cells[14]);
+            SetObject<GameObject>("potionBottlePrefab", cells[15]);
+            SetObject<GameObject>("dropPiecePrefab", cells[16]);
+            SetObject<Sprite>("icon", cells[17]);
+            SetString("description", cells[18]);
+            SetAutoFloat("solubility", cells[19], 0f, 1f);
+            SetAutoFloat("heatLimit", cells[20], 0f, 1000f);
+            SetAutoFloat("heatSensitivity", cells[21], 0f, 1f);
+            SetFloat("activationTemp", cells[22] == Clear ? "0" : cells[22], 0f);
+            SetFloat("activationBonus", cells[23], -100f);
+            SetInt("discoveriesToUnlock", cells[24], 0, 9999);
             return changed;
         }
 

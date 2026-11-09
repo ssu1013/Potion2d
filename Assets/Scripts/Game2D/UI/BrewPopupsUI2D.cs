@@ -14,7 +14,7 @@ namespace PotionFrontier.Game2D
         public string detail = "";
         public int stars;
         public bool isNew;
-        /// <summary>相談の見立て（空なら出さない）</summary>
+        /// <summary>結果カードの下のひとこと（空なら出さない。今のゲームでは使っていない）</summary>
         public string quest = "";
         public bool questMatch;
     }
@@ -22,7 +22,7 @@ namespace PotionFrontier.Game2D
     /// <summary>
     /// 調合台の、その場に出る手ごたえ（Step4-A・B）。
     ///   ふわっと浮かぶ文字（回復 +3・沸騰した・溶けきった！など）／カーソルのそばの数字（注いだ量・火加減）／
-    ///   かき混ぜている間の溶け具合の輪／瓶詰めの結果カード（★ が1つずつ付く・新発見・相談に合うか）／画面がパッと光る
+    ///   かき混ぜている間の溶け具合の輪／瓶詰めの結果カード（★ が1つずつ付く・新発見）／画面がパッと光る
     /// 位置は画面の画素（オーバーレイの Canvas なので、ワールドの位置は Camera.WorldToScreenPoint で変えて渡す）。
     /// </summary>
     public sealed class BrewPopupsUI2D

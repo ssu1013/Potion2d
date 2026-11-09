@@ -111,11 +111,10 @@ namespace PotionFrontier.Game2D
         private void Update()
         {
             if (session == null) return;
-            // アトリエの部屋にいる間（調合台に向かっていないとき）は隠す
+            // タイトルの間は隠す（1画面なので、遊んでいる間はずっと出ている）
             if (canvas == null) canvas = GetComponent<Canvas>();
-            AtelierView2D view = AtelierView2D.Current;
             GameFlow flow = GameFlow.Instance;
-            bool show = (view == null || view.InBrew) && (flow == null || flow.Mode == GameMode.Playing);
+            bool show = flow == null || flow.Mode == GameMode.Playing;
             if (canvas != null && canvas.enabled != show) canvas.enabled = show;
             if (!show) return;
             float dt = Time.deltaTime;

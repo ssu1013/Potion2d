@@ -76,37 +76,6 @@ namespace PotionFrontier.Game
             return slider;
         }
 
-        /// <summary>金貨のアイコン</summary>
-        public static Sprite Coin()
-        {
-            if (UIFactory.Skin != null && UIFactory.Skin.coin != null) return UIFactory.Skin.coin;
-            const string key = "coin";
-            if (cache.TryGetValue(key, out Sprite s)) return s;
-            const int size = 64;
-            var pixels = new Color[size * size];
-            var gold = new Color(1f, 0.8f, 0.25f);
-            var dark = new Color(0.75f, 0.5f, 0.12f);
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    var p = new Vector2(x + 0.5f - 32f, y + 0.5f - 32f);
-                    float d = p.magnitude;
-                    Color c = Color.clear;
-                    if (d < 29f)
-                    {
-                        c = d > 25f ? UIColors.Outline : (d > 21f ? dark : Color.Lerp(gold, Color.white, Mathf.Clamp01((p.y + p.x * -0.4f) / 40f) * 0.5f));
-                        // 中央の「G」っぽい刻印（簡易）
-                        if (d < 14f && d > 9f && !(p.x > 2f && p.y > -3f && p.y < 6f)) c = dark;
-                        if (p.x > 1f && p.x < 12f && Mathf.Abs(p.y + 1f) < 2.2f) c = dark;
-                        c.a = Mathf.Clamp01(29f - d);
-                    }
-                    pixels[y * size + x] = c;
-                }
-            }
-            return Make(key, size, size, pixels, 0);
-        }
-
         /// <summary>スライダーのつまみ</summary>
         public static Sprite Knob()
         {

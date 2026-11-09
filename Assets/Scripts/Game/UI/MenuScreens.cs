@@ -8,6 +8,9 @@ namespace PotionFrontier.Game
     /// <summary>見出しのリボンつき羊皮紙パネル（ポーズ・設定・クリア画面で共通）</summary>
     internal static class MenuPanel
     {
+        /// <summary>机の上に本を広げるときの、後ろの暗さ（ランプの火のゆらぎが透けて見える薄さ）</summary>
+        public const float DeskDim = 0.3f;
+
         public static Image Create(RectTransform parent, string name, string heading, Vector2 size, out GameObject overlay, float dim = 0.6f)
         {
             Image shade = UIFactory.CreateImage(parent, name, null, new Color(0.02f, 0.012f, 0.008f, dim));
@@ -36,6 +39,32 @@ namespace PotionFrontier.Game
             float s = Mathf.Lerp(0.9f, 1f, e);
             panel.localScale = new Vector3(s, s, 1f);
         }
+
+        /// <summary>
+        /// 本を机の上に広げるアニメーション：少し手前（下）から、わずかに傾いてすっと置かれる。
+        /// 画面は切り替えず、後ろの机・火のゆらぎは見えたまま
+        /// </summary>
+        public static void Rise(RectTransform panel, Vector2 rest, ref float appear, float dt, float restScale = DeskBookScale)
+        {
+            appear = Mathf.Min(1f, appear + dt * 4.5f);
+            float e = 1f - Mathf.Pow(1f - appear, 3f);
+            panel.anchoredPosition = rest + new Vector2(0f, -70f * (1f - e));
+            panel.localRotation = Quaternion.Euler(0f, 0f, 1.6f * (1f - e));
+            float s = restScale * Mathf.Lerp(0.95f, 1f, e);
+            panel.localScale = new Vector3(s, s, 1f);
+        }
+
+        /// <summary>机の上に置いた本の大きさ（少し小さくして、まわりに机・ランプ・窓が見えるようにする）</summary>
+        public const float DeskBookScale = 0.92f;
+
+        /// <summary>後ろの暗がりを、本が開くのに合わせて少しずつ濃くする</summary>
+        public static void Shade(Image overlay, float appear, float dim = DeskDim)
+        {
+            if (overlay == null) return;
+            Color c = overlay.color;
+            c.a = dim * Mathf.Clamp01(appear * 1.4f);
+            overlay.color = c;
+        }
     }
 
     /// <summary>Esc で開くポーズメニュー（時間が止まる）</summary>
@@ -54,8 +83,9 @@ namespace PotionFrontier.Game
             Image paper = MenuPanel.Create(parent, "PauseMenu", "ひとやすみ", new Vector2(600f, 720f), out root);
             panel = paper.rectTransform;
 
-            stats = UIFactory.Label(panel, "Stats", "", 26, UIColors.Ink, TextAnchor.UpperCenter);
-            UIFactory.Place(stats.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(520f, 130f));
+            stats = UIFactory.Label(panel, "Stats", "", 25, UIColors.Ink, TextAnchor.UpperCenter);
+            stats.supportRichText = true;
+            UIFactory.Place(stats.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -74f), new Vector2(560f, 136f));
 
             Image divider = UIFactory.CreateImage(panel, "Divider", null, new Color(0.45f, 0.3f, 0.17f, 0.5f));
             UIFactory.Place(divider.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -214f), new Vector2(480f, 3f));
@@ -73,15 +103,12 @@ namespace PotionFrontier.Game
             root.SetActive(false);
         }
 
-        public void Open(PlayerProgress progress, PotionInventory inventory)
+        /// <summary>summary：探求の進み具合（発見・液体・机の素材など。AtelierHUD が作る）</summary>
+        public void Open(string summary)
         {
             root.SetActive(true);
             appear = 0f;
-            int gold = progress != null ? progress.Gold : 0;
-            int done = progress != null ? progress.CompletedQuests : 0;
-            int potions = inventory != null ? inventory.TotalCount : 0;
-            string cleared = progress != null && progress.GameCleared ? "\n<color=#B07A1A>★ 伝説の特効薬を届けた</color>" : "";
-            stats.text = $"所持金　<b>{gold} G</b>\n解決した相談　<b>{done} 件</b>　／　棚の瓶　<b>{potions} 本</b>{cleared}";
+            stats.text = summary ?? "";
             menu.ResetSelection(0);
             SoundLibrary lib = AudioManager.Lib;
             if (lib != null) AudioManager.Se(lib.uiOpen, 0.7f);
@@ -298,7 +325,7 @@ namespace PotionFrontier.Game
         }
     }
 
-    /// <summary>最後の相談を解決したときのクリア画面（紙吹雪つき）</summary>
+    /// <summary>伝説の特効薬を初めて瓶に詰めたときのクリア画面（紙吹雪つき）</summary>
     public sealed class ClearScreenUI
     {
         private readonly GameObject root;
@@ -353,7 +380,7 @@ namespace PotionFrontier.Game
             Image paper = UIFactory.CreateImage(panel, "Paper", UIFactory.Parchment(), Color.white);
             UIFactory.Place(paper.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -70f), new Vector2(900f, 400f));
             Text message = UIFactory.Label(paper.transform, "Message",
-                "伝説の特効薬のおかげで、町に笑顔がもどりました！\nあなたはもう立派な錬金術師です。",
+                "ついに、伝説の特効薬が調合机の上で生まれました。\nあなたはもう立派な錬金術師です。",
                 32, UIColors.Ink, TextAnchor.UpperCenter, FontStyle.Bold);
             UIFactory.Place(message.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -46f), new Vector2(820f, 110f));
             stats = UIFactory.Label(paper.transform, "Stats", "", 28, UIColors.InkLight, TextAnchor.UpperCenter);
@@ -362,7 +389,7 @@ namespace PotionFrontier.Game
             RectTransform buttons = UIFactory.CreateRect("Buttons", paper.transform);
             UIFactory.Place(buttons, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 36f), new Vector2(500f, 84f));
             UIFactory.Horizontal(buttons.gameObject, new RectOffset(0, 0, 0, 0), 0f, TextAnchor.MiddleCenter);
-            menu.Add(UIWidgets.WoodButton(buttons, "アトリエにもどる", 34, new Vector2(440f, 80f), onContinue));
+            menu.Add(UIWidgets.WoodButton(buttons, "調合机にもどる", 34, new Vector2(440f, 80f), onContinue));
 
             Color[] colors =
             {
@@ -380,14 +407,13 @@ namespace PotionFrontier.Game
             root.SetActive(false);
         }
 
-        public void Open(PlayerProgress progress)
+        /// <summary>summary：探求の進み具合（AtelierHUD が作る）</summary>
+        public void Open(string summary)
         {
             root.SetActive(true);
             appear = 0f;
             time = 0f;
-            int gold = progress != null ? progress.Gold : 0;
-            int done = progress != null ? progress.CompletedQuests : 0;
-            stats.text = $"解決した相談　<b>{done} 件</b>　　所持金　<b>{gold} G</b>\n<size=22>このあとも、新しい調合を探求したり、町の人の相談に乗ったりして遊べます</size>";
+            stats.text = (summary ?? "") + "\n<size=22>このあとも、まだ見ぬ液体や反応を探して遊べます</size>";
             menu.ResetSelection(0);
 
             Vector2 screen = ((RectTransform)root.transform).rect.size;

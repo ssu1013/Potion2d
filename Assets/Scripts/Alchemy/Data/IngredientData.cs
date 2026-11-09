@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PotionFrontier.Alchemy
 {
@@ -24,7 +25,7 @@ namespace PotionFrontier.Alchemy
         [SerializeField, TextArea(2, 4)]
         private string description = "";
 
-        [SerializeField, Tooltip("素材の絵（2D 版：トレイ・手に持ったとき・取引先帳・レシピ本・素材ノート）。Assets/CustomAssets/Images/Ingredients/<ID>.png を同じ名前で上書きすると差し替わる。空なら色と容器から自動で描く")]
+        [SerializeField, Tooltip("素材の絵（2D 版：トレイ・手に持ったとき・レシピ本・素材ノート）。Assets/CustomAssets/Images/Ingredients/<ID>.png を同じ名前で上書きすると差し替わる。空なら色と容器から自動で描く")]
         private Sprite icon;
 
         [SerializeField, Tooltip("ベース液体は必ず1種類、主素材は1種類以上、触媒は任意")]
@@ -59,21 +60,13 @@ namespace PotionFrontier.Alchemy
         [SerializeField, Min(0.05f), Tooltip("固体・粉を1回で入れる量（単位）。液体は注いだ分だけ入る")]
         private float amountPerUse = 1f;
 
-        [Header("入手・分類")]
+        [Header("届く時期・分類")]
         [SerializeField, Range(1, 5), Tooltip("レア度（★の数）")]
         private int rarity = 1;
 
-        [SerializeField, Min(0), Tooltip("取り寄せの値段（1単位あたりのゴールド）。使い放題の素材では「開拓の費用（自動）」の元になる。0 なら取引先帳に出ない")]
-        private int buyPrice = 10;
-
-        [SerializeField, Tooltip("在庫の扱い。無限 = 一度手に入れたら何度使っても減らない／消費 = 使った分だけ減る")]
-        private StockPolicy stockPolicy = StockPolicy.Auto;
-
-        [SerializeField, Min(-1), Tooltip("使い放題の素材：取引先帳で入手ルートを開拓する費用（1回だけ）。-1 = 自動（取り寄せの値段 × ゲームバランスの倍率）、0 = 開拓できない（ファームやお礼で手に入れる）")]
-        private int unlockPrice = -1;
-
-        [SerializeField, Min(0), Tooltip("取引先帳で取引できるようになる実績（解決した相談の数）。0 = はじめから")]
-        private int requiredReputation = 0;
+        [SerializeField, Min(0), FormerlySerializedAs("requiredReputation"),
+         Tooltip("この発見のポイントがたまると、調合机の素材トレイに自動で届く（性質1・反応2・新しい液体1）。はじめから机にある素材は GameBalance で決める")]
+        private int discoveriesToUnlock = 0;
 
         [SerializeField, Tooltip("検索や絞り込みに使う分類（例：花、鉱石、森）")]
         private List<string> tags = new List<string>();
@@ -140,15 +133,12 @@ namespace PotionFrontier.Alchemy
         public GameObject PotionBottlePrefab => potionBottlePrefab;
         public float AmountPerUse => amountPerUse;
         public int Rarity => rarity;
-        public int BuyPrice => buyPrice;
-        /// <summary>開拓の費用の設定値（-1 = 自動）。実際の費用は UnlockCost で求める</summary>
-        public int UnlockPriceSetting => unlockPrice;
-        public int RequiredReputation => requiredReputation;
+        /// <summary>机に届くのに必要な発見のポイント（DiscoveryProgress）</summary>
+        public int DiscoveriesToUnlock => discoveriesToUnlock;
         public IReadOnlyList<string> Tags => tags;
         public int SortOrder => sortOrder;
         public GameObject WorldPrefab => worldPrefab;
         public GameObject DropPiecePrefab => dropPiecePrefab;
-        public StockPolicy StockPolicySetting => stockPolicy;
         public float ActivationTemp => activationTemp;
         public float ActivationBonus => activationBonus;
         public float MeltTemp => meltTemp;
@@ -185,23 +175,7 @@ namespace PotionFrontier.Alchemy
 
         public float HeatSensitivity => heatSensitivity >= 0f ? Mathf.Clamp01(heatSensitivity) : 0.5f;
 
-        /// <summary>在庫が減らない素材か（自動ならレア度で決める。境目は呼ぶ側が渡す）</summary>
-        public bool IsInfinite(int infiniteRarityMax)
-        {
-            switch (stockPolicy)
-            {
-                case StockPolicy.Infinite: return true;
-                case StockPolicy.Consumable: return false;
-                default: return rarity <= infiniteRarityMax;
-            }
-        }
 
-        /// <summary>入手ルートを開拓する費用（自動を解決したもの）。0 以下なら開拓できない</summary>
-        public int UnlockCost(int priceMultiplier)
-        {
-            if (unlockPrice >= 0) return unlockPrice;
-            return buyPrice > 0 ? buyPrice * Mathf.Max(1, priceMultiplier) : 0;
-        }
 
         /// <summary>実際の形状（自動を解決したもの）</summary>
         public IngredientForm Form
@@ -266,11 +240,10 @@ namespace PotionFrontier.Alchemy
         }
 
         /// <summary>エディタ拡張用：入手・分類などの追加項目</summary>
-        public void EditorSetupDetails(int rarity, int buyPrice, string[] tags, IngredientForm form = IngredientForm.Auto,
+        public void EditorSetupDetails(int rarity, string[] tags, IngredientForm form = IngredientForm.Auto,
                                        ContainerStyle container = ContainerStyle.Auto, float amountPerUse = 1f, int sortOrder = 0)
         {
             this.rarity = Mathf.Clamp(rarity, 1, 5);
-            this.buyPrice = Mathf.Max(0, buyPrice);
             this.tags = new List<string>(tags ?? new string[0]);
             this.form = form;
             this.container = container;
@@ -278,11 +251,10 @@ namespace PotionFrontier.Alchemy
             this.sortOrder = sortOrder;
         }
 
-        /// <summary>エディタ拡張用：取引先帳での扱い（開拓の費用・必要な実績）</summary>
-        public void EditorSetTrade(int unlockPrice, int requiredReputation)
+        /// <summary>エディタ拡張用：机に届くのに必要な発見のポイント</summary>
+        public void EditorSetUnlock(int discoveries)
         {
-            this.unlockPrice = Mathf.Max(-1, unlockPrice);
-            this.requiredReputation = Mathf.Max(0, requiredReputation);
+            discoveriesToUnlock = Mathf.Max(0, discoveries);
         }
 
         /// <summary>エディタ拡張用：工程での性質（溶けやすさ・熱・目覚め）</summary>
@@ -331,7 +303,7 @@ namespace PotionFrontier.Alchemy
         public bool EditorShapeIsAuto => form == IngredientForm.Auto && container == ContainerStyle.Auto;
 
         /// <summary>追加項目がまだ初期値のままか（古いバージョンで作った素材の移行判定用）</summary>
-        public bool EditorDetailsAreDefault => rarity == 1 && buyPrice == 10 && tags.Count == 0 && sortOrder == 0;
+        public bool EditorDetailsAreDefault => rarity == 1 && tags.Count == 0 && sortOrder == 0;
 #endif
     }
 }

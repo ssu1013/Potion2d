@@ -11,24 +11,17 @@ namespace PotionFrontier.Game
     public class SaveData
     {
         /// <summary>今のセーブデータの版。古い版を読んだときは、足りない物を補う（素材の在庫など）</summary>
-        public const int CurrentVersion = 6;
+        /// 版7：1画面版（お金・相談・仕入れをなくした。調合机に届いた素材だけを覚える）
+        public const int CurrentVersion = 7;
 
         public int version = CurrentVersion;
         public string savedAt = "";
-        public int gold;
-        /// <summary>解決した相談の数</summary>
-        public int completedQuests;
-        /// <summary>瓶を分け与えて解決した数（版5から）</summary>
-        public int sharedCount;
-        /// <summary>作り方を教えて解決した数（版5から）</summary>
-        public int taughtCount;
-        /// <summary>解決した相談の ID</summary>
-        public List<string> completedQuestIds = new List<string>();
+        /// <summary>伝説の特効薬を作った（クリア画面を見た）</summary>
         public bool gameCleared;
         public List<PotionStack> potions = new List<PotionStack>();
-        /// <summary>素材の在庫（版2から。版4からは使った分だけ減る素材のみ）</summary>
+        /// <summary>版6までの素材の在庫（読み込みのためだけ。量があった素材は、机に届いていることにする）</summary>
         public List<IngredientStockEntry> ingredients = new List<IngredientStockEntry>();
-        /// <summary>取引済み（使い放題）の素材の ID（版4から）</summary>
+        /// <summary>調合机に届いている素材の ID</summary>
         public List<string> unlockedIngredients = new List<string>();
         /// <summary>調合フラスコに入っている素材（版2のみ。版3からは flaskState）</summary>
         public List<IngredientStockEntry> flask = new List<IngredientStockEntry>();

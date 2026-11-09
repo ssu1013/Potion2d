@@ -12,15 +12,11 @@ namespace PotionFrontier.Game
     /// 1つずつページになって記録される。見開きの左が目次、右がページ。
     ///   ・ページ：見た目（3D の瓶・色・特性からわかる様子）／属性（100ml あたりの濃さ）／特性と効果／
     ///            作り方（素材・量・温度・混ぜた向きと回数・順番。ちがう作り方を3つまで）／使った素材／系譜／記録
-    ///   ・名前を付ける：自分で見つけた液体に好きな名前を付けられる（棚の瓶・トレイの瓶の名前も変わる）
-    /// 相談に乗るときにも使う（お客さんとの会話から開く）：
-    ///   ・分け与える … 満タンの瓶がある液体だけを並べ、選んだ瓶を1本渡す
-    ///   ・教える     … 作り方の記録がある液体だけを並べ、選んだ作り方を教える（瓶は減らない）
+    ///   ・名前を付ける：自分で見つけた液体に好きな名前を付けられる（トレイの瓶の名前も変わる）
+    /// 画面は切り替えず、調合机の上に本を広げるように出す（後ろは少しだけ暗く、ランプの火のゆらぎは見えたまま）。
     /// </summary>
     public sealed class RecipeBookUI
     {
-        public enum Mode { Read, Share, Teach }
-
         private static readonly string[] FilterLabels = { "すべて", "ポーション", "中間液体", "未知の液体" };
         private static readonly float[] FilterWidths = { 96f, 130f, 118f, 132f };
         private const float RowHeight = 84f;
@@ -31,7 +27,6 @@ namespace PotionFrontier.Game
         private const int MaxAttributeRows = 8;
         private const int MaxLinks = 6;
 
-        private static readonly Color Green = new Color(0.18f, 0.45f, 0.16f);
         private static readonly Color Muted = new Color(0.54f, 0.42f, 0.27f);
         private static readonly Color TabOff = new Color(0.62f, 0.55f, 0.48f, 1f);
 
@@ -63,10 +58,9 @@ namespace PotionFrontier.Game
 
         private readonly Func<AlchemyManager> alchemy;
         private readonly PotionInventory potions;
-        private readonly Func<QuestData> currentConsultation;
-        private readonly Func<float> teachRewardRate;
         private readonly Action onCloseButton;
         private readonly GameObject root;
+        private readonly Image overlay;
         private readonly RectTransform panelRoot;
         private readonly LiquidPreview preview;
         private LiquidRegistry registry;
@@ -97,7 +91,6 @@ namespace PotionFrontier.Game
         private GameObject detailContent;
         private Text detailEmpty;
         private RawImage previewImage;
-        private RectTransform helpStamp;
         private Text kindText;
         private Text nameText;
         private Text autoNameText;
@@ -117,20 +110,9 @@ namespace PotionFrontier.Game
         private Text childrenLabel;
         private Text recordText;
 
-        // 右のページの下（相談に乗るとき）
-        private GameObject actionArea;
-        private Text checkText;
-        private Text actionNote;
-        private GameObject actionButtons;
-        private Button actionButton;
-        private Text actionLabel;
-
         // 本の外の案内
         private Text footerText;
 
-        private Mode mode;
-        private QuestData quest;
-        private Action<LiquidRecord> onPick;
         private int filter;
         private string query = "";
         private int selected = -1;
@@ -142,7 +124,6 @@ namespace PotionFrontier.Game
         private float appear;
 
         public bool IsOpen => root.activeSelf;
-        public Mode CurrentMode => mode;
         public bool IsRenaming => renaming;
         /// <summary>名前・検索の欄に文字を打っている（キー操作を本に渡さない）</summary>
         public bool IsTyping => (renameField != null && renameField.isFocused) || (search != null && search.isFocused);
@@ -152,22 +133,20 @@ namespace PotionFrontier.Game
         public LiquidRecord SelectedRecord => selected >= 0 && selected < items.Count ? items[selected] : null;
         /// <summary>右のページに出している文（自動テストの記録用）</summary>
         public string DetailSummary => nameText.text + " ／ " + appearanceText.text + " ／ " + recipeText.text.Replace('\n', ' ');
-        public string CheckLine => checkText.gameObject.activeSelf ? checkText.text : "";
-        public bool ActionInteractable => actionButton != null && actionButton.interactable && actionArea.activeSelf && actionButtons.activeSelf;
+        /// <summary>本が机の上に置かれきった（開くアニメーションが終わった）</summary>
+        public bool FullyOpen => IsOpen && appear >= 1f;
 
-        public RecipeBookUI(RectTransform canvasRoot, Func<AlchemyManager> alchemy, PotionInventory potions,
-                            Func<QuestData> currentConsultation, Func<float> teachRewardRate, Action onCloseButton)
+        public RecipeBookUI(RectTransform canvasRoot, Func<AlchemyManager> alchemy, PotionInventory potions, Action onCloseButton)
         {
             this.alchemy = alchemy;
             this.potions = potions;
-            this.currentConsultation = currentConsultation;
-            this.teachRewardRate = teachRewardRate;
             this.onCloseButton = onCloseButton;
             rowSprite = UIFactory.RoundedRect(new Color(1f, 1f, 1f, 0.16f), new Color(0.45f, 0.3f, 0.17f, 0.28f), 10, 2);
             rowSelectedSprite = UIFactory.RoundedRect(new Color(1f, 0.86f, 0.45f, 0.62f), new Color(0.71f, 0.4f, 0.11f, 1f), 10, 3);
             preview = new LiquidPreview(512, new Color(0.93f, 0.86f, 0.7f));
 
-            Image overlay = UIFactory.CreateImage(canvasRoot, "RecipeBook", null, new Color(0f, 0f, 0f, 0.62f));
+            // 後ろの机は少しだけ暗くする（画面は切り替えない）
+            overlay = UIFactory.CreateImage(canvasRoot, "RecipeBook", null, new Color(0.02f, 0.012f, 0.008f, MenuPanel.DeskDim));
             overlay.raycastTarget = true;
             UIFactory.Stretch(overlay.rectTransform);
             root = overlay.gameObject;
@@ -199,20 +178,15 @@ namespace PotionFrontier.Game
         // 開く・閉じる
         // ------------------------------------------------------------------
 
-        /// <summary>
-        /// 開く。Read はふつうに読む。Share／Teach は相談に乗るとき（consultation の人に、選んだ瓶を分け与える／作り方を教える）。
-        /// pick は選んだとき（やめたときは null で）呼ばれる
-        /// </summary>
-        public void Open(Mode openMode, QuestData consultation = null, Action<LiquidRecord> pick = null)
+        /// <summary>開く（調合机の上に本を広げる）</summary>
+        public void Open()
         {
             EnsureRegistry();
-            mode = openMode;
-            quest = consultation;
-            onPick = pick;
             renaming = false;
             root.SetActive(true);
             appear = 0f;
-            if (mode != Mode.Read) filter = 0;
+            MenuPanel.Rise(panelRoot, Vector2.zero, ref appear, 0f);
+            MenuPanel.Shade(overlay, 0f);
             search.text = "";
             query = "";
             RefreshHeader();
@@ -226,8 +200,8 @@ namespace PotionFrontier.Game
             }
         }
 
-        /// <summary>閉じる。相談に乗る途中で閉じたときは「やめた」ことを伝える（notifyCancel が false なら伝えない）</summary>
-        public void Close(bool notifyCancel = true)
+        /// <summary>閉じる（playSound が false なら、閉じる音を鳴らさない：ほかの画面に切り替わるとき）</summary>
+        public void Close(bool playSound = true)
         {
             if (!root.activeSelf) return;
             if (search.isFocused) search.DeactivateInputField();
@@ -238,21 +212,15 @@ namespace PotionFrontier.Game
             root.SetActive(false);
             preview.SetActive(false);
             preview.Clear();
-            Action<LiquidRecord> callback = onPick;
-            onPick = null;
-            quest = null;
             SoundLibrary lib = AudioManager.Lib;
-            if (lib != null) AudioManager.Se(lib.uiClose, 0.7f);
-            if (notifyCancel && callback != null) callback(null);
+            if (playSound && lib != null) AudioManager.Se(lib.uiClose, 0.7f);
         }
 
         public void Tick(float dt, bool allowInput)
         {
             if (!IsOpen) return;
-            appear = Mathf.Min(1f, appear + dt * 7f);
-            float e = 1f - Mathf.Pow(1f - appear, 3f);
-            float s = Mathf.Lerp(0.95f, 1f, e);
-            panelRoot.localScale = new Vector3(s, s, 1f);
+            MenuPanel.Rise(panelRoot, Vector2.zero, ref appear, dt);
+            MenuPanel.Shade(overlay, appear);
             preview.Tick(dt);
 
             if (dirty)
@@ -293,41 +261,22 @@ namespace PotionFrontier.Game
             if (Input.GetKeyDown(KeyCode.PageUp)) ScrollDetail(1f);
             if (Input.GetKeyDown(KeyCode.RightArrow)) SetRecipeIndex(recipeIndex + 1);
             if (Input.GetKeyDown(KeyCode.LeftArrow)) SetRecipeIndex(recipeIndex - 1);
-            if (mode == Mode.Read)
+            for (int i = 0; i < FilterLabels.Length; i++)
             {
-                for (int i = 0; i < FilterLabels.Length; i++)
-                {
-                    if (Input.GetKeyDown(KeyCode.Alpha1 + i)) SetFilter(i);
-                }
-                if (Input.GetKeyDown(KeyCode.N)) BeginRename();
+                if (Input.GetKeyDown(KeyCode.Alpha1 + i)) SetFilter(i);
             }
-            else if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
-            {
-                PrimaryAction();
-            }
+            if (Input.GetKeyDown(KeyCode.N)) BeginRename();
         }
 
         // ------------------------------------------------------------------
         // 操作（自動テストからも呼べる）
         // ------------------------------------------------------------------
 
-        /// <summary>相談に乗る：選んでいる瓶を分け与える／選んでいる作り方を教える</summary>
-        public void PrimaryAction()
-        {
-            if (mode == Mode.Read) return;
-            LiquidRecord record = SelectedRecord;
-            if (record == null || !CanAct(record)) return;
-            Action<LiquidRecord> callback = onPick;
-            onPick = null;
-            Close(false);
-            if (callback != null) callback(record);
-        }
-
         /// <summary>液体を ID で選ぶ（目次の絞り込みで隠れていたら「すべて」に戻して探す）。見つからなければ false</summary>
         public bool SelectById(string id)
         {
             int index = IndexOf(id);
-            if (index < 0 && mode == Mode.Read && (filter != 0 || query.Length > 0))
+            if (index < 0 && (filter != 0 || query.Length > 0))
             {
                 filter = 0;
                 search.text = "";
@@ -384,7 +333,7 @@ namespace PotionFrontier.Game
         public void BeginRename()
         {
             LiquidRecord r = SelectedRecord;
-            if (r == null || mode != Mode.Read) return;
+            if (r == null) return;
             renaming = true;
             renameField.text = r.DisplayName;
             ShowRenameUI(true);
@@ -410,7 +359,7 @@ namespace PotionFrontier.Game
             AtelierHUD hud = AtelierHUD.Instance;
             if (r.DisplayName != before)
             {
-                if (lib != null) AudioManager.Se(lib.questAccept, 0.55f, 1.15f);
+                AudioManager.Se(lib != null && lib.starChime != null ? lib.starChime : SfxSynth.Chime, 0.4f, 1.26f);
                 if (hud != null)
                 {
                     hud.ShowToast(string.IsNullOrEmpty(r.customName)
@@ -466,20 +415,9 @@ namespace PotionFrontier.Game
             return potions != null && r != null ? potions.Find(r.id) : null;
         }
 
-        private int FullBottlesOf(LiquidRecord r)
-        {
-            PotionStack s = StockOf(r);
-            return s != null ? s.FullBottles : 0;
-        }
-
-        /// <summary>今の相談（分け与える・教える相手。ふつうに読んでいるときは、待ってもらっている相談）</summary>
-        private QuestData Consultation => quest != null ? quest : currentConsultation != null ? currentConsultation() : null;
-
         private bool Matches(LiquidRecord r)
         {
             if (r == null) return false;
-            if (mode == Mode.Share && FullBottlesOf(r) < 1) return false;
-            if (mode == Mode.Teach && !r.HasRecipe) return false;
             if (filter == 1 && r.kind != LiquidKind.Potion) return false;
             if (filter == 2 && r.kind != LiquidKind.Intermediate) return false;
             if (filter == 3 && r.kind != LiquidKind.Unknown) return false;
@@ -550,55 +488,28 @@ namespace PotionFrontier.Game
 
         private string EmptyMessage()
         {
-            if (query.Length > 0 || (mode == Mode.Read && filter != 0 && registry != null && registry.Count > 0)) return "見つかりませんでした。";
-            switch (mode)
-            {
-                case Mode.Share:
-                    return "分け与えられる満タンの瓶（100ml）がありません。\n調合して、瓶に詰めてこよう。";
-                case Mode.Teach:
-                    return "教えられる作り方が、まだありません。\n調合して瓶に詰めると、作り方が記録される。";
-                default:
-                    return "まだ何も記録されていません。\n\nフラスコで調合して瓶に詰めると、\nその液体がここに記録される。\n（失敗した液体も、大事な探求の記録）";
-            }
+            if (query.Length > 0 || (filter != 0 && registry != null && registry.Count > 0)) return "見つかりませんでした。";
+            return "まだ何も記録されていません。\n\nフラスコで調合して瓶に詰めると、\nその液体がここに記録される。\n（失敗した液体も、大事な探求の記録）";
         }
 
         private void RefreshHeader()
         {
             int total = registry != null ? registry.Count : 0;
-            QuestData q = quest;
-            switch (mode)
+            titleText.text = "<color=#B5651D>◆</color> レシピ本";
+            int potionCount = 0, intermediate = 0, unknown = 0;
+            if (registry != null)
             {
-                case Mode.Share:
-                    titleText.text = "分け与える瓶を選ぶ";
-                    subtitleText.text = q != null ? $"{q.ClientName}さんの相談：{q.TroubleSummary}" : "";
-                    break;
-                case Mode.Teach:
-                    titleText.text = "教える作り方を選ぶ";
-                    subtitleText.text = q != null ? $"{q.ClientName}さんの相談：{q.TroubleSummary}" : "";
-                    break;
-                default:
-                    titleText.text = "<color=#B5651D>◆</color> レシピ本";
-                    int potionCount = 0, intermediate = 0, unknown = 0;
-                    if (registry != null)
-                    {
-                        foreach (LiquidRecord r in registry.All)
-                        {
-                            if (r.kind == LiquidKind.Potion) potionCount++;
-                            else if (r.kind == LiquidKind.Intermediate) intermediate++;
-                            else unknown++;
-                        }
-                    }
-                    subtitleText.text = total > 0
-                        ? $"これまでに記録した液体 {total} 種類（ポーション {potionCount}・中間液体 {intermediate}・未知の液体 {unknown}）"
-                        : "これまでに記録した液体 0 種類";
-                    break;
+                foreach (LiquidRecord r in registry.All)
+                {
+                    if (r.kind == LiquidKind.Potion) potionCount++;
+                    else if (r.kind == LiquidKind.Intermediate) intermediate++;
+                    else unknown++;
+                }
             }
-            for (int i = 0; i < filterTabs.Count; i++) filterTabs[i].transform.gameObject.SetActive(mode == Mode.Read);
-            footerText.text = mode == Mode.Read
-                ? "↑↓ ページを選ぶ　　1〜4 種類　　←→ 作り方を切り替える　　PageUp／PageDown 送る　　N 名前を付ける　　R／Esc 閉じる"
-                : mode == Mode.Share
-                    ? "↑↓ 瓶を選ぶ　　←→ 作り方を切り替える　　E 分け与える　　Esc やめる"
-                    : "↑↓ 作り方を選ぶ　　←→ 作り方を切り替える　　E 教える　　Esc やめる";
+            subtitleText.text = total > 0
+                ? $"これまでに記録した液体 {total} 種類（ポーション {potionCount}・中間液体 {intermediate}・未知の液体 {unknown}）"
+                : "これまでに記録した液体 0 種類";
+            footerText.text = "↑↓ ページを選ぶ　　1〜4 種類　　←→ 作り方を切り替える　　PageUp／PageDown 送る　　N 名前を付ける　　Esc 閉じる";
         }
 
         private void FillRow(Row row, LiquidRecord r)
@@ -613,13 +524,9 @@ namespace PotionFrontier.Game
             sb.Append("　作った回数 ").Append(Mathf.Max(1, r.madeCount));
             row.meta.text = sb.ToString();
 
-            QuestData q = Consultation;
-            int full = FullBottlesOf(r);
             PotionStack stock = StockOf(r);
             if (r.unread) SetTag(row, "NEW", new Color(0.78f, 0.45f, 0.05f));
-            else if (q != null && q.IsSatisfiedBy(r)) SetTag(row, "相談", Green);
-            else if (mode == Mode.Share) SetTag(row, $"満タン{full}本", UIColors.InkLight);
-            else if (stock != null && stock.ml >= PotionStack.EmptyMl) SetTag(row, $"棚 {stock.ml:0}ml", UIColors.InkLight);
+            else if (stock != null && stock.ml >= PotionStack.EmptyMl) SetTag(row, $"瓶 {stock.ml:0}ml", UIColors.InkLight);
             else SetTag(row, "", UIColors.InkLight);
         }
 
@@ -684,21 +591,12 @@ namespace PotionFrontier.Game
         // ページ
         // ------------------------------------------------------------------
 
-        private bool CanAct(LiquidRecord r)
-        {
-            if (r == null) return false;
-            if (mode == Mode.Share) return FullBottlesOf(r) >= 1;
-            if (mode == Mode.Teach) return r.HasRecipe;
-            return false;
-        }
-
         private void RefreshDetail()
         {
             LiquidRecord r = SelectedRecord;
             bool any = r != null;
             detailContent.SetActive(any);
             detailEmpty.gameObject.SetActive(!any);
-            RefreshAction(r);
             if (!any)
             {
                 preview.Clear();
@@ -709,14 +607,6 @@ namespace PotionFrontier.Game
             // 見た目
             preview.Show(r);
             previewImage.texture = preview.Texture;
-            bool shared = r.sharedWith != null && r.sharedWith.Count > 0;
-            helpStamp.gameObject.SetActive(r.HelpedCount > 0);
-            if (r.HelpedCount > 0)
-            {
-                UISkin skin = UIFactory.Skin;
-                if (shared) StampUI.Set(helpStamp, skin != null ? skin.stampHelped : null, "役に立った", StampUI.Green);
-                else StampUI.Set(helpStamp, skin != null ? skin.stampTaught : null, "教えた", StampUI.Gold);
-            }
             int number = registry != null ? registry.NumberOf(r) : 0;
             kindText.text = $"No.{number}　{KindLabel(r.kind)}{(r.IsSpecial ? "・特別なポーション" : "")}";
             nameText.text = r.DisplayName;
@@ -725,7 +615,7 @@ namespace PotionFrontier.Game
             if (custom) autoNameText.text = $"もとの名前：{r.autoName}";
             starsText.gameObject.SetActive(r.stars > 0);
             if (r.stars > 0) starsText.text = BrewResult.StarText(r.stars);
-            renameButtonRow.SetActive(mode == Mode.Read && !renaming);
+            renameButtonRow.SetActive(!renaming);
             swatch.color = new Color(r.color.r, r.color.g, r.color.b, 1f);
             appearanceText.text = DescribeLook(r, settings);
 
@@ -804,29 +694,7 @@ namespace PotionFrontier.Game
             sb.Append("作った回数：").Append(Mathf.Max(1, r.madeCount)).Append(" 回");
             if (ways > 0) sb.Append("　／　作り方：").Append(ways).Append(" 通り");
             PotionStack stock = StockOf(r);
-            sb.Append("\n棚：").Append(stock != null && stock.ml >= PotionStack.EmptyMl ? stock.DescribeAmount() : "なし");
-            if (r.HelpedCount > 0)
-            {
-                sb.Append("\n<color=#2E7024>力になった相談：");
-                bool firstHelp = true;
-                if (r.sharedWith != null)
-                {
-                    foreach (string who in r.sharedWith)
-                    {
-                        sb.Append(firstHelp ? "" : "・").Append(who).Append("さん（分け与えた）");
-                        firstHelp = false;
-                    }
-                }
-                if (r.taughtTo != null)
-                {
-                    foreach (string who in r.taughtTo)
-                    {
-                        sb.Append(firstHelp ? "" : "・").Append(who).Append("さん（作り方を教えた）");
-                        firstHelp = false;
-                    }
-                }
-                sb.Append("</color>");
-            }
+            sb.Append("\nトレイの瓶：").Append(stock != null && stock.ml >= PotionStack.EmptyMl ? stock.DescribeAmount() : "なし");
             recordText.text = sb.ToString();
         }
 
@@ -910,51 +778,11 @@ namespace PotionFrontier.Game
             }
         }
 
-        private void RefreshAction(LiquidRecord r)
-        {
-            QuestData q = Consultation;
-            bool helps = r != null && q != null && q.IsSatisfiedBy(r);
-            bool consulting = mode != Mode.Read;
-            actionButtons.SetActive(consulting);
-            actionNote.gameObject.SetActive(consulting);
-            checkText.gameObject.SetActive(consulting || helps);
-            if (helps) checkText.text = $"○ {q.ClientName}さんの悩みに役立ちそう！";
-            else if (consulting && r != null) checkText.text = mode == Mode.Share
-                ? "合うかどうかは、渡してみないとわからない"
-                : "合うかどうかは、教えてみないとわからない";
-            else checkText.text = "";
-            checkText.color = helps ? Green : Muted;
-
-            if (consulting)
-            {
-                bool can = CanAct(r);
-                actionButton.interactable = can;
-                if (mode == Mode.Share)
-                {
-                    actionLabel.text = "この瓶を分け与える（E）";
-                    actionNote.text = r != null && can ? $"満タンの瓶を1本渡す（棚に満タン {FullBottlesOf(r)} 本）。合わなければ返してくれる" : "満タンの瓶（100ml）がない";
-                }
-                else
-                {
-                    int percent = Mathf.RoundToInt((teachRewardRate != null ? teachRewardRate() : 0.7f) * 100f);
-                    actionLabel.text = "この作り方を教える（E）";
-                    actionNote.text = r != null && can
-                        ? $"瓶は減らない。お礼は分け与えるときの {percent}% くらい"
-                        : "作り方の記録がない";
-                }
-            }
-
-            float bottom = consulting ? 196f : checkText.gameObject.activeSelf ? 76f : 34f;
-            detailViewport.offsetMin = new Vector2(detailViewport.offsetMin.x, bottom);
-            detailScrollbar.offsetMin = new Vector2(detailScrollbar.offsetMin.x, bottom);
-            actionArea.SetActive(consulting || helps);
-        }
-
         private void ShowRenameUI(bool on)
         {
             renameArea.SetActive(on);
             nameText.gameObject.SetActive(!on);
-            renameButtonRow.SetActive(!on && mode == Mode.Read);
+            renameButtonRow.SetActive(!on);
         }
 
         // ------------------------------------------------------------------
@@ -1199,8 +1027,6 @@ namespace PotionFrontier.Game
 
             Heading(content, "記録");
             recordText = Body(content);
-
-            BuildAction(page);
         }
 
         private void BuildHeader(RectTransform content)
@@ -1214,12 +1040,6 @@ namespace PotionFrontier.Game
             previewImage.transform.SetParent(frame.transform, false);
             previewImage.raycastTarget = false;
             UIFactory.Stretch(previewImage.rectTransform, 6f, 6f, 6f, 6f);
-            // 町の人の役に立った液体には、スタンプ（UISkin の stamp_helped / stamp_taught）
-            helpStamp = StampUI.Create(frame.transform, "HelpStamp", UIFactory.Skin != null ? UIFactory.Skin.stampHelped : null, "役に立った",
-                                       new Vector2(124f, 124f), -12f, StampUI.Green);
-            helpStamp.anchorMin = helpStamp.anchorMax = new Vector2(1f, 0f);
-            helpStamp.anchoredPosition = new Vector2(-24f, 30f);
-            helpStamp.gameObject.SetActive(false);
 
             RectTransform column = UIFactory.CreateRect("Column", header);
             UIFactory.Vertical(column.gameObject, new RectOffset(0, 0, 10, 0), 6f).childForceExpandWidth = true;
@@ -1248,26 +1068,6 @@ namespace PotionFrontier.Game
             UIFactory.Horizontal(buttonRow.gameObject, new RectOffset(0, 0, 6, 0), 0f);
             UIWidgets.WoodButton(buttonRow, "名前を付ける（N）", 22, new Vector2(236f, 50f), BeginRename);
             renameButtonRow = buttonRow.gameObject;
-        }
-
-        private void BuildAction(RectTransform page)
-        {
-            RectTransform area = UIFactory.CreateRect("Action", page);
-            UIFactory.Place(area, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(PageWidth - 96f, 160f));
-            UIFactory.Vertical(area.gameObject, new RectOffset(0, 0, 0, 0), 8f, TextAnchor.LowerCenter).childForceExpandWidth = true;
-            actionArea = area.gameObject;
-
-            Image line = UIFactory.CreateImage(area, "Line", null, new Color(0.45f, 0.3f, 0.17f, 0.45f));
-            UIFactory.Size(line.gameObject, -1f, 2f);
-            checkText = UIFactory.Label(area, "Check", "", 23, Green, TextAnchor.MiddleCenter, FontStyle.Bold);
-            actionNote = UIFactory.Label(area, "Note", "", 19, UIColors.InkLight, TextAnchor.MiddleCenter);
-
-            RectTransform buttons = UIFactory.CreateRect("Buttons", area);
-            UIFactory.Horizontal(buttons.gameObject, new RectOffset(0, 0, 4, 0), 14f, TextAnchor.MiddleCenter);
-            actionButtons = buttons.gameObject;
-            actionButton = UIWidgets.WoodButton(buttons, "この瓶を分け与える（E）", 25, new Vector2(390f, 64f), PrimaryAction);
-            actionLabel = actionButton.GetComponentInChildren<Text>();
-            UIWidgets.WoodButton(buttons, "やめる（Esc）", 23, new Vector2(200f, 64f), () => { if (onCloseButton != null) onCloseButton(); });
         }
 
         private AttributeBar CreateBar(Transform parent)

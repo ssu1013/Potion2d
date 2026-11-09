@@ -11,7 +11,7 @@ namespace PotionFrontier.Alchemy.EditorTools
     /// </summary>
     public static class AlchemySampleDataGenerator
     {
-        private const string InvisibilityDescription = "飲むと数分間、姿がほとんど見えなくなる。「人目につかずに何かしたい」という相談の頼みの綱。";
+        private const string InvisibilityDescription = "飲むと数分間、姿がほとんど見えなくなる。人目につかずに何かしたい夜の、頼みの綱。";
 
         private const string RootDir = "Assets/GameData/Alchemy";
         private const string IngredientDir = RootDir + "/Ingredients";
@@ -190,8 +190,9 @@ namespace PotionFrontier.Alchemy.EditorTools
                     new AttributeCondition(PotionAttribute.Invisibility, ConditionType.IsDominant),
                 },
                 useCustomColor: true, customColor: new Color(0.92f, 0.92f, 1.00f, 0.30f));
-            // 前の版で作った説明（「依頼の定番」）は、相談の言い回しに直す
+            // 前の版で作った説明（「依頼の定番」「相談の頼みの綱」）は、今の言い回しに直す（1画面版には相談がない）
             if (invisibility.EditorUpgradeDescription("依頼の定番", InvisibilityDescription)) EditorUtility.SetDirty(invisibility);
+            if (invisibility.EditorUpgradeDescription("相談の頼みの綱", InvisibilityDescription)) EditorUtility.SetDirty(invisibility);
 
             var growthBooster = Condition("Potion_GrowthBooster", "special_growth_booster", "成長促進剤",
                 "畑にまくと作物の成長が大きく早まる。ファームの効率化に欠かせない。",
@@ -215,42 +216,46 @@ namespace PotionFrontier.Alchemy.EditorTools
                 useCustomColor: true, customColor: new Color(1.00f, 0.85f, 0.40f, 1.00f));
 
             // 入手・分類（値段は1単位あたり）
-            Details(water, 1, 2, "水");
-            Details(oil, 1, 4, "油", "火");
-            Details(honey, 1, 5, "農園", "花");
-            Details(spiritWater, 3, 14, "水", "森", "神秘");
-            Details(herb, 1, 3, "草", "農園");
-            Details(fireGrass, 1, 6, "草", "火");
-            Details(frostMint, 2, 6, "草", "氷");
-            Details(sproutSeed, 1, 5, "種", "農園");
-            Details(mistFlower, 2, 9, "花", "森");
-            Details(nightshade, 2, 6, "実", "毒");
-            Details(sunPetal, 2, 7, "花", "光");
-            Details(galeFeather, 2, 7, "羽根", "風");
-            Details(amplifyCrystal, 3, 16, "鉱石");
-            Details(sunStone, 3, 12, "鉱石", "光");
-            Details(moonDust, 3, 12, "粉", "神秘");
-            Details(amberResin, 2, 8, "樹脂", "森");
-            Details(starPetal, 2, 9, "花", "光", "夜");
-            Details(dreamLavender, 2, 8, "花", "香り");
-            Details(frostStone, 2, 10, "鉱石", "氷");
-            Details(spiralShell, 2, 9, "貝", "海", "風");
-            Details(volcanoAsh, 1, 4, "粉", "火", "土");
-            Details(beesWax, 1, 6, "樹脂", "蝋", "森");
-            Details(fiddlehead, 2, 7, "草", "森", "風");
-            Details(fizzPowder, 1, 5, "粉", "風", "氷");
-            Details(nightDew, 2, 9, "水", "夜", "神秘");
-            // 取引先帳で取引できるようになる時期（解決した相談の数）
-            Trade(volcanoAsh, 0);
-            Trade(amberResin, 1);
-            Trade(dreamLavender, 1);
-            Trade(starPetal, 2);
-            Trade(frostStone, 2);
-            Trade(spiralShell, 3);
-            Trade(fizzPowder, 0);
-            Trade(beesWax, 1);
-            Trade(fiddlehead, 2);
-            Trade(nightDew, 3);
+            Details(water, 1, "水");
+            Details(oil, 1, "油", "火");
+            Details(honey, 1, "農園", "花");
+            Details(spiritWater, 3, "水", "森", "神秘");
+            Details(herb, 1, "草", "農園");
+            Details(fireGrass, 1, "草", "火");
+            Details(frostMint, 2, "草", "氷");
+            Details(sproutSeed, 1, "種", "農園");
+            Details(mistFlower, 2, "花", "森");
+            Details(nightshade, 2, "実", "毒");
+            Details(sunPetal, 2, "花", "光");
+            Details(galeFeather, 2, "羽根", "風");
+            Details(amplifyCrystal, 3, "鉱石");
+            Details(sunStone, 3, "鉱石", "光");
+            Details(moonDust, 3, "粉", "神秘");
+            Details(amberResin, 2, "樹脂", "森");
+            Details(starPetal, 2, "花", "光", "夜");
+            Details(dreamLavender, 2, "花", "香り");
+            Details(frostStone, 2, "鉱石", "氷");
+            Details(spiralShell, 2, "貝", "海", "風");
+            Details(volcanoAsh, 1, "粉", "火", "土");
+            Details(beesWax, 1, "樹脂", "蝋", "森");
+            Details(fiddlehead, 2, "草", "森", "風");
+            Details(fizzPowder, 1, "粉", "風", "氷");
+            Details(nightDew, 2, "水", "夜", "神秘");
+            // 調合机に届く時期（発見のポイント：性質1・反応2・新しい液体1）。はじめから机にある素材は GameBalance
+            Unlock(volcanoAsh, 2);
+            Unlock(fizzPowder, 3);
+            Unlock(sunPetal, 4);
+            Unlock(galeFeather, 5);
+            Unlock(nightshade, 6);
+            Unlock(mistFlower, 7);
+            Unlock(beesWax, 8);
+            Unlock(amberResin, 9);
+            Unlock(dreamLavender, 10);
+            Unlock(frostStone, 12);
+            Unlock(starPetal, 14);
+            Unlock(fiddlehead, 16);
+            Unlock(spiralShell, 18);
+            Unlock(nightDew, 20);
             // 見た目に変化をつける（形状・容器がまだ「自動」の素材だけ）
             Shape(moonDust, IngredientForm.Powder, ContainerStyle.Pouch);
             Shape(sproutSeed, IngredientForm.Solid, ContainerStyle.Pouch);
@@ -443,10 +448,10 @@ namespace PotionFrontier.Alchemy.EditorTools
         }
 
         /// <summary>入手・分類などの追加項目を入れる（まだ初期値のままの素材だけ）</summary>
-        private static void Details(IngredientData data, int rarity, int price, params string[] tags)
+        private static void Details(IngredientData data, int rarity, params string[] tags)
         {
             if (data == null || !data.EditorDetailsAreDefault) return;
-            data.EditorSetupDetails(rarity, price, tags);
+            data.EditorSetupDetails(rarity, tags);
             EditorUtility.SetDirty(data);
         }
 
@@ -457,11 +462,13 @@ namespace PotionFrontier.Alchemy.EditorTools
             EditorUtility.SetDirty(data);
         }
 
-        /// <summary>取引先帳で取引できるようになる時期（まだ初期値のままの素材だけ。開拓の費用は自動）</summary>
-        private static void Trade(IngredientData data, int requiredReputation)
+        /// <summary>
+        /// 調合机に届くのに必要な発見のポイント。まだ決めていない素材（0）と、1画面版の前の「必要な実績」（1〜3）のままの素材だけ変える
+        /// </summary>
+        internal static void Unlock(IngredientData data, int discoveries)
         {
-            if (data == null || data.RequiredReputation != 0 || data.UnlockPriceSetting != -1) return;
-            data.EditorSetTrade(-1, requiredReputation);
+            if (data == null || data.DiscoveriesToUnlock == discoveries || data.DiscoveriesToUnlock > 3) return;
+            data.EditorSetUnlock(discoveries);
             EditorUtility.SetDirty(data);
         }
 

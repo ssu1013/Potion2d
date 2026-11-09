@@ -16,7 +16,7 @@ namespace PotionFrontier.Game2D.EditorTools
     /// <summary>
     /// Step5（C：素材の性質の軸 ＋ D：発見の記録）のセットアップ。
     ///   ・新しい素材6つ・反応3つを、なければ作る（すでにある物は上書きしない）。シーンの AlchemyManager に反応を登録する
-    ///   ・素材の仮の絵：Assets/CustomAssets/Images/Ingredients/&lt;素材ID&gt;.png（256×256：トレイ・手に持つ・取引先帳・レシピ本・素材ノート）と
+    ///   ・素材の仮の絵：Assets/CustomAssets/Images/Ingredients/&lt;素材ID&gt;.png（256×256：トレイ・手に持つ・届いたお知らせ・レシピ本・素材ノート）と
     ///     &lt;素材ID&gt;_piece.png（96×96：フラスコに落ちる欠片・底の溶け残り。液体にはない）
     ///   ・発見の仮の絵：Assets/CustomAssets/Images/UI/Discovery/（page・card・unknown・stamp_*）→ UISkin に割り当て
     /// 仮の絵は、ファイルがないときだけ作る。同じ名前の PNG で上書きすれば、どこからも参照がそのままで絵だけ替わる。
@@ -27,7 +27,7 @@ namespace PotionFrontier.Game2D.EditorTools
         public const string IngredientArtDir = CustomAssetPaths.Ingredients;
         public const string DiscoveryArtDir = CustomAssetPaths.UIDiscovery;
         private const string SkinPath = "Assets/Art2D/UI/UISkin.asset";
-        private static readonly string[] Scenes = { "Assets/Scenes/Atelier2D.unity", "Assets/Scenes/Brew2D.unity" };
+        private static readonly string[] Scenes = { "Assets/Scenes/Atelier2D.unity" };
 
         private enum Shape { Bottle, Leaf, Flower, Petal, Crystal, Powder, Seed, Feather, Berry, Shell, Resin, Stone }
 
@@ -72,7 +72,7 @@ namespace PotionFrontier.Game2D.EditorTools
             int made = 0, assigned = 0;
             var readme = new StringBuilder();
             readme.AppendLine("素材の絵（同じ名前の PNG で上書きすると、ゲームのどこでも差し替わります）");
-            readme.AppendLine("  <素材ID>.png       … 256×256 推奨。トレイ・手に持ったとき・取引先帳・レシピ本・素材ノートの絵（背景は透明）");
+            readme.AppendLine("  <素材ID>.png       … 256×256 推奨。トレイ・手に持ったとき・届いたお知らせ・レシピ本・素材ノートの絵（背景は透明）");
             readme.AppendLine("  <素材ID>_piece.png … 96×96 推奨。フラスコに入れたときに落ちる欠片・底に沈む溶け残り（液体の素材にはない）");
             readme.AppendLine("  ※ 絵は素材データ（Assets/GameData/Alchemy/Ingredients）の「アイコン」「欠片の絵」から参照しています");
             readme.AppendLine();
@@ -305,8 +305,6 @@ namespace PotionFrontier.Game2D.EditorTools
             Sprite stampNew = Make("stamp_new", 160, 160, 0, (x, y) => StampArt(x, y, new Color(0.8f, 0.16f, 0.12f, 1f)), ref made);
             Sprite stampFact = Make("stamp_fact", 160, 160, 0, (x, y) => StampArt(x, y, new Color(0.82f, 0.3f, 0.12f, 1f)), ref made);
             Sprite stampReaction = Make("stamp_reaction", 160, 160, 0, (x, y) => StampArt(x, y, new Color(0.62f, 0.2f, 0.55f, 1f)), ref made);
-            Sprite stampHelped = Make("stamp_helped", 160, 160, 0, (x, y) => StampArt(x, y, new Color(0.18f, 0.5f, 0.2f, 1f)), ref made);
-            Sprite stampTaught = Make("stamp_taught", 160, 160, 0, (x, y) => StampArt(x, y, new Color(0.78f, 0.55f, 0.08f, 1f)), ref made);
             Sprite stampComplete = Make("stamp_complete", 160, 160, 0, (x, y) => StampArt(x, y, new Color(0.78f, 0.55f, 0.08f, 1f)), ref made);
 
             var readme = new StringBuilder();
@@ -318,8 +316,6 @@ namespace PotionFrontier.Game2D.EditorTools
             readme.AppendLine("  stamp_new.png       … 160×160。新しい液体を発見");
             readme.AppendLine("  stamp_fact.png      … 160×160。素材の性質を発見");
             readme.AppendLine("  stamp_reaction.png  … 160×160。新しい反応を発見");
-            readme.AppendLine("  stamp_helped.png    … 160×160。レシピ本「役に立った」");
-            readme.AppendLine("  stamp_taught.png    … 160×160。レシピ本「作り方を教えた」");
             readme.AppendLine("  stamp_complete.png  … 160×160。素材ノート「すべて発見」");
             readme.AppendLine("  ※ スタンプの上には文字（新発見 など）を重ねて出します。絵に文字を描き込んだら、UISkin の「スタンプに文字を重ねる」をオフに");
             if (!File.Exists(DiscoveryArtDir + "/README.txt"))
@@ -340,8 +336,6 @@ namespace PotionFrontier.Game2D.EditorTools
                 assigned += Fill(ref skin.stampNew, stampNew);
                 assigned += Fill(ref skin.stampFact, stampFact);
                 assigned += Fill(ref skin.stampReaction, stampReaction);
-                assigned += Fill(ref skin.stampHelped, stampHelped);
-                assigned += Fill(ref skin.stampTaught, stampTaught);
                 assigned += Fill(ref skin.stampComplete, stampComplete);
                 if (assigned > 0) EditorUtility.SetDirty(skin);
             }
