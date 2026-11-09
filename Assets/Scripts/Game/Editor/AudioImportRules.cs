@@ -4,7 +4,7 @@ using UnityEngine;
 namespace PotionFrontier.Game.EditorTools
 {
     /// <summary>
-    /// Assets/Audio に置いた音の取り込み設定を自動で決める。
+    /// 差し替え用の音（Assets/CustomAssets/Sounds）の取り込み設定を自動で決める。同じ名前の WAV で上書きしたときも同じ設定になる。
     ///   BGM・環境音 … ストリーミング再生（メモリ節約）
     ///   効果音      … 読み込み時に展開（すぐ鳴る）・モノラル化
     /// </summary>
@@ -12,7 +12,7 @@ namespace PotionFrontier.Game.EditorTools
     {
         private void OnPreprocessAudio()
         {
-            if (!assetPath.StartsWith("Assets/Audio/")) return;
+            if (!assetPath.StartsWith("Assets/CustomAssets/Sounds/") && !assetPath.StartsWith("Assets/Audio/")) return;
             var importer = (AudioImporter)assetImporter;
             AudioImporterSampleSettings settings = importer.defaultSampleSettings;
 

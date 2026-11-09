@@ -52,6 +52,19 @@ MonoBehaviour:
   ignite: {fileID: 8300000, guid: 81ece5778731f9648bc5b0d8e6f4a3a6, type: 3}
   knobTick: {fileID: 8300000, guid: 074d5c0a37bc6a644a86cd287a98cf8b, type: 3}
   corkPop: {fileID: 8300000, guid: a1b6fe03cb7b3ce47a944f05ba747d1c, type: 3}
+  starChime: {fileID: 8300000, guid: 299202d0e47f1d64abd661b8a52bedf9, type: 3}
+  goalReached: {fileID: 8300000, guid: e64abcd819f17b543ba00bfda983a109, type: 3}
+  discovery: {fileID: 8300000, guid: 8e798c79351a482409bfa72fb1502ce0, type: 3}
+  reactionSting: {fileID: 8300000, guid: f25a0c4bd46b96e458a726ed565e6284, type: 3}
+  softWarning: {fileID: 8300000, guid: f5f13394d9075a2448f139285b11022b, type: 3}
+  lampFireLoop: {fileID: 8300000, guid: 78ff13c3211784b4ea6d7cade4ad4128, type: 3}
+  kotoKnock:
+  - {fileID: 8300000, guid: 4a2a9a31f621bd94a9d072d9505977fa, type: 3}
+  - {fileID: 8300000, guid: 7d55852de22b1d941a90972558e9fe19, type: 3}
+  - {fileID: 8300000, guid: b1741e5a55b0f4248a36a4266a099a50, type: 3}
+  glassTouch:
+  - {fileID: 8300000, guid: b189a92d071256a4cbfbed19f8e89e77, type: 3}
+  - {fileID: 8300000, guid: 4720b5fdc81c4de4fadc0a6dd7e30a64, type: 3}
   doorBell: {fileID: 8300000, guid: 35161e79eca6fcd4ca2345c729016449, type: 3}
   voiceBlip: {fileID: 8300000, guid: da2989a224c94de48a892c816a1bae96, type: 3}
   coins: {fileID: 8300000, guid: fba0cdb375a5e6447bf1ae42fd1d8a9c, type: 3}

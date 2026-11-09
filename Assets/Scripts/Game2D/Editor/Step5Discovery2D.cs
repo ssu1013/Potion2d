@@ -16,16 +16,16 @@ namespace PotionFrontier.Game2D.EditorTools
     /// <summary>
     /// Step5（C：素材の性質の軸 ＋ D：発見の記録）のセットアップ。
     ///   ・新しい素材6つ・反応3つを、なければ作る（すでにある物は上書きしない）。シーンの AlchemyManager に反応を登録する
-    ///   ・素材の仮の絵：Assets/Art2D/Ingredients/&lt;素材ID&gt;.png（256×256：トレイ・手に持つ・取引先帳・レシピ本・素材ノート）と
+    ///   ・素材の仮の絵：Assets/CustomAssets/Images/Ingredients/&lt;素材ID&gt;.png（256×256：トレイ・手に持つ・取引先帳・レシピ本・素材ノート）と
     ///     &lt;素材ID&gt;_piece.png（96×96：フラスコに落ちる欠片・底の溶け残り。液体にはない）
-    ///   ・発見の仮の絵：Assets/Art2D/UI/Discovery/（page・card・unknown・stamp_*）→ UISkin に割り当て
+    ///   ・発見の仮の絵：Assets/CustomAssets/Images/UI/Discovery/（page・card・unknown・stamp_*）→ UISkin に割り当て
     /// 仮の絵は、ファイルがないときだけ作る。同じ名前の PNG で上書きすれば、どこからも参照がそのままで絵だけ替わる。
     /// </summary>
     public static class Step5Discovery2D
     {
         private const string Menu = "Tools/Potion Frontier 2D/";
-        public const string IngredientArtDir = "Assets/Art2D/Ingredients";
-        public const string DiscoveryArtDir = "Assets/Art2D/UI/Discovery";
+        public const string IngredientArtDir = CustomAssetPaths.Ingredients;
+        public const string DiscoveryArtDir = CustomAssetPaths.UIDiscovery;
         private const string SkinPath = "Assets/Art2D/UI/UISkin.asset";
         private static readonly string[] Scenes = { "Assets/Scenes/Atelier2D.unity", "Assets/Scenes/Brew2D.unity" };
 
@@ -98,8 +98,12 @@ namespace PotionFrontier.Game2D.EditorTools
                 }
                 readme.AppendLine($"{id}.png{(data.IsPoured ? "" : $" ／ {id}_piece.png")}　… {data.DisplayName}");
             }
-            File.WriteAllText(IngredientArtDir + "/README.txt", readme.ToString(), new UTF8Encoding(true));
-            AssetDatabase.ImportAsset(IngredientArtDir + "/README.txt");
+            // 説明書（README.txt）は Step7 でくわしい物を置いたので、なければだけ書く
+            if (!File.Exists(IngredientArtDir + "/README.txt"))
+            {
+                File.WriteAllText(IngredientArtDir + "/README.txt", readme.ToString(), new UTF8Encoding(true));
+                AssetDatabase.ImportAsset(IngredientArtDir + "/README.txt");
+            }
             log.AppendLine($"・素材の絵：新しく作った {made} 枚、素材データに割り当てた {assigned} 件（{IngredientArtDir}）");
         }
 
@@ -318,8 +322,11 @@ namespace PotionFrontier.Game2D.EditorTools
             readme.AppendLine("  stamp_taught.png    … 160×160。レシピ本「作り方を教えた」");
             readme.AppendLine("  stamp_complete.png  … 160×160。素材ノート「すべて発見」");
             readme.AppendLine("  ※ スタンプの上には文字（新発見 など）を重ねて出します。絵に文字を描き込んだら、UISkin の「スタンプに文字を重ねる」をオフに");
-            File.WriteAllText(DiscoveryArtDir + "/README.txt", readme.ToString(), new UTF8Encoding(true));
-            AssetDatabase.ImportAsset(DiscoveryArtDir + "/README.txt");
+            if (!File.Exists(DiscoveryArtDir + "/README.txt"))
+            {
+                File.WriteAllText(DiscoveryArtDir + "/README.txt", readme.ToString(), new UTF8Encoding(true));
+                AssetDatabase.ImportAsset(DiscoveryArtDir + "/README.txt");
+            }
 
             UISkin skin = AssetDatabase.LoadAssetAtPath<UISkin>(SkinPath);
             int assigned = 0;

@@ -17,22 +17,22 @@ namespace PotionFrontier.Game
         [Tooltip("太字に使うフォント（同じ書体の Bold など）。空なら上のフォントを太らせて表示する")]
         public Font fontBold;
 
-        [Header("枠・パネル（9スライス推奨）")]
-        public Sprite parchment;
-        public Sprite woodPanel;
+        [Header("枠・パネル（Assets/CustomAssets/Images/UI/Common。同じ名前の PNG で上書きすると差し替わる）")]
+        [Tooltip("parchment.png：羊皮紙（ウィンドウ・カードの紙）")] public Sprite parchment;
+        [Tooltip("wood_panel.png：木の板（棚の枠など）")] public Sprite woodPanel;
         [Tooltip("ボタン（空なら木の板）")] public Sprite button;
         [Tooltip("棚・素材箱のマス")] public Sprite slot;
         [Tooltip("選んでいるマス")] public Sprite slotSelected;
 
-        [Header("アイコン・小物")]
-        public Sprite crosshair;
-        public Sprite coin;
-        [Tooltip("スライダーのつまみ")] public Sprite knob;
-        public Sprite vignette;
-        public Sprite sparkle;
-        [Tooltip("ぼんやり光る丸（光の粒など）")] public Sprite softDot;
+        [Header("アイコン・小物（Assets/CustomAssets/Images/UI/Common）")]
+        [Tooltip("照準（3D 版の名残り。2D 版では使っていない）")] public Sprite crosshair;
+        [Tooltip("coin.png：お金のアイコン")] public Sprite coin;
+        [Tooltip("knob.png：スライダーのつまみ")] public Sprite knob;
+        [Tooltip("vignette.png：タイトル画面のふちの暗がり")] public Sprite vignette;
+        [Tooltip("sparkle.png：タイトルのロゴのきらめき")] public Sprite sparkle;
+        [Tooltip("soft_dot.png：ぼんやり光る丸（光の粒・影など）")] public Sprite softDot;
 
-        [Header("発見・素材ノート（Assets/Art2D/UI/Discovery。同じ名前の PNG で上書きすると差し替わる）")]
+        [Header("発見・素材ノート（Assets/CustomAssets/Images/UI/Discovery。同じ名前の PNG で上書きすると差し替わる）")]
         [Tooltip("page.png：新しい反応を見つけたときのページ・書き足したお知らせの紙（9スライス推奨）")] public Sprite discoveryPage;
         [Tooltip("page_turn.png：ページめくりで、めくれていく紙（左の辺がとじ目。9スライス推奨）")] public Sprite pageTurn;
         [Tooltip("card.png：素材ノートの素材カード（9スライス推奨）")] public Sprite notebookCard;

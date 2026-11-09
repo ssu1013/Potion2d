@@ -1160,14 +1160,13 @@ MonoBehaviour:
   thermometerSize: {x: 56, y: 400}
   resultCenter: {x: 961, y: 800}
   meterPanel: {fileID: 0}
-  barBack: {fileID: 0}
-  barFill: {fileID: 0}
-  thermometerTube: {fileID: 0}
-  stirRing: {fileID: 0}
+  barBack: {fileID: 21300000, guid: a6197310b416d9d43b977e035aa53b8a, type: 3}
+  barFill: {fileID: 21300000, guid: 207e115d4f86c9d4796069c41e08187d, type: 3}
+  thermometerTube: {fileID: 21300000, guid: 342ba9329d06f6e47ae98d069653ec51, type: 3}
+  stirRing: {fileID: 21300000, guid: 8aa04137f622274439406274cc05a0f2, type: 3}
   reactionSlowMotion: 1
   slowMotionScale: 0.35
   slowMotionSeconds: 0.45
-  screenFlash: 1
   showBottleResult: 1
   popInterval: 0.55
   soundVolume: 1
