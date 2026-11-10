@@ -181,9 +181,7 @@ namespace PotionFrontier.Game
             {
                 int liquids = save.liquids != null ? save.liquids.Count : 0;
                 int onDesk = save.unlockedIngredients != null ? save.unlockedIngredients.Count : 0;
-                // つづきからは1日進むので、これから始まる夜の日付を出す
-                int next = Mathf.Max(0, save.day) + 1;
-                saveInfo.text = $"つづきから：{GameCalendar.Format(next, GameContext.Balance)}（{next}日目の夜）　見つけた液体 {liquids} 種類　机の素材 {onDesk} 種類";
+                saveInfo.text = $"つづきから：{save.savedAt}　見つけた液体 {liquids} 種類　机の素材 {onDesk} 種類";
             }
             else
             {

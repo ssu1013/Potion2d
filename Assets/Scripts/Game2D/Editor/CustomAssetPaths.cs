@@ -22,7 +22,7 @@ namespace PotionFrontier.Game2D.EditorTools
         public const string UICommon = UI + "/Common";
         public const string UIBrew = UI + "/Brew";
         public const string UIDiscovery = UI + "/Discovery";
-        public const string UIDateCard = UI + "/DateCard";
+        public const string UILoading = UI + "/Loading";
         public const string UnusedImages = Images + "/_Unused";
 
         // ---- 音 ----
@@ -42,7 +42,7 @@ namespace PotionFrontier.Game2D.EditorTools
         public static readonly Dictionary<string, string> ImageFolders = new Dictionary<string, string>
         {
             { "lamp", Workbench },
-            { "date_background", UIDateCard }, { "date_ornament", UIDateCard },
+            { "loading_background", UILoading },
             { "brew_background", Workbench }, { "flask_back", Workbench }, { "flask_front", Workbench }, { "flask_mask", Workbench },
             { "heater_stand", Workbench }, { "knob_base", Workbench }, { "knob_dial", Workbench }, { "flame", Workbench },
             { "stir_rod", Workbench }, { "tray", Workbench },
@@ -65,7 +65,7 @@ namespace PotionFrontier.Game2D.EditorTools
             { "bgm_title", Bgm }, { "bgm_atelier", Bgm },
             { "amb_room", Ambient }, { "amb_lamp_fire_loop", Ambient },
             { "se_ui_click", SeUI }, { "se_ui_hover", SeUI }, { "se_ui_open", SeUI }, { "se_ui_close", SeUI },
-            { "se_page", SeUI }, { "se_start_game", SeUI }, { "se_warning", SeUI }, { "se_date", SeUI },
+            { "se_page", SeUI }, { "se_start_game", SeUI }, { "se_warning", SeUI },
             { "se_pickup", SeBrewing }, { "se_putback", SeBrewing }, { "se_pour_loop", SeBrewing }, { "se_pour_thin_loop", SeBrewing },
             { "se_plop", SeBrewing }, { "se_drop_solid_1", SeBrewing }, { "se_drop_solid_2", SeBrewing }, { "se_drop_solid_3", SeBrewing },
             { "se_drop_powder_1", SeBrewing }, { "se_drop_powder_2", SeBrewing }, { "se_stir_loop", SeBrewing },

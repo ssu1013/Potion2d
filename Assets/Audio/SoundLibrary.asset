@@ -22,7 +22,6 @@ MonoBehaviour:
   uiClose: {fileID: 8300000, guid: ffd34a61d0dce4a4f9e4aa6f9a19bed5, type: 3}
   page: {fileID: 8300000, guid: 0dfe63663fcd1ae48b9e70fd4554cf9b, type: 3}
   startGame: {fileID: 8300000, guid: fe2535bd69ce7754a89f5159f286fa36, type: 3}
-  dateCard: {fileID: 8300000, guid: 858206b2c3cadec418f1846c4aa6d728, type: 3}
   pickup: {fileID: 8300000, guid: 8ec1f9b6db9076e47a48404b9359de91, type: 3}
   putBack: {fileID: 8300000, guid: eeeae15950b599544b57d74a80103d16, type: 3}
   pourLoop: {fileID: 8300000, guid: 74eea1582393d6c428449b0ed33c668d, type: 3}

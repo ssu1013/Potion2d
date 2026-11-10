@@ -13,7 +13,7 @@ namespace PotionFrontier.Game2D
     /// <summary>
     /// 2D 版（1画面版）の通しテスト（エディタ専用。製品版には含まれない）。
     /// メニュー「Tools/Potion Frontier 2D/仕上げ/④ 通しテストを実行」から始める。
-    ///   タイトル → 設定 → はじめから（日付のアイキャッチ → 調合机）→ トレイから水を取って傾けて注ぐ → 薬草を2回入れる
+    ///   タイトル → 設定 → はじめから（ロード画面 → 調合机）→ トレイから水を取って傾けて注ぐ → 薬草を2回入れる
     ///   → 円を描いてかき混ぜる → 「全部詰める」→ 強火で薬草の「熱に弱い」を見つける → 発見が進んで新しい素材が机に届く
     ///   （手紙のお知らせ・トレイに並ぶ・手に取れる）→ 素材ノート・レシピ本を机の上で開く（火の音・机はそのまま）
     ///   → ポーズ → 設定 → タイトルへ（セーブ）→ つづきから（届いた素材・液体・ノートが戻る）
@@ -183,16 +183,18 @@ namespace PotionFrontier.Game2D
             yield return Wait(0.3f);
             CheckWords("タイトル");
 
-            // ---- はじめから（日付のアイキャッチ → 調合机）---------------------------------
+            // ---- はじめから（ロード画面 → 調合机）---------------------------------
+            float loadStart = Time.realtimeSinceStartup;
             hud.Title.ForceNewGame();
-            yield return WaitUntil(() => hud.DateCard != null && hud.DateCard.Covered, 6f, "はじめから → 画面が暗くなって、日付のアイキャッチが出る");
-            Log($"[日付] {(hud.DateCard != null ? hud.DateCard.DateText : "")}（{flow.Day}日目）");
-            Check(flow.Day == 1 && hud.DateCard != null && hud.DateCard.DateText == flow.DateLabel && flow.DateLabel.Contains("月"), "はじめからは1日目。その日付が出る");
-            Check(flow.Mode == GameMode.Title, "日付が出ている間は、まだ調合机を触れない");
-            yield return Wait(2.2f);
-            yield return Shot("date_card");
-            yield return WaitUntil(() => flow.Mode == GameMode.Playing, 20f, "日付が消えて、遊べるようになる");
-            yield return WaitUntil(() => !hud.IsDateCardOpen, 10f, "暗がりが晴れて、調合机が現れる");
+            yield return WaitUntil(() => hud.Loading != null && hud.Loading.Covered, 4f, "はじめから → 1枚絵のロード画面が出る");
+            Check(UIFactory.Skin != null && UIFactory.Skin.loadingBackground != null, "ロード画面の絵（CustomAssets/Images/UI/Loading/loading_background.png）が UISkin につながっている");
+            Check(hud.Loading != null && hud.Loading.LabelText.StartsWith("Loading"), "ロード画面の右下に Loading... と出る");
+            Check(flow.Mode == GameMode.Title, "ロード画面の間は、まだ調合机を触れない");
+            yield return Shot("loading_screen");
+            yield return WaitUntil(() => flow.Mode == GameMode.Playing && !hud.IsLoadingOpen, 8f, "ロード画面が消えて、遊べるようになる");
+            float loadSeconds = Time.realtimeSinceStartup - loadStart;
+            Log($"[ロード画面] {loadSeconds:0.0} 秒");
+            Check(loadSeconds < 4f, "ロード画面は 2〜3 秒ほどで終わる");
             yield return Wait(0.6f);
             Check(Drift() < 0.01f, "はじめから遊びはじめても、カメラは調合机のまま");
             BrewHUD2D brewHud = FindFirstObjectByType<BrewHUD2D>();
@@ -515,11 +517,9 @@ namespace PotionFrontier.Game2D
             yield return Shot("title_with_save");
             int noticesBefore = notice != null ? notice.ShownCount : 0;
             flow.ContinueGame();
-            yield return WaitUntil(() => hud.DateCard != null && hud.DateCard.Covered, 6f, "つづきから → 日付のアイキャッチが出る");
-            Log($"[日付] つづきから：{hud.DateCard.DateText}（{flow.Day}日目・瓶に詰めた回数 {flow.BrewCount}）");
-            Check(flow.Day == 2 && hud.DateCard.DateText == flow.DateLabel, "つづきからは1日進んで、2日目の日付が出る");
-            Check(flow.BrewCount >= 1, "瓶に詰めた回数がセーブから戻る");
-            yield return WaitUntil(() => flow.Mode == GameMode.Playing && !hud.IsDateCardOpen, 25f, "つづきから → 遊べるようになる");
+            yield return WaitUntil(() => hud.Loading != null && hud.Loading.Covered, 4f, "つづきから → ロード画面が出る");
+            yield return WaitUntil(() => flow.Mode == GameMode.Playing && !hud.IsLoadingOpen, 8f, "つづきから → 遊べるようになる");
+            Check(flow.BrewCount >= 1, $"瓶に詰めた回数がセーブから戻る（{flow.BrewCount}）");
             yield return Wait(1.5f);
             yield return Shot("continued");
             int liquidsAfter = session.Alchemy != null ? session.Alchemy.Liquids.Count : 0;
