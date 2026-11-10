@@ -581,16 +581,26 @@ namespace PotionFrontier.Game.EditorTools
             }
         }
 
-        /// <summary>ゲームの目標：伝説の特効薬が、届く素材だけで作れる</summary>
+        /// <summary>伝説の特効薬が、届く素材だけで作れる。暦が正しく進む</summary>
         private static void FinalPotion()
         {
-            Section("伝説の特効薬（クリア）");
+            Section("伝説の特効薬（作ってもゲームは終わらない。特別な薬の1つ）");
             LiquidRecord r = Make(f => { f.Pour(d.spiritWater, 100f); f.AddSolid(d.amplifyCrystal, 1f); Stir(f, 15f, true, 6f); f.Tick(10f); f.AddSolid(d.herb, 4f); f.AddSolid(d.sunPetal, 1f); Stir(f, 14f, true, 6f); f.Tick(4f); });
             Show("お手本", r);
-            Check("お手本の作り方で、伝説の特効薬になる", r.specialPotionId == GameFlow.FinalPotionId, r.ToDebugString(d.settings));
+            Check("お手本の作り方で、伝説の特効薬になる", r.specialPotionId == "special_legendary_cure", r.ToDebugString(d.settings));
             int need = 0;
             foreach (IngredientData x in new[] { d.spiritWater, d.amplifyCrystal, d.herb, d.sunPetal }) need = Mathf.Max(need, x.DiscoveriesToUnlock);
             Check("使う素材は、早めに机にそろう", need <= 6, $"いちばん遅い素材まで 発見 {need}");
+
+            Section("暦（日付のアイキャッチ）");
+            GameCalendar.MonthDay(1, 4, 1, out int m1, out int d1);
+            GameCalendar.MonthDay(31, 4, 1, out int m2, out int d2);
+            GameCalendar.MonthDay(275, 4, 1, out int m3, out int d3);
+            GameCalendar.MonthDay(366, 4, 1, out int m4, out int d4);
+            Check("1日目は、はじまりの日", m1 == 4 && d1 == 1, $"{m1}月{d1}日");
+            Check("月をまたいで進む（31日目は5月1日）", m2 == 5 && d2 == 1, $"{m2}月{d2}日");
+            Check("年をまたいで進む（275日目は12月31日）", m3 == 12 && d3 == 31, $"{m3}月{d3}日");
+            Check("1年たつと、同じ月日に戻る", m4 == 4 && d4 == 1, $"{m4}月{d4}日");
         }
 
         // ------------------------------------------------------------------

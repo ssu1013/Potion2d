@@ -13,7 +13,7 @@ namespace PotionFrontier.Game2D
     /// <summary>
     /// 2D 版（1画面版）の通しテスト（エディタ専用。製品版には含まれない）。
     /// メニュー「Tools/Potion Frontier 2D/仕上げ/④ 通しテストを実行」から始める。
-    ///   タイトル → 設定 → はじめから（暗転なしで、そのまま調合机）→ トレイから水を取って傾けて注ぐ → 薬草を2回入れる
+    ///   タイトル → 設定 → はじめから（日付のアイキャッチ → 調合机）→ トレイから水を取って傾けて注ぐ → 薬草を2回入れる
     ///   → 円を描いてかき混ぜる → 「全部詰める」→ 強火で薬草の「熱に弱い」を見つける → 発見が進んで新しい素材が机に届く
     ///   （手紙のお知らせ・トレイに並ぶ・手に取れる）→ 素材ノート・レシピ本を机の上で開く（火の音・机はそのまま）
     ///   → ポーズ → 設定 → タイトルへ（セーブ）→ つづきから（届いた素材・液体・ノートが戻る）
@@ -183,22 +183,17 @@ namespace PotionFrontier.Game2D
             yield return Wait(0.3f);
             CheckWords("タイトル");
 
-            // ---- はじめから（暗転せず、そのまま調合机）---------------------------------
+            // ---- はじめから（日付のアイキャッチ → 調合机）---------------------------------
             hud.Title.ForceNewGame();
-            float faderMax = 0f;
-            float waitStart = Time.realtimeSinceStartup;
-            while (flow.Mode != GameMode.Playing && Time.realtimeSinceStartup - waitStart < 8f)
-            {
-                if (hud.Fader != null) faderMax = Mathf.Max(faderMax, hud.Fader.Alpha);
-                yield return null;
-            }
-            Check(flow.Mode == GameMode.Playing, "はじめから → 遊べるようになる");
-            for (float t = 0f; t < 1.4f; t += Time.unscaledDeltaTime)
-            {
-                if (hud.Fader != null) faderMax = Mathf.Max(faderMax, hud.Fader.Alpha);
-                yield return null;
-            }
-            Check(faderMax < 0.05f, $"はじめるときに画面が暗転しない（暗さ いちばん {faderMax:0.00}）");
+            yield return WaitUntil(() => hud.DateCard != null && hud.DateCard.Covered, 6f, "はじめから → 画面が暗くなって、日付のアイキャッチが出る");
+            Log($"[日付] {(hud.DateCard != null ? hud.DateCard.DateText : "")}（{flow.Day}日目）");
+            Check(flow.Day == 1 && hud.DateCard != null && hud.DateCard.DateText == flow.DateLabel && flow.DateLabel.Contains("月"), "はじめからは1日目。その日付が出る");
+            Check(flow.Mode == GameMode.Title, "日付が出ている間は、まだ調合机を触れない");
+            yield return Wait(2.2f);
+            yield return Shot("date_card");
+            yield return WaitUntil(() => flow.Mode == GameMode.Playing, 20f, "日付が消えて、遊べるようになる");
+            yield return WaitUntil(() => !hud.IsDateCardOpen, 10f, "暗がりが晴れて、調合机が現れる");
+            yield return Wait(0.6f);
             Check(Drift() < 0.01f, "はじめから遊びはじめても、カメラは調合机のまま");
             BrewHUD2D brewHud = FindFirstObjectByType<BrewHUD2D>();
             Canvas brewCanvas = brewHud != null ? brewHud.GetComponent<Canvas>() : null;
@@ -520,7 +515,11 @@ namespace PotionFrontier.Game2D
             yield return Shot("title_with_save");
             int noticesBefore = notice != null ? notice.ShownCount : 0;
             flow.ContinueGame();
-            yield return WaitUntil(() => flow.Mode == GameMode.Playing, 8f, "つづきから → 遊べるようになる");
+            yield return WaitUntil(() => hud.DateCard != null && hud.DateCard.Covered, 6f, "つづきから → 日付のアイキャッチが出る");
+            Log($"[日付] つづきから：{hud.DateCard.DateText}（{flow.Day}日目・瓶に詰めた回数 {flow.BrewCount}）");
+            Check(flow.Day == 2 && hud.DateCard.DateText == flow.DateLabel, "つづきからは1日進んで、2日目の日付が出る");
+            Check(flow.BrewCount >= 1, "瓶に詰めた回数がセーブから戻る");
+            yield return WaitUntil(() => flow.Mode == GameMode.Playing && !hud.IsDateCardOpen, 25f, "つづきから → 遊べるようになる");
             yield return Wait(1.5f);
             yield return Shot("continued");
             int liquidsAfter = session.Alchemy != null ? session.Alchemy.Liquids.Count : 0;

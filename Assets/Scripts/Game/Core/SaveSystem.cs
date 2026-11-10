@@ -12,12 +12,15 @@ namespace PotionFrontier.Game
     {
         /// <summary>今のセーブデータの版。古い版を読んだときは、足りない物を補う（素材の在庫など）</summary>
         /// 版7：1画面版（お金・相談・仕入れをなくした。調合机に届いた素材だけを覚える）
-        public const int CurrentVersion = 7;
+        /// 版8：日付（何日目か）と、瓶に詰めた回数を覚える。クリアはなくした（いつまでも遊べる）
+        public const int CurrentVersion = 8;
 
         public int version = CurrentVersion;
         public string savedAt = "";
-        /// <summary>伝説の特効薬を作った（クリア画面を見た）</summary>
-        public bool gameCleared;
+        /// <summary>何日目か（版8から。調合机に向かうたびに1日進む。古いセーブは 0 ＝ つづきからで1日目になる）</summary>
+        public int day;
+        /// <summary>これまでに瓶に詰めた回数（版8から）</summary>
+        public int brewCount;
         public List<PotionStack> potions = new List<PotionStack>();
         /// <summary>版6までの素材の在庫（読み込みのためだけ。量があった素材は、机に届いていることにする）</summary>
         public List<IngredientStockEntry> ingredients = new List<IngredientStockEntry>();
