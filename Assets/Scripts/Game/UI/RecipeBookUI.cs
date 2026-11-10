@@ -158,9 +158,9 @@ namespace PotionFrontier.Game
             Image trim = UIFactory.CreateImage(cover.transform, "Trim", UIFactory.RoundedRect(new Color(0f, 0f, 0f, 0f), new Color(0.86f, 0.66f, 0.3f, 0.85f), 20, 2), Color.white);
             UIFactory.Stretch(trim.rectTransform, 9f, 9f, 9f, 9f);
 
-            Image left = UIFactory.CreateImage(cover.transform, "LeftPage", UIFactory.Parchment(), Color.white);
+            Image left = UIFactory.CreateImage(cover.transform, "LeftPage", UIFactory.Parchment(), UIFactory.Paper);
             UIFactory.Place(left.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-4f, 0f), new Vector2(PageWidth, PageHeight));
-            Image right = UIFactory.CreateImage(cover.transform, "RightPage", UIFactory.Parchment(), Color.white);
+            Image right = UIFactory.CreateImage(cover.transform, "RightPage", UIFactory.Parchment(), UIFactory.Paper);
             UIFactory.Place(right.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(PageWidth, PageHeight));
             Image spine = UIFactory.CreateImage(cover.transform, "Spine", UIWidgets.SoftDot(), new Color(0.25f, 0.13f, 0.05f, 0.45f));
             UIFactory.Place(spine.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70f, PageHeight + 30f));

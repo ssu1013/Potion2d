@@ -163,7 +163,7 @@ namespace PotionFrontier.Game2D
             resultGroup = result.gameObject.AddComponent<CanvasGroup>();
             resultGroup.blocksRaycasts = false;
             resultGroup.interactable = false;
-            Image paper = UIFactory.CreateImage(result, "Paper", UIFactory.Parchment(), Color.white);
+            Image paper = UIFactory.CreateImage(result, "Paper", UIFactory.Parchment(), UIFactory.Paper);
             UIFactory.Stretch(paper.rectTransform);
 
             preview = new LiquidPreview(256, new Color(0f, 0f, 0f, 0f));
@@ -208,7 +208,7 @@ namespace PotionFrontier.Game2D
             slipGroup = slip.gameObject.AddComponent<CanvasGroup>();
             slipGroup.blocksRaycasts = false;
             slipGroup.interactable = false;
-            Image slipPaper = UIFactory.CreateImage(slip, "Paper", SkinSprite(s => s.discoveryPage) ?? UIFactory.Parchment(), Color.white);
+            Image slipPaper = UIFactory.CreateImage(slip, "Paper", SkinSprite(s => s.discoveryPage) ?? UIFactory.Parchment(), UIFactory.Paper);
             UIFactory.Stretch(slipPaper.rectTransform);
             slipIcon = UIFactory.CreateImage(slip, "Icon", null, Color.white);
             slipIcon.preserveAspect = true;
@@ -228,7 +228,7 @@ namespace PotionFrontier.Game2D
             pageGroup = page.gameObject.AddComponent<CanvasGroup>();
             pageGroup.blocksRaycasts = false;
             pageGroup.interactable = false;
-            Image pagePaper = UIFactory.CreateImage(page, "Paper", SkinSprite(s => s.discoveryPage) ?? UIFactory.Parchment(), Color.white);
+            Image pagePaper = UIFactory.CreateImage(page, "Paper", SkinSprite(s => s.discoveryPage) ?? UIFactory.Parchment(), UIFactory.Paper);
             UIFactory.Stretch(pagePaper.rectTransform);
             Text pageTitle = UIFactory.Label(page, "Title", "新しい反応を発見！", 28, new Color(0.72f, 0.46f, 0.08f), TextAnchor.UpperCenter, FontStyle.Bold);
             UIFactory.Place(pageTitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(800f, 36f));

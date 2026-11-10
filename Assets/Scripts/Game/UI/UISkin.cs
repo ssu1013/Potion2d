@@ -45,6 +45,10 @@ namespace PotionFrontier.Game
         [Tooltip("loading_background.png：タイトルから遊びはじめるときに出る、画面いっぱいの1枚絵（1920×1080）。空なら暗い単色")] public Sprite loadingBackground;
         [Range(0f, 0.9f), Tooltip("1枚絵の上に重ねる暗がりの濃さ（0 で絵をそのまま見せる。右下の Loading... が読みにくければ上げる）")] public float loadingShade = 0f;
 
+        [Header("夜の色合い")]
+        [Tooltip("羊皮紙の UI（見立てカード・結果カード・お知らせ・本・ポーズなど）に掛ける色。白 = 絵そのまま。暗い夜の画面で紙が白く浮かないように、少しくすんだ暖色にしてある")]
+        public Color paperTint = new Color(0.84f, 0.75f, 0.62f, 1f);
+
         [Header("そのほか")]
         [Tooltip("スタンプの上に文字（新発見・新しい反応 など）を重ねる。スタンプの絵に文字を描き込んだらオフにする")] public bool drawStampLabels = true;
     }

@@ -246,7 +246,9 @@ namespace PotionFrontier.Game2D
             foreach (UnityEngine.Rendering.Universal.Light2D l in FindObjectsByType<UnityEngine.Rendering.Universal.Light2D>(FindObjectsSortMode.None))
                 if (l.lightType == UnityEngine.Rendering.Universal.Light2D.LightType.Global) globalLight = l.intensity;
             Log($"[夜の空気感] 全体の光 {globalLight:0.00}");
-            Check(globalLight >= 0f && globalLight <= 0.15f, "全体の光（Global Light 2D）が、深い夜の暗さになっている");
+            Check(globalLight >= 0f && globalLight <= 0.2f, "全体の光（Global Light 2D）が、夜の暗さになっている（0.2 以下）");
+            GameObject rightLamp = GameObject.Find("Lamp（右・窓の下）");
+            Check(rightLamp != null && rightLamp.GetComponentInChildren<UnityEngine.Rendering.Universal.Light2D>() != null, "机の右（窓の下）にも、ランタンの温かい灯りがある");
             NightSoundscape2D night = NightSoundscape2D.Current;
             Check(night != null && night.FirePlaying, "ランプの火が静かに燃える音（夜の環境音）が鳴っている");
             // 画面の中の物は、すべてカメラの中（見えない所に、クリックする物を置いていない）

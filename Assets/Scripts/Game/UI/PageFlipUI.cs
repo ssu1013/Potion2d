@@ -31,7 +31,7 @@ namespace PotionFrontier.Game
         {
             leaf = UIFactory.CreateRect(name, target);
             UIFactory.Stretch(leaf);
-            paper = UIFactory.CreateImage(leaf, "Paper", LeafSprite(), Color.white);
+            paper = UIFactory.CreateImage(leaf, "Paper", LeafSprite(), UIFactory.Paper);
             UIFactory.Stretch(paper.rectTransform);
             // めくれて立っているあいだの陰（真横になるほど暗く、裏側は少し暗い）
             shade = UIFactory.CreateImage(leaf, "Shade", paper.sprite, new Color(0.16f, 0.09f, 0.04f, 0f));
@@ -94,7 +94,8 @@ namespace PotionFrontier.Game
             if (back) alpha = Mathf.Clamp01(1f - (-sx - 0.35f) / 0.65f);   // 向こう側に倒れながら消える
             if (age > seconds) alpha *= Mathf.Clamp01(1f - (age - seconds) / FadeSeconds);
             float dark = 0.38f * (1f - Mathf.Abs(sx)) + (back ? 0.14f : 0f);
-            paper.color = new Color(1f, 1f, 1f, alpha);
+            Color tint = UIFactory.Paper;
+            paper.color = new Color(tint.r, tint.g, tint.b, alpha);
             shade.color = new Color(0.16f, 0.09f, 0.04f, dark * alpha);
         }
 

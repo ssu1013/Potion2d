@@ -18,7 +18,7 @@ namespace PotionFrontier.Game
             UIFactory.Stretch(shade.rectTransform);
             overlay = shade.gameObject;
 
-            Image paper = UIFactory.CreateImage(shade.transform, "Paper", UIFactory.Parchment(), Color.white);
+            Image paper = UIFactory.CreateImage(shade.transform, "Paper", UIFactory.Parchment(), UIFactory.Paper);
             UIFactory.Place(paper.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -10f), size);
 
             if (!string.IsNullOrEmpty(heading))
