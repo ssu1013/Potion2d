@@ -174,7 +174,7 @@ namespace PotionFrontier.Game2D.EditorTools
         }
 
         /// <summary>コードで作った音を 16bit の WAV にする（ファイルがあれば触らない）</summary>
-        private static AudioClip WriteWav(string dir, string name, AudioClip clip)
+        internal static AudioClip WriteWav(string dir, string name, AudioClip clip)
         {
             P.EnsureFolder(dir);
             string path = $"{dir}/{name}.wav";

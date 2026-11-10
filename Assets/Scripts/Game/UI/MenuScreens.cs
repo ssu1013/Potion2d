@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace PotionFrontier.Game
 {
-    /// <summary>見出しのリボンつき羊皮紙パネル（ポーズ・設定・クリア画面で共通）</summary>
+    /// <summary>見出しのリボンつき羊皮紙パネル（ポーズ・設定で共通）</summary>
     internal static class MenuPanel
     {
         /// <summary>机の上に本を広げるときの、後ろの暗さ（ランプの火のゆらぎが透けて見える薄さ）</summary>
@@ -322,137 +322,6 @@ namespace PotionFrontier.Game
             value = UIFactory.Label(row, "Value", "", 28, UIColors.Ink, TextAnchor.MiddleRight, FontStyle.Bold);
             UIFactory.Size(value.gameObject, 90f, 44f);
             return slider;
-        }
-    }
-
-    /// <summary>伝説の特効薬を初めて瓶に詰めたときのクリア画面（紙吹雪つき）</summary>
-    public sealed class ClearScreenUI
-    {
-        private readonly GameObject root;
-        private readonly RectTransform panel;
-        private readonly Text stats;
-        private readonly MenuList menu = new MenuList();
-        private readonly List<Confetti> confetti = new List<Confetti>();
-        private readonly RectTransform confettiLayer;
-        private readonly Image glow;
-        private float appear;
-        private float time;
-
-        private struct Confetti
-        {
-            public RectTransform rect;
-            public Vector2 velocity;
-            public float spin;
-            public float sway;
-        }
-
-        public bool IsOpen => root.activeSelf;
-
-        public ClearScreenUI(RectTransform parent, Action onContinue)
-        {
-            Image shade = UIFactory.CreateImage(parent, "ClearScreen", null, new Color(0.02f, 0.012f, 0.008f, 0.5f));
-            shade.raycastTarget = true;
-            UIFactory.Stretch(shade.rectTransform);
-            root = shade.gameObject;
-
-            glow = UIFactory.CreateImage(shade.transform, "Glow", UIWidgets.SoftDot(), new Color(1f, 0.8f, 0.4f, 0.45f));
-            UIFactory.Place(glow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(1800f, 900f));
-
-            confettiLayer = UIFactory.CreateRect("Confetti", shade.transform);
-            UIFactory.Stretch(confettiLayer);
-
-            panel = UIFactory.CreateRect("Panel", shade.transform);
-            UIFactory.Place(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1200f, 800f));
-
-            Text title = UIFactory.Label(panel, "Title", "ゲームクリア！", 130, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            title.horizontalOverflow = HorizontalWrapMode.Overflow;
-            UIFactory.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -130f), new Vector2(1200f, 170f));
-            var gradient = title.gameObject.AddComponent<UIGradient>();
-            gradient.top = new Color(1f, 0.97f, 0.75f);
-            gradient.bottom = new Color(1f, 0.62f, 0.2f);
-            var outline = title.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.22f, 0.11f, 0.05f, 1f);
-            outline.effectDistance = new Vector2(4f, -4f);
-            var drop = title.gameObject.AddComponent<Shadow>();
-            drop.effectColor = new Color(0f, 0f, 0f, 0.5f);
-            drop.effectDistance = new Vector2(0f, -10f);
-
-            Image paper = UIFactory.CreateImage(panel, "Paper", UIFactory.Parchment(), Color.white);
-            UIFactory.Place(paper.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -70f), new Vector2(900f, 400f));
-            Text message = UIFactory.Label(paper.transform, "Message",
-                "ついに、伝説の特効薬が調合机の上で生まれました。\nあなたはもう立派な錬金術師です。",
-                32, UIColors.Ink, TextAnchor.UpperCenter, FontStyle.Bold);
-            UIFactory.Place(message.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -46f), new Vector2(820f, 110f));
-            stats = UIFactory.Label(paper.transform, "Stats", "", 28, UIColors.InkLight, TextAnchor.UpperCenter);
-            UIFactory.Place(stats.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -170f), new Vector2(820f, 120f));
-
-            RectTransform buttons = UIFactory.CreateRect("Buttons", paper.transform);
-            UIFactory.Place(buttons, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 36f), new Vector2(500f, 84f));
-            UIFactory.Horizontal(buttons.gameObject, new RectOffset(0, 0, 0, 0), 0f, TextAnchor.MiddleCenter);
-            menu.Add(UIWidgets.WoodButton(buttons, "調合机にもどる", 34, new Vector2(440f, 80f), onContinue));
-
-            Color[] colors =
-            {
-                new Color(1f, 0.82f, 0.3f), new Color(0.95f, 0.45f, 0.4f), new Color(0.45f, 0.8f, 0.5f),
-                new Color(0.5f, 0.65f, 1f), new Color(0.9f, 0.6f, 1f), new Color(1f, 0.95f, 0.85f),
-            };
-            for (int i = 0; i < 90; i++)
-            {
-                Image piece = UIFactory.CreateImage(confettiLayer, "Piece" + i, null, colors[i % colors.Length]);
-                RectTransform rt = piece.rectTransform;
-                rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
-                rt.sizeDelta = new Vector2(UnityEngine.Random.Range(10f, 18f), UnityEngine.Random.Range(18f, 30f));
-                confetti.Add(new Confetti { rect = rt });
-            }
-            root.SetActive(false);
-        }
-
-        /// <summary>summary：探求の進み具合（AtelierHUD が作る）</summary>
-        public void Open(string summary)
-        {
-            root.SetActive(true);
-            appear = 0f;
-            time = 0f;
-            stats.text = (summary ?? "") + "\n<size=22>このあとも、まだ見ぬ液体や反応を探して遊べます</size>";
-            menu.ResetSelection(0);
-
-            Vector2 screen = ((RectTransform)root.transform).rect.size;
-            for (int i = 0; i < confetti.Count; i++)
-            {
-                Confetti c = confetti[i];
-                c.rect.anchoredPosition = new Vector2(UnityEngine.Random.Range(0f, screen.x), screen.y + UnityEngine.Random.Range(20f, 900f));
-                c.velocity = new Vector2(UnityEngine.Random.Range(-40f, 40f), -UnityEngine.Random.Range(120f, 260f));
-                c.spin = UnityEngine.Random.Range(-360f, 360f);
-                c.sway = UnityEngine.Random.Range(0f, 6.28f);
-                confetti[i] = c;
-            }
-        }
-
-        public void Close()
-        {
-            root.SetActive(false);
-        }
-
-        public void Tick(float dt, bool allowInput)
-        {
-            if (!IsOpen) return;
-            time += dt;
-            MenuPanel.Pop(panel, ref appear, dt);
-            float pulse = 0.4f + Mathf.Sin(time * 2f) * 0.08f;
-            glow.color = new Color(1f, 0.8f, 0.4f, pulse);
-
-            Vector2 screen = ((RectTransform)root.transform).rect.size;
-            for (int i = 0; i < confetti.Count; i++)
-            {
-                Confetti c = confetti[i];
-                Vector2 p = c.rect.anchoredPosition;
-                p += new Vector2(c.velocity.x + Mathf.Sin(time * 3f + c.sway) * 60f, c.velocity.y) * dt;
-                if (p.y < -40f) p = new Vector2(UnityEngine.Random.Range(0f, screen.x), screen.y + 40f);
-                c.rect.anchoredPosition = p;
-                c.rect.localRotation = Quaternion.Euler(Mathf.Sin(time * 4f + c.sway) * 70f, 0f, time * c.spin);
-                confetti[i] = c;
-            }
-            if (allowInput && time > 1.2f) menu.Tick();
         }
     }
 }

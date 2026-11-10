@@ -41,6 +41,12 @@ namespace PotionFrontier.Game
         [Tooltip("stamp_reaction.png：新しい反応を発見")] public Sprite stampReaction;
         [Tooltip("stamp_complete.png：素材ノート「すべて発見」")] public Sprite stampComplete;
         [Tooltip("letter.png：新しい素材が調合机に届いたときの、小さなお知らせの手紙")] public Sprite letter;
+        [Header("日付のアイキャッチ（Assets/CustomAssets/Images/UI/DateCard。同じ名前の PNG で上書きすると差し替わる）")]
+        [Tooltip("date_background.png：日付が浮かぶ画面いっぱいの背景（1920×1080）。イラストに差し替えられる。空なら暗い単色")] public Sprite dateBackground;
+        [Tooltip("date_ornament.png：日付の下の飾りの線（512×32）。空なら細い線")] public Sprite dateOrnament;
+        [Range(0f, 0.9f), Tooltip("背景の絵の上に重ねる暗がりの濃さ（明るいイラストに差し替えたとき、日付が読みにくければ上げる）")] public float dateShade = 0.25f;
+
+        [Header("そのほか")]
         [Tooltip("スタンプの上に文字（新発見・新しい反応 など）を重ねる。スタンプの絵に文字を描き込んだらオフにする")] public bool drawStampLabels = true;
     }
 }
