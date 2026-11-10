@@ -36,7 +36,7 @@ namespace PotionFrontier.Game
             group = card.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
             group.interactable = false;
-            Image paper = UIFactory.CreateImage(card, "Paper", Skin(s => s.discoveryPage) ?? UIFactory.Parchment(), new Color(1f, 0.97f, 0.9f, 0.96f));
+            Image paper = UIFactory.CreateImage(card, "Paper", Skin(s => s.discoveryPage) ?? UIFactory.Parchment(), UIFactory.Paper * new Color(1f, 0.97f, 0.9f, 0.96f));
             UIFactory.Stretch(paper.rectTransform);
             Image letter = UIFactory.CreateImage(card, "Letter", Skin(s => s.letter), Color.white);
             letter.preserveAspect = true;

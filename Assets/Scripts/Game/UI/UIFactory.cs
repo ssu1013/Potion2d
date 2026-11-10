@@ -34,6 +34,20 @@ namespace PotionFrontier.Game
         /// <summary>自作のUIの絵・フォント（空の欄はコードで描いた仮の絵を使う）。GameContext が起動時に設定する</summary>
         public static UISkin Skin { get; set; }
 
+        /// <summary>
+        /// 羊皮紙の UI に掛ける色（夜のランプの下の紙：少しくすんだ暖色）。UISkin の「Paper Tint」で調整する。
+        /// 紙の Image を作るときに、白の代わりにこれを使う（上の文字やアイコンの色は変わらない）
+        /// </summary>
+        public static Color Paper
+        {
+            get
+            {
+                Color c = Skin != null ? Skin.paperTint : new Color(0.84f, 0.75f, 0.62f, 1f);
+                c.a = 1f;
+                return c;
+            }
+        }
+
         /// <summary>UIスキンのフォント。なければ日本語を表示できるOSのフォント（製品版ではライセンスの明確なフォントを UISkin に入れる）</summary>
         public static Font DefaultFont
         {

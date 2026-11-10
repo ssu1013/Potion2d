@@ -331,7 +331,7 @@ namespace PotionFrontier.Game
             dim.raycastTarget = true;
             UIFactory.Stretch(dim.rectTransform);
 
-            Image paper = UIFactory.CreateImage(dim.transform, "Paper", UIFactory.Parchment(), Color.white);
+            Image paper = UIFactory.CreateImage(dim.transform, "Paper", UIFactory.Parchment(), UIFactory.Paper);
             UIFactory.Place(paper.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760f, 340f));
             Text message = UIFactory.Label(paper.transform, "Message",
                 "セーブデータがあります。\n消して、はじめから遊びますか？", 34, UIColors.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);

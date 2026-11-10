@@ -442,6 +442,7 @@ namespace PotionFrontier.Game2D.EditorTools
             room.SetParent(parent, false);
             AddSprite(room, "Background（背景の絵）", a.sprites.background, "Background", 0, Vector3.zero);
             Instance(a.lamp, room, o + new Vector3(-6.8f, -2.08f, 0f));
+            Instance(a.lamp, room, o + Step10Lighting2D.RightLampPosition).name = Step10Lighting2D.RightLampName;
 
             var bench = new GameObject("Workbench").transform;
             bench.SetParent(parent, false);

@@ -96,7 +96,7 @@ namespace PotionFrontier.Game2D
             glow = UIFactory.CreateImage(card, "Glow", UIFactory.RoundedRect(new Color(1f, 1f, 1f, 0f), Color.white, 18, 6), new Color(1f, 0.85f, 0.4f, 0f));
             UIFactory.Stretch(glow.rectTransform, -8f, -8f, -8f, -8f);
 
-            Image paper = UIFactory.CreateImage(card, "Paper", panel != null ? panel : UIFactory.Parchment(), Color.white);
+            Image paper = UIFactory.CreateImage(card, "Paper", panel != null ? panel : UIFactory.Parchment(), UIFactory.Paper);
             UIFactory.Stretch(paper.rectTransform);
 
             Text title = UIFactory.Label(card, "Title", "見立て", 26, UIColors.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
