@@ -15,7 +15,7 @@ namespace PotionFrontier.Game2D.EditorTools
         public sealed class Set
         {
             public Sprite background, flaskBack, flaskMask, flaskFront, liquidBody, liquidSurface;
-            public Sprite heaterStand, flame, knobBase, knobDial, tray, stirRod, dropPiece, pourStream, lamp;
+            public Sprite heaterStand, flame, knobBase, knobDial, trayPanel, trayTile, trayDot, stirRod, dropPiece, pourStream, lamp;
             public Sprite tallBottle, tallBottleContent, jar, jarContent, roundFlask, roundFlaskContent;
             public Sprite pouch, pouchContent, crystal, crystalContent, potionBottle, potionBottleContent;
             public Sprite fxSteam, fxBubble, fxDroplet, fxSwirl, fxRipple;
@@ -39,7 +39,10 @@ namespace PotionFrontier.Game2D.EditorTools
             s.flame = Ensure(dir, "flame", 100, 150, Flame);
             s.knobBase = Ensure(dir, "knob_base", 110, 110, (x, y) => Over(Paint(new Color(0.85f, 0.7f, 0.45f, 1f), Stroke(Circle(x, y, 0f, 0f, 49f), 4f)), Paint(new Color(0.2f, 0.17f, 0.15f, 1f), Fill(Circle(x, y, 0f, 0f, 50f)))));
             s.knobDial = Ensure(dir, "knob_dial", 90, 90, KnobDial);
-            s.tray = Ensure(dir, "tray", 1300, 100, Tray);
+            // 右の素材トレイ（縦の棚の板・素材の四角いマス・ページの点）。マスと点は白っぽく描く（色はコードで付ける）
+            s.trayPanel = Ensure(dir, "tray_panel", 205, 846, TrayPanel);
+            s.trayTile = Ensure(dir, "tray_tile", 84, 84, TrayTile);
+            s.trayDot = Ensure(dir, "tray_page_dot", 16, 16, (x, y) => White(Fill(Circle(x, y, 0f, 0f, 7f))));
             s.stirRod = Ensure(dir, "stir_rod", 24, 320, (x, y) => Over(Paint(new Color(1f, 1f, 1f, 0.6f), Fill(Box(x, y, -3f, 0f, 2f, 150f, 2f))), Paint(new Color(0.85f, 0.93f, 1f, 0.75f), Fill(Box(x, y, 0f, 0f, 7f, 155f, 7f)))));
             s.dropPiece = Ensure(dir, "drop_piece", 40, 40, (x, y) => White(Fill(Circle(x, y, 0f, 0f, 15f))));
             s.pourStream = Ensure(dir, "pour_stream", 24, 64, (x, y) => White(Fill(Box(x, y, 0f, 0f, 8f, 32f, 8f))));
@@ -241,15 +244,26 @@ namespace PotionFrontier.Game2D.EditorTools
             return Over(notch, Over(ring, brass));
         }
 
-        internal static Color Tray(float x, float y)
+        /// <summary>右の素材トレイの板（縦長の、暗い木の板。ふちだけ明るい）</summary>
+        internal static Color TrayPanel(float x, float y)
         {
-            float d = Box(x, y, 0f, 0f, 645f, 45f, 12f);
-            Color wood = Paint(new Color(0.45f, 0.3f, 0.18f, 1f), Fill(d));
-            Color top = Paint(new Color(0.58f, 0.4f, 0.24f, 1f), Fill(Box(x, y, 0f, 30f, 640f, 12f, 8f)));
-            float grain = 0.06f * Mathf.Sin(x * 0.05f + Mathf.Sin(y * 0.2f) * 2f);
+            float d = Box(x, y, 0f, 0f, 100f, 421f, 14f);
+            Color wood = Paint(new Color(0.27f, 0.18f, 0.11f, 0.9f), Fill(d));
+            float grain = 0.04f * Mathf.Sin(y * 0.045f + Mathf.Sin(x * 0.15f) * 2f);
             wood.r += grain; wood.g += grain * 0.7f;
-            Color edge = Paint(new Color(0.25f, 0.16f, 0.1f, 1f), Stroke(d, 3f));
-            return Over(edge, Over(top, wood));
+            Color edge = Paint(new Color(0.52f, 0.37f, 0.22f, 1f), Stroke(d, 4f));
+            return Over(edge, wood);
+        }
+
+        /// <summary>素材の四角いマス（白っぽく描く。素材トレイの「マスの色」で塗られる）</summary>
+        internal static Color TrayTile(float x, float y)
+        {
+            float d = Box(x, y, 0f, 0f, 40f, 40f, 9f);
+            float shade = 0.86f + 0.14f * Mathf.Clamp01((y + 40f) / 80f); // 上が少し明るい
+            Color face = Paint(new Color(shade, shade, shade, 0.95f), Fill(d));
+            Color inner = Paint(new Color(0.72f, 0.72f, 0.72f, 1f), Stroke(Box(x, y, 0f, 0f, 34f, 34f, 6f), 1.5f));
+            Color edge = Paint(new Color(0.42f, 0.42f, 0.42f, 1f), Stroke(d, 3f));
+            return Over(edge, Over(inner, face));
         }
 
         internal static Color Pouch(float x, float y)

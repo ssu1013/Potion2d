@@ -46,7 +46,7 @@ namespace PotionFrontier.Game
         [Range(0f, 0.9f), Tooltip("1枚絵の上に重ねる暗がりの濃さ（0 で絵をそのまま見せる。右下の Loading... が読みにくければ上げる）")] public float loadingShade = 0f;
 
         [Header("夜の色合い")]
-        [Tooltip("羊皮紙の UI（見立てカード・結果カード・お知らせ・本・ポーズなど）に掛ける色。白 = 絵そのまま。暗い夜の画面で紙が白く浮かないように、少しくすんだ暖色にしてある")]
+        [Tooltip("羊皮紙の UI（結果カード・お知らせ・本・ポーズなど）に掛ける色。白 = 絵そのまま。暗い夜の画面で紙が白く浮かないように、少しくすんだ暖色にしてある")]
         public Color paperTint = new Color(0.84f, 0.75f, 0.62f, 1f);
 
         [Header("そのほか")]

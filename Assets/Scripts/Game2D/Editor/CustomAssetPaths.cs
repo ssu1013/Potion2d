@@ -45,7 +45,7 @@ namespace PotionFrontier.Game2D.EditorTools
             { "loading_background", UILoading },
             { "brew_background", Workbench }, { "flask_back", Workbench }, { "flask_front", Workbench }, { "flask_mask", Workbench },
             { "heater_stand", Workbench }, { "knob_base", Workbench }, { "knob_dial", Workbench }, { "flame", Workbench },
-            { "stir_rod", Workbench }, { "tray", Workbench },
+            { "stir_rod", Workbench }, { "tray_panel", Workbench }, { "tray_tile", Workbench }, { "tray_page_dot", Workbench },
             { "liquid_body", Liquid }, { "liquid_surface", Liquid }, { "pour_stream", Liquid }, { "drop_piece", Liquid },
             { "container_tall_bottle", Containers }, { "container_tall_bottle_content", Containers },
             { "container_jar", Containers }, { "container_jar_content", Containers },

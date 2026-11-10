@@ -11,14 +11,13 @@ namespace PotionFrontier.Game2D.EditorTools
     /// Step4（調合の手ごたえ）のセットアップ。
     ///   ・描く順番（Sorting Layer）の番号の修理：Flask・Liquid・Items・Held・FX の番号が 0（いちばん奥の Default と同じ）になっていて、
     ///     フラスコの中身・トレイの素材・手に持った瓶・湯気が、部屋の絵の後ろに隠れていたのを直す
-    ///   ・調合画面（BrewHUD の Prefab）の配置を新しくする：液体の名前は上の真ん中、工程は左上、
-    ///     フラスコの左に見立てカードと温度計、瓶に詰めるボタンはカードの下、右上は早送りだけ
+    ///   ・調合画面（BrewHUD の Prefab）の配置を新しくする：液体の名前は上の真ん中、フラスコの左に温度計
+    ///     （工程・見立てカード・瓶に詰めるボタン・早送りは Step11 でなくした。今の配置の仕上げは Step11 のメニュー）
     /// </summary>
     public static class Step4Brew2D
     {
         private const string Menu = "Tools/Potion Frontier 2D/";
         private const string BrewHudPath = Brew2DBuilder.PrefabDir + "/BrewHUD.prefab";
-        private const string BackupDir = Brew2DBuilder.PrefabDir + "/Backup";
         public const int LayoutVersion = 4;
 
         /// <summary>Prefab の中の物 → 本来の描く順番（Brew2DBuilder が作るときに決めていた物）</summary>
@@ -163,14 +162,6 @@ namespace PotionFrontier.Game2D.EditorTools
                 log.AppendLine("！ " + BrewHudPath + " がありません（「アトリエを作る」を先に実行）");
                 return;
             }
-            if (!AssetDatabase.IsValidFolder(BackupDir)) AssetDatabase.CreateFolder(Brew2DBuilder.PrefabDir, "Backup");
-            string backup = BackupDir + "/BrewHUD_before_step4.prefab";
-            if (!File.Exists(backup))
-            {
-                AssetDatabase.CopyAsset(BrewHudPath, backup);
-                log.AppendLine("・今の調合画面の控えを取った：" + backup);
-            }
-
             GameObject root = PrefabUtility.LoadPrefabContents(BrewHudPath);
             try
             {
@@ -194,38 +185,8 @@ namespace PotionFrontier.Game2D.EditorTools
                     }
                     notes.Add("液体の名前 → 上の真ん中");
                 }
-                RectTransform process = Find(root, "ProcessPanel");
-                if (process != null)
-                {
-                    Place(process, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(560f, 200f));
-                    notes.Add("工程 → 左上");
-                }
                 RectTransform toast = Find(root, "Toast");
-                if (toast != null) Place(toast, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -146f), new Vector2(700f, 64f)); // 左上の工程と重ならない幅
-                // 作業中の数字は、カーソルのそばに出す（BrewFeedback2D）
-                RectTransform activity = Find(root, "Activity");
-                if (activity != null) activity.gameObject.SetActive(false);
-                // 瓶に詰める：見立てカードのすぐ下（目標に届いたのを見て、すぐ押せる）
-                RectTransform one = Find(root, "BottleOneButton");
-                if (one != null)
-                {
-                    Place(one, Vector2.zero, Vector2.zero, new Vector2(340f, 290f), new Vector2(360f, 54f));
-                    FitLabel(one);
-                }
-                RectTransform all = Find(root, "BottleAllButton");
-                if (all != null)
-                {
-                    Place(all, Vector2.zero, Vector2.zero, new Vector2(340f, 230f), new Vector2(360f, 54f));
-                    FitLabel(all);
-                }
-                if (one != null || all != null) notes.Add("瓶に詰めるボタン → 見立てカードの下");
-                RectTransform fast = Find(root, "FastForwardButton");
-                if (fast != null)
-                {
-                    Place(fast, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(260f, 52f));
-                    FitLabel(fast);
-                    notes.Add("右上は早送りだけ");
-                }
+                if (toast != null) Place(toast, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -146f), new Vector2(700f, 64f));
 
                 if (root.GetComponent<BrewFeedback2D>() == null)
                 {
@@ -237,7 +198,8 @@ namespace PotionFrontier.Game2D.EditorTools
                 {
                     var so = new SerializedObject(hud);
                     SerializedProperty v = so.FindProperty("layoutVersion");
-                    if (v != null)
+                    // Step11 の配置（11）になっていれば、そのまま（古い版に戻さない）
+                    if (v != null && v.intValue < LayoutVersion)
                     {
                         v.intValue = LayoutVersion;
                         so.ApplyModifiedPropertiesWithoutUndo();
@@ -284,22 +246,6 @@ namespace PotionFrontier.Game2D.EditorTools
         {
             Text t = rt.GetComponent<Text>();
             if (t != null) t.alignment = anchor;
-        }
-
-        /// <summary>ボタンの文字を、ボタンの大きさいっぱいに広げて真ん中にそろえる</summary>
-        private static void FitLabel(RectTransform button)
-        {
-            Text label = button.GetComponentInChildren<Text>(true);
-            if (label == null) return;
-            RectTransform rt = label.rectTransform;
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta = new Vector2(-12f, -6f);
-            label.alignment = TextAnchor.MiddleCenter;
-            label.horizontalOverflow = HorizontalWrapMode.Wrap;
-            label.verticalOverflow = VerticalWrapMode.Overflow;
         }
     }
 }

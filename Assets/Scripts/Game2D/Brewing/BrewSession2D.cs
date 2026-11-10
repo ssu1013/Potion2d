@@ -14,8 +14,6 @@ namespace PotionFrontier.Game2D
     [DefaultExecutionOrder(-50)]
     public class BrewSession2D : MonoBehaviour
     {
-        public static readonly float[] HeatSteps = { 0f, 0.3f, 0.6f, 1f };
-
         [Header("参照（空ならシーンから探す）")]
         [SerializeField] private AlchemyManager alchemy;
         [SerializeField] private IngredientInventory ingredients;
@@ -25,7 +23,6 @@ namespace PotionFrontier.Game2D
         [Header("フラスコ")]
         [SerializeField, Min(50f), Tooltip("入れられる量（ml）")] private float capacityMl = 600f;
         [SerializeField, Min(10f), Tooltip("瓶1本の量（ml）")] private float bottleMl = 100f;
-        [SerializeField, Min(1f), Tooltip("早送りのときの、フラスコの中の時間の速さ")] private float fastForwardSpeed = 4f;
         [SerializeField, Tooltip("机に素材が1つもなければ、GameBalance の「はじめから机にある素材」を並べる（GameFlow がないときだけ）")] private bool giveStarterIngredients = true;
 
         private FlaskSimulation flask;
@@ -57,9 +54,6 @@ namespace PotionFrontier.Game2D
         public float BottleMl => bottleMl;
         public bool HasLiquid => flask != null && flask.HasLiquid;
         public float HeatLevel => flask != null ? flask.HeatLevel : 0f;
-        /// <summary>早送り中（フラスコの中の時間だけが速く進む）</summary>
-        public bool FastForward { get; set; }
-        public float SimSpeed => FastForward ? fastForwardSpeed : 1f;
         /// <summary>今かき混ぜている速さ（回転/秒。見た目用になめらかにした値）</summary>
         public float StirSpeed => stirSpeed;
         public bool LastStirClockwise { get; private set; } = true;
@@ -95,7 +89,7 @@ namespace PotionFrontier.Game2D
         private void Update()
         {
             float dt = Time.deltaTime;
-            if (flask != null) flask.Tick(dt * SimSpeed);
+            if (flask != null) flask.Tick(dt);
 
             // かき混ぜる速さ（見た目用）。手を止めると数秒かけて弱まる
             float instant = dt > 0f ? stirTurnsThisFrame / dt : 0f;
@@ -201,28 +195,7 @@ namespace PotionFrontier.Game2D
             RefreshPreview();
         }
 
-        /// <summary>火加減を「消す → 弱火 → 中火 → 強火 → 消す」と切り替える</summary>
-        public void CycleHeat()
-        {
-            if (flask == null) return;
-            float current = flask.HeatLevel;
-            float next = HeatSteps[0];
-            for (int i = 0; i < HeatSteps.Length; i++)
-            {
-                if (HeatSteps[i] > current + 0.01f)
-                {
-                    next = HeatSteps[i];
-                    break;
-                }
-            }
-            SetHeat(next);
-            Say($"火加減：{ProcessStep.HeatLabel(next)}");
-        }
-
-        /// <summary>1本（100ml）瓶に詰める</summary>
-        public LiquidRecord BottleOne() => BottleMany(1);
-
-        /// <summary>中身を全部瓶に詰める（100ml ずつ。最後は残りの量で1本）</summary>
+        /// <summary>中身を全部瓶に詰める（100ml ずつ。最後は残りの量で1本）。素材トレイの下の「空き瓶」をクリックしたとき</summary>
         public LiquidRecord BottleAll() => BottleMany(Mathf.Max(1, BottlesForAll()));
 
         /// <summary>全部詰めたときの本数（少しのあまりは最後の瓶に一緒に入る）</summary>
@@ -290,7 +263,6 @@ namespace PotionFrontier.Game2D
             if (flask != null) flask.ReactionOccurred -= OnReaction;
             flask = alchemy.CreateFlask(capacityMl);
             if (flask != null) flask.ReactionOccurred += OnReaction;
-            FastForward = false;
             RefreshPreview();
         }
 
@@ -358,7 +330,7 @@ namespace PotionFrontier.Game2D
         {
             if (fullWarningCooldown > 0f) return;
             fullWarningCooldown = 2f;
-            Say("フラスコがいっぱいです（F で瓶に詰める）");
+            Say("フラスコがいっぱい（右下の空き瓶で、瓶に詰められる）");
         }
 
         /// <summary>

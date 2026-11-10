@@ -401,7 +401,7 @@ Transform:
   - {fileID: 2105612887}
   - {fileID: 1129481236}
   - {fileID: 965045376}
-  - {fileID: 532300215}
+  - {fileID: 516987681}
   m_Father: {fileID: 2104026281}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &426245049
@@ -438,7 +438,7 @@ Transform:
   - {fileID: 598731906}
   m_Father: {fileID: 2104026281}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &532300214
+--- !u!1001 &516987680
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -452,11 +452,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8647913665198278701, guid: b4489a7ab5454f64887c384ca08fc780, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 8.46
       objectReference: {fileID: 0}
     - target: {fileID: 8647913665198278701, guid: b4489a7ab5454f64887c384ca08fc780, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -4.6
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8647913665198278701, guid: b4489a7ab5454f64887c384ca08fc780, type: 3}
       propertyPath: m_LocalPosition.z
@@ -495,10 +495,10 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b4489a7ab5454f64887c384ca08fc780, type: 3}
---- !u!4 &532300215 stripped
+--- !u!4 &516987681 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8647913665198278701, guid: b4489a7ab5454f64887c384ca08fc780, type: 3}
-  m_PrefabInstance: {fileID: 532300214}
+  m_PrefabInstance: {fileID: 516987680}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &598731905
 PrefabInstance:
@@ -720,6 +720,9 @@ MonoBehaviour:
   stirSegmentPixels: 10
   keyStirTurnsPerSecond: 1.6
   knobPixels: 300
+  clickOnHeat: 0.6
+  clickPixels: 8
+  dragPixels: 24
   dropInterval: 0.4
 --- !u!114 &837726249
 MonoBehaviour:
@@ -739,7 +742,6 @@ MonoBehaviour:
   art: {fileID: 11400000, guid: 5c8f699380cf81e4693e08bfab8d0992, type: 2}
   capacityMl: 600
   bottleMl: 100
-  fastForwardSpeed: 4
   giveStarterIngredients: 1
 --- !u!114 &837726251
 MonoBehaviour:
@@ -1568,7 +1570,7 @@ MonoBehaviour:
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.5
   m_Color: {r: 0.52, g: 0.58, b: 0.86, a: 1}
-  m_Intensity: 0.16
+  m_Intensity: 0.5
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
   m_ApplyToSortingLayers: 00000000de26d6135b558769a7897a4f101a4152bdb76224b820352d2f3836609ed09d24b347d36c

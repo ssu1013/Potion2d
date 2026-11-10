@@ -7,27 +7,22 @@ using UnityEngine;
 namespace PotionFrontier.Game2D
 {
     /// <summary>
-    /// 調合台の手ごたえ（Step4 の A「見える化」と B「音と演出」）。BrewHUD の Prefab のルートに付ける（なければ BrewHUD2D が自分に付ける）。
-    ///   A：見立てカード（属性の棒・溶かしきったときの予告・ひとこと＝次の素材が届くまでの発見の数）／温度計／
-    ///      かき混ぜている間の溶け具合の輪／注いだ量・火加減の数字／値が変わったときの「回復 +3」
-    ///   B：反応の瞬間（光・スロー・音）／
-    ///      瓶詰めの結果カード（★ が1つずつ「ちりん」・新発見）／沸騰・焦げ・溶けきった・素材が弱まった/目覚めたのお知らせ
+    /// 調合台の手ごたえ。BrewHUD の Prefab のルートに付ける（なければ BrewHUD2D が自分に付ける）。
+    ///   見える化：温度計／かき混ぜている間の溶け具合の輪／注いだ量・かき混ぜた回数（作業中だけ、カーソルのそば）
+    ///   演出：反応の瞬間（光・スロー・音）／瓶詰めの結果カード（★ が1つずつ「ちりん」・新発見）／
+    ///         沸騰・焦げ・溶けきった・素材が弱まった/目覚めたの短いお知らせ／素材ノートに書き足したお知らせ・新しい反応のページ
+    /// （Step11 で「見立てカード」と、値が変わったときの「回復 +3」はなくした。フラスコの色・湯気・音で感じ取る）
     /// 見た目は「置き場所」「絵」の欄で変えられる（空の絵はコードで描いた仮の絵）。音は SoundLibrary の「調合の手ごたえ」。
     /// </summary>
     [DisallowMultipleComponent]
     public class BrewFeedback2D : MonoBehaviour
     {
         [Header("置き場所（1920×1080 の画面で、左下が 0,0）")]
-        [SerializeField, Tooltip("見立てカードの左下")] private Vector2 meterPosition = new Vector2(340f, 352f);
-        [SerializeField] private Vector2 meterSize = new Vector2(360f, 470f);
         [SerializeField, Tooltip("温度計の左下（球の下）")] private Vector2 thermometerPosition = new Vector2(770f, 312f);
         [SerializeField] private Vector2 thermometerSize = new Vector2(56f, 400f);
         [SerializeField, Tooltip("瓶詰めの結果カードの真ん中")] private Vector2 resultCenter = new Vector2(961f, 800f);
 
         [Header("絵（空ならコードで描いた仮の絵）")]
-        [SerializeField, Tooltip("見立てカードの紙（9スライス推奨。空なら UISkin の羊皮紙）")] private Sprite meterPanel;
-        [SerializeField, Tooltip("棒の下地（9スライス推奨）")] private Sprite barBack;
-        [SerializeField, Tooltip("棒の中身（白で描く。属性の色で塗られる）")] private Sprite barFill;
         [SerializeField, Tooltip("温度計の管（9スライス推奨）")] private Sprite thermometerTube;
         [SerializeField, Tooltip("溶け具合の輪（白い輪。ぐるっと塗っていく）")] private Sprite stirRing;
 
@@ -36,12 +31,10 @@ namespace PotionFrontier.Game2D
         [SerializeField, Range(0.1f, 1f)] private float slowMotionScale = 0.35f;
         [SerializeField, Min(0f), Tooltip("ゆっくりにする時間（実際の秒）")] private float slowMotionSeconds = 0.45f;
         [SerializeField, Tooltip("瓶詰めの結果カードを出す（出すときは、下の文字のお知らせは出さない）")] private bool showBottleResult = true;
-        [SerializeField, Min(0.1f), Tooltip("同じ属性の「+3」が続けて出るときの間隔（秒）")] private float popInterval = 0.55f;
+        [SerializeField, Tooltip("注いでいる間の「+35ml」・かき混ぜている間の回数を、カーソルのそばに出す（オフにすると、作業中の数字も出ない）")] private bool showWorkNumbers = true;
         [SerializeField, Range(0f, 2f), Tooltip("手ごたえの音の大きさ")] private float soundVolume = 1f;
 
         private static readonly float[] StarPitch = { 1f, 1.122f, 1.26f, 1.498f, 1.682f };
-
-        private static readonly int Count = AttributeVector.Count;
 
         private BrewSession2D session;
         private BrewInput2D input;
@@ -49,24 +42,14 @@ namespace PotionFrontier.Game2D
         private HeldItem2D held;
         private Canvas canvas;
 
-        private BrewMeterUI2D meter;
         private BrewThermoUI2D thermo;
         private BrewPopupsUI2D popups;
 
-        private readonly MeterModel model = new MeterModel();
-        private readonly float[] current = new float[Count];
-        private readonly float[] projected = new float[Count];
-        private readonly float[] lastCurrent = new float[Count];
-        private readonly float[] popAccum = new float[Count];
-        private readonly float[] lastPopTime = new float[Count];
-        private readonly List<PotionAttribute> rowAttrs = new List<PotionAttribute>();
-        private readonly List<PotionAttribute> candidates = new List<PotionAttribute>();
         private readonly List<FlaskSimulation.IngredientState> states = new List<FlaskSimulation.IngredientState>();
         private readonly List<BrewThermoUI2D.Mark> marks = new List<BrewThermoUI2D.Mark>();
         // このフラスコで、もう知らせたこと（「素材ID:性質」）。フラスコが空になったら忘れる
         private readonly HashSet<string> noticed = new HashSet<string>();
 
-        private bool primed;
         private bool wasBoiling;
         private bool wasScorching;
         private float lastDissolved = 1f;
@@ -90,9 +73,6 @@ namespace PotionFrontier.Game2D
         public bool NewHeaderVisible => popups != null && popups.NewHeaderVisible;
         public int PageTurnCount => popups != null ? popups.PageTurnCount : 0;
         public int ReactionCount { get; private set; }
-        public string Status => model.status;
-        public float CurrentValue(PotionAttribute a) => current[(int)a];
-        public float ProjectedValue(PotionAttribute a) => projected[(int)a];
 
         private void Awake()
         {
@@ -109,14 +89,13 @@ namespace PotionFrontier.Game2D
             ViewportFit2D fit = GetComponent<ViewportFit2D>();
             RectTransform parent = fit != null ? fit.SafeRoot : (RectTransform)transform;
 
-            // 奥：見立てカード・温度計（Prefab の文字やボタンより奥）／手前：ポップ・輪・結果カード・光
+            // 奥：温度計（Prefab の文字より奥）／手前：ポップ・輪・結果カード・光
             RectTransform back = UIFactory.CreateRect("FeedbackBack", parent);
             UIFactory.Stretch(back);
             back.SetAsFirstSibling();
             RectTransform front = UIFactory.CreateRect("FeedbackFront", parent);
             UIFactory.Stretch(front);
             front.SetAsLastSibling();
-            meter = new BrewMeterUI2D(back, meterPosition, meterSize, meterPanel, barBack, barFill);
             thermo = new BrewThermoUI2D(back, thermometerPosition, thermometerSize, thermometerTube);
             popups = new BrewPopupsUI2D(front, resultCenter, stirRing);
             popups.StarShown = OnStarShown;
@@ -126,27 +105,24 @@ namespace PotionFrontier.Game2D
 
             if (session != null)
             {
-                session.ContentsChanged += Refresh;
                 session.Bottled += OnBottled;
                 session.Reacted += OnReacted;
             }
             DiscoveryJournal.FactDiscovered += OnFactDiscovered;
             DiscoveryJournal.ReactionDiscovered += OnReactionDiscovered;
             BrewHUD2D hud = GetComponent<BrewHUD2D>();
-            if (hud != null && hud.LayoutVersion < 4)
+            if (hud != null && hud.LayoutVersion < BrewHUD2D.MinimalLayout)
             {
-                Debug.LogWarning("[調合画面] 画面の配置が Step4 より前のままです。メニュー「Tools/Potion Frontier 2D/Step4：調合画面を新しくする」を実行すると、見立てカードと重ならない配置になります。", this);
+                Debug.LogWarning("[調合画面] 画面の配置が Step11 より前のままです（工程・ボタン・ページ送りが残っています）。メニュー「Tools/Potion Frontier 2D/Step11：画面をスッキリ（UI の断捨離・右の素材トレイ・明るさ）」を実行してください。", this);
             }
             // コードで作る音は、最初に鳴らすときに引っかからないよう、先に作っておく
             _ = SfxSynth.Chime;
-            Refresh();
         }
 
         private void OnDestroy()
         {
             if (session != null)
             {
-                session.ContentsChanged -= Refresh;
                 session.Bottled -= OnBottled;
                 session.Reacted -= OnReacted;
             }
@@ -167,7 +143,7 @@ namespace PotionFrontier.Game2D
 
         private void Update()
         {
-            if (session == null || session.Flask == null || meter == null) return;
+            if (session == null || session.Flask == null || thermo == null) return;
             bool visible = canvas == null || canvas.enabled;
             if (!visible)
             {
@@ -200,7 +176,6 @@ namespace PotionFrontier.Game2D
                          ProcessStep.HeatLabel(sim.HeatLevel) + (sim.IsBoiling ? "・沸騰" : ""), sim.IsScorching, marks);
 
             UpdateCursorHelpers(sim);
-            meter.Tick(dt);
             thermo.Tick(dt);
             popups.Tick(dt);
         }
@@ -219,18 +194,16 @@ namespace PotionFrontier.Game2D
             string follow = "";
             Vector2 at = pointer + new Vector2(34f, 18f);
             bool ring = false;
+            // 火加減は温度計の上に出ているので、カーソルのそばには出さない
             switch (input.Current)
             {
                 case BrewInput2D.Activity.Pouring:
-                    follow = $"+{Mathf.RoundToInt(input.PouredThisTime)}ml\n<size=15>{Mathf.RoundToInt(sim.VolumeMl)} / {Mathf.RoundToInt(session.CapacityMl)} ml</size>";
+                    if (showWorkNumbers) follow = $"+{Mathf.RoundToInt(input.PouredThisTime)}ml";
                     if (held != null && held.HasItem) at = WorldToScreen(held.MouthWorld) + new Vector2(30f, 6f);
                     break;
                 case BrewInput2D.Activity.Stirring:
                     if (solids) ring = true;
-                    else follow = $"{(input.StirClockwise ? "時計回り" : "反時計回り")} {input.StirTurnsThisTime:0.0}回";
-                    break;
-                case BrewInput2D.Activity.Dialing:
-                    follow = $"{ProcessStep.HeatLabel(session.HeatLevel)}　{Mathf.RoundToInt(session.HeatLevel * 100f)}%";
+                    else if (showWorkNumbers) follow = $"{(input.StirClockwise ? "時計回り" : "反時計回り")} {input.StirTurnsThisTime:0.0}回";
                     break;
             }
             popups.SetFollow(follow, at);
@@ -362,142 +335,6 @@ namespace PotionFrontier.Game2D
         }
 
         // ==================================================================
-        // 見立て（中身が変わるたび：BrewSession2D の ContentsChanged、0.25 秒ごと）
-        // ==================================================================
-
-        private void Refresh()
-        {
-            if (meter == null || session == null || session.Flask == null) return;
-            FlaskSimulation sim = session.Flask;
-            AlchemySettings settings = sim.Settings;
-            if (settings == null) return;
-            LiquidRecord preview = session.Preview;
-            bool wet = session.HasLiquid;
-            bool solids = sim.SolidUnits > 0.001f;
-            float dissolved = sim.DissolvedFraction;
-
-            for (int i = 0; i < Count; i++) current[i] = 0f;
-            if (preview != null && preview.attributes != null)
-            {
-                for (int i = 0; i < Count && i < preview.attributes.Length; i++) current[i] = preview.attributes[i];
-            }
-            if (wet) sim.ProjectConcentration(projected);
-            else System.Array.Copy(current, projected, Count);
-
-            // 棒に出す属性：入っている属性（多い順）
-            rowAttrs.Clear();
-            candidates.Clear();
-            for (int i = 0; i < Count; i++)
-            {
-                var a = (PotionAttribute)i;
-                if (!rowAttrs.Contains(a) && Mathf.Max(current[i], projected[i]) >= 0.5f) candidates.Add(a);
-            }
-            candidates.Sort((x, y) => Mathf.Max(current[(int)y], projected[(int)y]).CompareTo(Mathf.Max(current[(int)x], projected[(int)x])));
-            rowAttrs.AddRange(candidates);
-            if (sim.IsEmpty) rowAttrs.Clear();
-
-            model.rows.Clear();
-            for (int n = 0; n < rowAttrs.Count && n < BrewMeterUI2D.MaxRows; n++)
-            {
-                PotionAttribute a = rowAttrs[n];
-                var r = new MeterModel.Row
-                {
-                    attribute = a,
-                    name = settings.GetDisplayName(a),
-                    color = AttributeColor(settings, a),
-                    current = current[(int)a],
-                    projected = projected[(int)a],
-                };
-                model.rows.Add(r);
-            }
-
-            model.target = "◆ フラスコの見立て";
-            model.showDissolve = solids && !sim.IsEmpty;
-            model.dissolveFraction = dissolved;
-            model.dissolve = solids ? $"溶け具合 {Mathf.FloorToInt(dissolved * 100f)}%" : "";
-            model.conditions = "";
-
-            if (sim.IsEmpty)
-            {
-                model.status = "素材を入れると、見立てが出ます\n<size=17><color=#8A6A45>" + ArrivalHint(true) + "</color></size>";
-                model.statusColor = UIColors.InkLight;
-            }
-            else if (!wet)
-            {
-                model.status = "液体を注ぐと、溶けはじめます";
-                model.statusColor = UIColors.InkLight;
-            }
-            else if (solids && dissolved < 0.99f)
-            {
-                model.status = "円を描いてかき混ぜると、\n溶け残りが溶けていく";
-                model.statusColor = UIColors.InkLight;
-            }
-            else
-            {
-                model.status = ArrivalHint();
-                model.statusColor = new Color(0.45f, 0.33f, 0.2f, 1f);
-            }
-            meter.Apply(model);
-
-            // 入ったばかりのときは「+3」を出さない
-            if (!primed)
-            {
-                primed = true;
-                for (int i = 0; i < Count; i++) lastCurrent[i] = current[i];
-                return;
-            }
-            ValuePops(settings, preview);
-        }
-
-        /// <summary>次の素材が届くまでの発見の数（自由に探求している間の、静かなひとこと）</summary>
-        public static string ArrivalHint(bool oneLine = false)
-        {
-            GameFlow flow = GameFlow.Instance;
-            if (flow == null) return "自由に探求しよう";
-            IngredientData next = flow.NextArrival(out int remaining);
-            if (oneLine) return next == null ? "すべての素材が机にそろった" : remaining > 0 ? $"新しい素材まで：発見あと {remaining}" : "新しい素材が、もうすぐ届く";
-            if (next == null) return "すべての素材が机にそろった\n自由に探求しよう";
-            return remaining > 0
-                ? $"新しい素材まで：発見あと {remaining}\n<size=17>性質・反応・新しい液体を見つけよう</size>"
-                : "新しい素材が、もうすぐ届く";
-        }
-
-        /// <summary>属性の値が変わったら「回復 +3」をフラスコから浮かべる（同じ属性は少し間をあける）</summary>
-        private void ValuePops(AlchemySettings settings, LiquidRecord preview)
-        {
-            bool visible = canvas == null || canvas.enabled;
-            float now = Time.unscaledTime;
-            for (int i = 0; i < Count; i++)
-            {
-                float d = current[i] - lastCurrent[i];
-                lastCurrent[i] = current[i];
-                if (preview == null || !visible)
-                {
-                    popAccum[i] = 0f;
-                    continue;
-                }
-                popAccum[i] += d;
-                if (Mathf.Abs(popAccum[i]) < 1f || now - lastPopTime[i] < popInterval) continue;
-                var a = (PotionAttribute)i;
-                Color c = Color.Lerp(AttributeColor(settings, a), Color.white, 0.3f);
-                string sign = popAccum[i] > 0f ? "+" : "-";
-                popups.ShowPop($"{settings.GetDisplayName(a)} {sign}{Mathf.Abs(popAccum[i]):0.#}", SurfaceScreen() + new Vector2(Random.Range(-70f, 70f), 10f), c);
-                popAccum[i] = 0f;
-                lastPopTime[i] = now;
-            }
-        }
-
-        private static Color AttributeColor(AlchemySettings settings, PotionAttribute a)
-        {
-            Color c = settings.GetInfo(a).color;
-            c.a = 1f;
-            // 羊皮紙の上で見えるよう、明るすぎる色は少し落とす
-            float lum = c.r * 0.3f + c.g * 0.59f + c.b * 0.11f;
-            if (lum > 0.8f) c = Color.Lerp(c, new Color(0.35f, 0.3f, 0.25f, 1f), 0.3f);
-            return c;
-        }
-
-        // ==================================================================
         // 瞬間の演出
         // ==================================================================
 
@@ -515,12 +352,10 @@ namespace PotionFrontier.Game2D
         private void ReactionMoment(string reactionName)
         {
             ReactionCount++;
-            Color color = flask != null ? flask.ShownColor : Color.white;
             Vector2 at = WorldToScreen(flask != null ? flask.MouthWorld : Vector3.zero) + new Vector2(0f, 90f);
             popups.ShowPop(string.IsNullOrEmpty(reactionName) ? "反応が起きた！" : $"反応！「{reactionName}」", at, new Color(1f, 0.93f, 0.65f, 1f), true);
             // 夜の空気感：きらきら・画面のフラッシュはやめて、温かい光がフラスコからふわっと漏れる
             if (flask != null) flask.WarmBloom(0.7f);
-            meter.Glow(Color.Lerp(color, Color.white, 0.3f));
             SoundLibrary lib = AudioManager.Lib;
             Play(lib != null ? lib.reactionSting : null, SfxSynth.Reaction, 0.55f, 1f);
             if (reactionSlowMotion && slowMotionSeconds > 0f)

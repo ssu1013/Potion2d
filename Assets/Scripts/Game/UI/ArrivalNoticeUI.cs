@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace PotionFrontier.Game
 {
     /// <summary>
-    /// 新しい素材が調合机に届いたときの、小さなお知らせ（右下からすっと出て、少しして消える）。
+    /// 新しい素材が調合机に届いたときの、小さなお知らせ（左上に、左からすっと出て、少しして消える。右は素材トレイなので空けておく）。
     /// 手紙の絵は UISkin の letter.png（Assets/CustomAssets/Images/UI/Discovery）、音は SoundLibrary の ingredientArrived（se_letter.wav）。
     /// いくつ届いても、1つずつ順番に出す。
     /// </summary>
@@ -29,10 +29,10 @@ namespace PotionFrontier.Game
 
         public ArrivalNoticeUI(RectTransform parent)
         {
-            // 右下（トレイのページ送りの上）。机の上の物にかからない、小さな紙
-            rest = new Vector2(-34f, 266f);
+            // 左上（右は素材トレイ、上の真ん中は液体の名前とお知らせ）。机の上の物にかからない、小さな紙
+            rest = new Vector2(34f, -34f);
             card = UIFactory.CreateRect("ArrivalNotice", parent);
-            UIFactory.Place(card, new Vector2(1f, 0f), new Vector2(1f, 0f), rest, new Vector2(470f, 122f));
+            UIFactory.Place(card, new Vector2(0f, 1f), new Vector2(0f, 1f), rest, new Vector2(470f, 122f));
             group = card.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
             group.interactable = false;
@@ -78,7 +78,7 @@ namespace PotionFrontier.Game
             IngredientData d = queue.Dequeue();
             ingredientIcon.sprite = IngredientIcons.Get(d);
             ingredientIcon.enabled = ingredientIcon.sprite != null;
-            body.text = d.DisplayName + "\n<size=16><color=#8A6A45>素材トレイに並んだ</color></size>";
+            body.text = d.DisplayName + "\n<size=16><color=#8A6A45>右の素材トレイに並んだ</color></size>";
             body.supportRichText = true;
             age = 0f;
             ShownCount++;
@@ -97,7 +97,7 @@ namespace PotionFrontier.Game
             float outK = Mathf.Clamp01((Life - age) / 0.6f);
             group.alpha = Mathf.Min(inK, outK);
             float ease = 1f - (1f - inK) * (1f - inK);
-            card.anchoredPosition = rest + new Vector2(60f * (1f - ease), 0f);
+            card.anchoredPosition = rest + new Vector2(-60f * (1f - ease), 0f);
             if (age >= Life) Next();
         }
 
