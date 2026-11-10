@@ -253,23 +253,59 @@ namespace PotionFrontier.Game2D.EditorTools
             return root;
         }
 
-        private static GameObject BuildTray(PlaceholderArt2D.Set s, GameObject itemPrefab)
+        /// <summary>右の素材トレイの置き場所（ワールド。画面は x -9.6〜9.6・y -5.4〜5.4。窓の絵の右、画面の右端に縦に立つ）</summary>
+        internal static readonly Vector3 TrayPosition = new Vector3(8.46f, 0f, 0f);
+        /// <summary>素材トレイの板の真ん中の高さと大きさ（トレイから見た位置。マス 2×7・ページの点・空き瓶が入る）</summary>
+        internal const float TrayPanelCenterY = 0.23f;
+        internal static readonly Vector2 TrayPanelSize = new Vector2(2.05f, 8.46f);
+        /// <summary>空き瓶（クリックで瓶に詰める）の高さ（トレイから見た位置）と、マスの大きさ</summary>
+        internal const float BottleStationY = -3.3f;
+        internal const float BottleTileSize = 1.1f;
+
+        /// <summary>
+        /// 右の素材トレイ：縦長の板（当たり判定つき。空いている所をクリックで、持っている物を戻せる）・
+        /// 四角いマス 2列×7行（BrewTray2D の「マス目を並べ直す」で作る）・いちばん下の空き瓶
+        /// </summary>
+        internal static GameObject BuildTray(PlaceholderArt2D.Set s, GameObject itemPrefab)
         {
             var root = new GameObject("Tray");
             Transform art = Child(root.transform, "Art", Vector3.zero);
-            AddSprite(art, "Board", s.tray, "Workbench", 10, Vector3.zero);
-            Transform slotsRoot = Child(root.transform, "Slots", Vector3.zero);
-            var slots = new List<Object>();
-            const int count = 10;
-            for (int i = 0; i < count; i++)
-            {
-                float x = (i - (count - 1) * 0.5f) * 1.2f;
-                slots.Add(Child(slotsRoot, "Slot_" + i.ToString("00"), new Vector3(x, 0.93f, 0f)));
-            }
+            SpriteRenderer board = AddSprite(art, "Board", s.trayPanel, "Workbench", 10, new Vector3(0f, TrayPanelCenterY, 0f));
+            FitSize(board.transform, s.trayPanel, TrayPanelSize);
+            var hit = root.AddComponent<BoxCollider2D>();
+            hit.size = TrayPanelSize;
+            hit.offset = new Vector2(0f, TrayPanelCenterY);
+
             var tray = root.AddComponent<BrewTray2D>();
             SetRef(tray, "itemPrefab", itemPrefab != null ? itemPrefab.GetComponent<TrayItem2D>() : null);
-            SetList(tray, "slots", slots);
+            SetRef(tray, "tileSprite", s.trayTile);
+            SetRef(tray, "dotSprite", s.trayDot);
+            tray.LayoutGrid();
+
+            // 空き瓶：クリックで、フラスコの中身を全部瓶に詰める（ボタンの代わり）
+            Transform station = Child(root.transform, "BottleStation", new Vector3(0f, BottleStationY, 0f));
+            var stationHit = station.gameObject.AddComponent<BoxCollider2D>();
+            stationHit.size = new Vector2(BottleTileSize, BottleTileSize);
+            SpriteRenderer tile = AddSprite(station, "Tile", s.trayTile, "Workbench", 20, Vector3.zero);
+            FitSize(tile.transform, s.trayTile, new Vector2(BottleTileSize, BottleTileSize));
+            Transform bottleArt = Child(station, "Art", Vector3.zero);
+            SpriteRenderer content = AddSprite(bottleArt, "Content", s.potionBottleContent, "Items", 0, Vector3.zero);
+            SpriteRenderer body = AddSprite(bottleArt, "Body", s.potionBottle, "Items", 1, Vector3.zero);
+            ArtFit2D.Fit(bottleArt, s.potionBottle, 0.8f, 0.8f);
+            var bottle = station.gameObject.AddComponent<BottleStation2D>();
+            SetRef(bottle, "tile", tile);
+            SetRef(bottle, "body", body);
+            SetRef(bottle, "content", content);
+            SetRef(bottle, "art", bottleArt);
             return root;
+        }
+
+        /// <summary>絵を、決めた大きさ（ワールド単位）に引きのばす（差し替えた絵の大きさが違っても、同じ大きさになる）</summary>
+        private static void FitSize(Transform t, Sprite sprite, Vector2 size)
+        {
+            if (t == null || sprite == null) return;
+            Vector2 b = sprite.bounds.size;
+            t.localScale = new Vector3(size.x / Mathf.Max(0.001f, b.x), size.y / Mathf.Max(0.001f, b.y), 1f);
         }
 
         private static GameObject BuildHeldItem(PlaceholderArt2D.Set s)
@@ -310,7 +346,11 @@ namespace PotionFrontier.Game2D.EditorTools
             return root;
         }
 
-        private static GameObject BuildHud()
+        /// <summary>
+        /// 調合画面の文字（Step11 の配置）：上の真ん中に液体の名前（液体があるときだけ）・お知らせ・カーソルのそばの説明だけ。
+        /// 工程・見立て・ボタン・ページ送り・操作の説明は置かない（机の上の物を直接さわって遊ぶ）
+        /// </summary>
+        internal static GameObject BuildHud()
         {
             var root = new GameObject("BrewHUD", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             var canvas = root.GetComponent<Canvas>();
@@ -321,63 +361,38 @@ namespace PotionFrontier.Game2D.EditorTools
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            Color panel = new Color(0.08f, 0.05f, 0.03f, 0.62f);
             Color ink = new Color(1f, 0.95f, 0.85f, 1f);
 
-            // 左上：フラスコの中身
-            RectTransform info = Panel(root.transform, "InfoPanel", new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(560f, 210f), panel);
-            Text title = Label(info, "LiquidTitle", font, 30, ink, new Vector2(18f, -12f), new Vector2(524f, 44f), TextAnchor.UpperLeft);
-            Text detail = Label(info, "LiquidDetail", font, 19, ink, new Vector2(18f, -60f), new Vector2(524f, 140f), TextAnchor.UpperLeft);
+            // 上の真ん中：フラスコの中身の名前（液体があるときだけ）と、分類・★
+            RectTransform info = Panel(root.transform, "InfoPanel", new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(680f, 96f), new Color(0f, 0f, 0f, 0f));
+            Text title = Label(info, "LiquidTitle", font, 30, ink, Vector2.zero, new Vector2(644f, 44f), TextAnchor.UpperCenter);
+            Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(644f, 44f), new Vector2(0.5f, 1f));
+            Text detail = Label(info, "LiquidDetail", font, 19, ink, Vector2.zero, new Vector2(644f, 30f), TextAnchor.UpperCenter);
+            Place(detail.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -56f), new Vector2(644f, 30f), new Vector2(0.5f, 1f));
 
-            // 左：工程
-            RectTransform logPanel = Panel(root.transform, "ProcessPanel", new Vector2(0f, 1f), new Vector2(24f, -250f), new Vector2(560f, 200f), panel);
-            Label(logPanel, "Heading", font, 16, new Color(1f, 0.85f, 0.6f, 1f), new Vector2(18f, -10f), new Vector2(524f, 24f), TextAnchor.UpperLeft).text = "これまでの工程";
-            Text process = Label(logPanel, "ProcessLog", font, 16, ink, new Vector2(18f, -36f), new Vector2(524f, 156f), TextAnchor.UpperLeft);
+            // 上の真ん中の少し下：短いお知らせ
+            Text toast = Label(root.transform, "Toast", font, 26, ink, Vector2.zero, new Vector2(700f, 64f), TextAnchor.MiddleCenter);
+            Place(toast.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -146f), new Vector2(700f, 64f), new Vector2(0.5f, 1f));
 
-            // 右上：ボタン
-            Button bottleOne = MakeButton(root.transform, "BottleOneButton", font, "瓶に詰める F", new Vector2(1f, 1f), new Vector2(-24f, -24f), out Text _);
-            Button bottleAll = MakeButton(root.transform, "BottleAllButton", font, "全部詰める Shift+F", new Vector2(1f, 1f), new Vector2(-24f, -92f), out Text bottleAllLabel);
-            Button fastForward = MakeButton(root.transform, "FastForwardButton", font, "早送り Space", new Vector2(1f, 1f), new Vector2(-24f, -160f), out Text fastForwardLabel);
-
-            // 右下：トレイのページ
-            Button prev = MakeButton(root.transform, "PagePrevButton", font, "◀", new Vector2(1f, 0f), new Vector2(-200f, 200f), out Text _, new Vector2(64f, 52f));
-            Button next = MakeButton(root.transform, "PageNextButton", font, "▶", new Vector2(1f, 0f), new Vector2(-24f, 200f), out Text _, new Vector2(64f, 52f));
-            Text pageLabel = Label(root.transform, "PageLabel", font, 20, ink, Vector2.zero, new Vector2(100f, 52f), TextAnchor.MiddleCenter);
-            Place(pageLabel.rectTransform, new Vector2(1f, 0f), new Vector2(-96f, 200f), new Vector2(100f, 52f), new Vector2(1f, 1f));
-
-            // 上の真ん中：お知らせ・作業中の数字
-            Text toast = Label(root.transform, "Toast", font, 26, ink, Vector2.zero, new Vector2(1000f, 44f), TextAnchor.MiddleCenter);
-            Place(toast.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(1000f, 44f), new Vector2(0.5f, 1f));
-            Text activity = Label(root.transform, "Activity", font, 22, new Color(1f, 0.9f, 0.6f, 1f), Vector2.zero, new Vector2(800f, 36f), TextAnchor.MiddleCenter);
-            Place(activity.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -80f), new Vector2(800f, 36f), new Vector2(0.5f, 1f));
-
-            // 下：操作の案内
-            Text hint = Label(root.transform, "ControlsHint", font, 15, new Color(1f, 0.95f, 0.85f, 0.75f), Vector2.zero, new Vector2(1500f, 26f), TextAnchor.MiddleCenter);
-            Place(hint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(1500f, 26f), new Vector2(0.5f, 0f));
-            hint.text = "トレイの物をクリックで持つ　液体：フラスコの上で押したまま下へ動かして注ぐ　固体：フラスコの上でクリック　手ぶらで円を描いて混ぜる　つまみをドラッグで火加減　右クリック・Q で戻す";
-
-            // カーソルのそば：説明
+            // カーソルのそば：素材の名前と性質
             RectTransform tip = Panel(root.transform, "Tooltip", new Vector2(0f, 0f), Vector2.zero, new Vector2(420f, 74f), new Color(0.05f, 0.03f, 0.02f, 0.85f));
             tip.pivot = new Vector2(0f, 1f);
             Text tipText = Label(tip, "TooltipText", font, 20, ink, new Vector2(14f, -8f), new Vector2(392f, 60f), TextAnchor.UpperLeft);
-            tip.GetComponent<Image>().raycastTarget = false;
 
             var hud = root.AddComponent<BrewHUD2D>();
             SetRef(hud, "liquidTitle", title);
             SetRef(hud, "liquidDetail", detail);
-            SetRef(hud, "processLog", process);
             SetRef(hud, "tooltipPanel", tip);
             SetRef(hud, "tooltipText", tipText);
             SetRef(hud, "toast", toast);
-            SetRef(hud, "activityText", activity);
-            SetRef(hud, "bottleOneButton", bottleOne);
-            SetRef(hud, "bottleAllButton", bottleAll);
-            SetRef(hud, "bottleAllLabel", bottleAllLabel);
-            SetRef(hud, "fastForwardButton", fastForward);
-            SetRef(hud, "fastForwardLabel", fastForwardLabel);
-            SetRef(hud, "pagePrevButton", prev);
-            SetRef(hud, "pageNextButton", next);
-            SetRef(hud, "pageLabel", pageLabel);
+            var so = new SerializedObject(hud);
+            SerializedProperty version = so.FindProperty("layoutVersion");
+            if (version != null)
+            {
+                version.intValue = BrewHUD2D.MinimalLayout;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+            root.AddComponent<BrewFeedback2D>();
             return root;
         }
 
@@ -429,7 +444,7 @@ namespace PotionFrontier.Game2D.EditorTools
             if (profile == null) log.AppendLine($"！画面効果の設定 {VolumeProfilePath} が見つからない（「② 2D URP 環境をセットアップ」を先に実行）");
         }
 
-        /// <summary>調合台のまわり（背景・ランプ・加熱台・フラスコ・ガラス棒・トレイ・調合台の灯り）を parent の下に置く</summary>
+        /// <summary>調合台のまわり（背景・ランプ・加熱台・フラスコ・ガラス棒・右の素材トレイ・調合台の灯り）を parent の下に置く</summary>
         internal static void PlaceBrewArea(BrewAssets a, Transform parent)
         {
             Vector3 o = parent != null ? parent.position : Vector3.zero;
@@ -449,7 +464,7 @@ namespace PotionFrontier.Game2D.EditorTools
             Instance(a.heater, bench, o + new Vector3(0f, -2.68f, 0f));
             Instance(a.flask, bench, o + new Vector3(0f, -0.83f, 0f));
             Instance(a.stirRod, bench, o);
-            Instance(a.tray, bench, o + new Vector3(0f, -4.6f, 0f));
+            Instance(a.tray, bench, o + TrayPosition);
         }
 
         /// <summary>ビルドに入れるシーンに足す（first なら一番はじめ＝起動したときのシーンにする）</summary>
@@ -600,26 +615,6 @@ namespace PotionFrontier.Game2D.EditorTools
             text.supportRichText = true;
             text.raycastTarget = false;
             return text;
-        }
-
-        private static Button MakeButton(Transform parent, string name, Font font, string caption, Vector2 anchor, Vector2 position, out Text label, Vector2? size = null)
-        {
-            Vector2 s = size ?? new Vector2(260f, 56f);
-            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
-            go.transform.SetParent(parent, false);
-            var rt = (RectTransform)go.transform;
-            Place(rt, anchor, position, s, anchor);
-            var image = go.GetComponent<Image>();
-            image.color = new Color(0.32f, 0.21f, 0.13f, 0.92f);
-            var button = go.GetComponent<Button>();
-            button.targetGraphic = image;
-            ColorBlock colors = button.colors;
-            colors.highlightedColor = new Color(1f, 0.9f, 0.75f, 1f);
-            colors.pressedColor = new Color(0.8f, 0.7f, 0.55f, 1f);
-            button.colors = colors;
-            label = Label(go.transform, "Label", font, 20, new Color(1f, 0.95f, 0.85f, 1f), Vector2.zero, s, TextAnchor.MiddleCenter);
-            label.text = caption;
-            return button;
         }
     }
 }

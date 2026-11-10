@@ -4,45 +4,12 @@ using UnityEngine;
 namespace PotionFrontier.Game2D
 {
     /// <summary>
-    /// 調合台の手ごたえの UI で使う、コードで描く仮の絵（斜線・点線・輪・丸）。
-    /// 本物の絵は BrewFeedback2D の「絵」の欄に入れると、そちらが使われる。
+    /// 調合台の手ごたえの UI で使う、コードで描く仮の絵（溶け具合の輪・丸）。
+    /// 本物の絵は BrewFeedback2D の「絵」の欄に入れると、そちらが使われる（輪は CustomAssets/Images/UI/Brew/stir_ring.png）。
     /// </summary>
     public static class BrewUiSprites2D
     {
         private static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
-
-        /// <summary>斜めの縞（「溶かしきると、ここまで行く」予告の部分。並べて敷き詰める）</summary>
-        public static Sprite Stripes()
-        {
-            const string key = "stripes";
-            if (TryGet(key, out Sprite s)) return s;
-            const int size = 16;
-            var px = new Color[size * size];
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float d = Mathf.Repeat(x + y, 8f);
-                    float a = Mathf.Clamp01(1.5f - Mathf.Abs(d - 2f));
-                    px[y * size + x] = new Color(1f, 1f, 1f, Mathf.Lerp(0.35f, 1f, a));
-                }
-            }
-            return Store(key, Make(size, size, px, TextureWrapMode.Repeat), Vector4.zero);
-        }
-
-        /// <summary>縦の点線（目標の線。縦に並べて敷き詰める）</summary>
-        public static Sprite Dashes()
-        {
-            const string key = "dashes";
-            if (TryGet(key, out Sprite s)) return s;
-            const int w = 4, h = 10;
-            var px = new Color[w * h];
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++) px[y * w + x] = y < 6 ? Color.white : new Color(1f, 1f, 1f, 0f);
-            }
-            return Store(key, Make(w, h, px, TextureWrapMode.Repeat), Vector4.zero);
-        }
 
         /// <summary>輪（ぐるっと塗っていく溶け具合の輪）</summary>
         public static Sprite Ring()

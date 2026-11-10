@@ -6,7 +6,7 @@ namespace PotionFrontier.Game2D
 {
     /// <summary>
     /// 加熱台と火加減のつまみ（Heater の Prefab のルートに付ける）。火加減の値は BrewSession2D が持ち、ここは見た目だけ。
-    /// つまみのドラッグは BrewInput2D が判定する（当たり判定は「Knob」の Collider2D）。
+    /// つまみの操作は BrewInput2D が判定する（当たり判定は「Knob」の Collider2D）：クリックで火を点ける／消す、ドラッグ・ホイールで細かく。
     ///
     /// 絵を差し替えるところ：
     ///   Art/Stand … 加熱台 ／ Art/Flame_0〜 … 炎（白〜黄色で描く。火加減で大きさと色が変わる）

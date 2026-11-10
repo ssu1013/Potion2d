@@ -199,15 +199,13 @@ namespace PotionFrontier.Game2D.EditorTools
                 }
                 if (skinSo != null && skinSo.ApplyModifiedPropertiesWithoutUndo()) EditorUtility.SetDirty(skin);
 
-                // 調合台の手ごたえ（見立てカードの棒・温度計・溶け具合の輪）：BrewHUD の Prefab の欄
+                // 調合台の手ごたえ（温度計・溶け具合の輪）：BrewHUD の Prefab の欄（見立てカードの棒は Step11 でなくした）
                 var brew = new List<KeyValuePair<string, Func<Sprite>>>
                 {
-                    Pair("bar_back", () => UIFactory.RoundedRect(new Color(0.22f, 0.14f, 0.08f, 0.9f), new Color(0.55f, 0.4f, 0.24f, 1f), 7, 2)),
-                    Pair("bar_fill", () => UIFactory.RoundedRect(Color.white, Color.white, 6, 0)),
                     Pair("thermometer_tube", () => UIFactory.RoundedRect(new Color(0.1f, 0.08f, 0.07f, 0.75f), new Color(0.92f, 0.88f, 0.8f, 0.9f), 12, 3)),
                     Pair("stir_ring", BrewUiSprites2D.Ring),
                 };
-                string[] hudFields = { "barBack", "barFill", "thermometerTube", "stirRing" };
+                string[] hudFields = { "thermometerTube", "stirRing" };
                 var sprites = new Sprite[brew.Count];
                 for (int i = 0; i < brew.Count; i++) sprites[i] = WritePng(CustomAssetPaths.UIBrew, brew[i].Key, brew[i].Value(), ref made);
                 if (File.Exists(BrewHudPath))

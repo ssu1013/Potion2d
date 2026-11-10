@@ -169,8 +169,13 @@ namespace PotionFrontier.Game2D
             }
             Log($"画面 {Screen.width}×{Screen.height} ／ 絵の範囲 {Fmt(CameraAspect2D.ViewRect)} ／ カメラ {(cam != null ? $"{cam.name} {deskCamera} 大きさ {deskSize:0.00}" : "なし")}");
             Check(cam != null && Vector2.Distance(cam.transform.position, view.CameraPosition) < 0.01f && Mathf.Abs(cam.orthographicSize - view.CameraSize) < 0.01f,
-                  "タイトルの間も、カメラは調合机に向いている（後ろに机とランプが見える）");
+                  "タイトルの間も、カメラは調合机に向いたまま（机はタイトルの1枚絵で隠れている）");
             Check(hud.Title != null && hud.Title.IsOpen, "タイトル画面が出ている");
+            Check(UIFactory.Skin != null && UIFactory.Skin.titleBackground != null && hud.Title != null && hud.Title.HasBackgroundArt,
+                  "タイトルの1枚絵（CustomAssets/Images/UI/Title/title_background.png）が UISkin につながっている");
+            BrewHUD2D titleBrewHud = FindFirstObjectByType<BrewHUD2D>();
+            Canvas titleBrewCanvas = titleBrewHud != null ? titleBrewHud.GetComponent<Canvas>() : null;
+            Check(titleBrewCanvas == null || !titleBrewCanvas.enabled, "タイトルの間は、調合机の画面（液体の名前・温度計）が出ていない");
             Check(flow.Mode == GameMode.Title, "モードがタイトル");
             CheckFonts("タイトル");
             yield return Shot("title");
@@ -186,6 +191,8 @@ namespace PotionFrontier.Game2D
             // ---- はじめから（ロード画面 → 調合机）---------------------------------
             float loadStart = Time.realtimeSinceStartup;
             hud.Title.ForceNewGame();
+            yield return null;
+            Check(hud.Title.Leaving || !hud.Title.IsOpen, "はじめから → タイトルのロゴとボタンが静かに消えていく");
             yield return WaitUntil(() => hud.Loading != null && hud.Loading.Covered, 4f, "はじめから → 1枚絵のロード画面が出る");
             Check(UIFactory.Skin != null && UIFactory.Skin.loadingBackground != null, "ロード画面の絵（CustomAssets/Images/UI/Loading/loading_background.png）が UISkin につながっている");
             Check(hud.Loading != null && hud.Loading.LabelText.StartsWith("Loading"), "ロード画面の右下に Loading... と出る");
@@ -199,8 +206,15 @@ namespace PotionFrontier.Game2D
             Check(Drift() < 0.01f, "はじめから遊びはじめても、カメラは調合机のまま");
             BrewHUD2D brewHud = FindFirstObjectByType<BrewHUD2D>();
             Canvas brewCanvas = brewHud != null ? brewHud.GetComponent<Canvas>() : null;
-            Check(brewCanvas != null && brewCanvas.enabled, "調合机の操作の画面（トレイ・見立て）が、すぐに出ている");
-            if (brewHud != null && brewHud.LayoutVersion < 4) Warn("調合画面の配置が古いまま（メニュー「Step4：調合画面を新しくする」）");
+            Check(brewCanvas != null && brewCanvas.enabled, "調合机の画面（液体の名前・温度計）が、すぐに出ている");
+            if (brewHud != null && brewHud.LayoutVersion < BrewHUD2D.MinimalLayout) Warn("調合画面の配置が古いまま（メニュー「Step11：画面をスッキリ」）");
+            // Step11：工程・見立て・ボタン・ページ送り・操作の説明は、画面に出さない
+            string[] removedUi = { "ProcessPanel", "MeterCard", "BottleOneButton", "BottleAllButton", "FastForwardButton", "PagePrevButton", "PageNextButton", "PageLabel", "ControlsHint" };
+            var leftovers = new List<string>();
+            foreach (string n in removedUi) if (GameObject.Find(n) != null) leftovers.Add(n);
+            Check(leftovers.Count == 0, $"工程・見立て・ボタン・操作の説明が、画面にない{(leftovers.Count > 0 ? "（残っている：" + string.Join("・", leftovers) + "）" : "")}");
+            Check(brewHud == null || brewHud.GetComponentsInChildren<Button>(true).Length == 0, "調合机の画面に、ボタンが1つもない");
+            Check(tray != null && tray.transform.position.x > 6f, $"素材トレイが画面の右にある（x {(tray != null ? tray.transform.position.x : 0f):0.##}）");
             Pointer2D.BeginSimulation(new Vector2(Screen.width * 0.5f, Screen.height * 0.5f));
 
             IngredientDatabase db = GameContext.Ingredients;
@@ -246,7 +260,7 @@ namespace PotionFrontier.Game2D
             foreach (UnityEngine.Rendering.Universal.Light2D l in FindObjectsByType<UnityEngine.Rendering.Universal.Light2D>(FindObjectsSortMode.None))
                 if (l.lightType == UnityEngine.Rendering.Universal.Light2D.LightType.Global) globalLight = l.intensity;
             Log($"[夜の空気感] 全体の光 {globalLight:0.00}");
-            Check(globalLight >= 0f && globalLight <= 0.2f, "全体の光（Global Light 2D）が、夜の暗さになっている（0.2 以下）");
+            Check(globalLight >= 0.4f && globalLight <= 0.6f, "全体の光（Global Light 2D）が、部屋全体が見える明るさ（0.4〜0.6）");
             GameObject rightLamp = GameObject.Find("Lamp（右・窓の下）");
             Check(rightLamp != null && rightLamp.GetComponentInChildren<UnityEngine.Rendering.Universal.Light2D>() != null, "机の右（窓の下）にも、ランタンの温かい灯りがある");
             NightSoundscape2D night = NightSoundscape2D.Current;
@@ -265,7 +279,7 @@ namespace PotionFrontier.Game2D
             yield return Measure("調合机");
             CheckWords("調合机");
             BrewFeedback2D feedback = BrewFeedback2D.Current;
-            Check(feedback != null, "調合机に手ごたえ（見立てカード・温度計）がある");
+            Check(feedback != null, "調合机に手ごたえ（温度計・演出）がある");
 
             // ---- 調合：水を注ぐ ----------------------------------------------------
             TrayItem2D waterItem = FindTrayItem(water);
@@ -304,14 +318,7 @@ namespace PotionFrontier.Game2D
             yield return Wait(0.6f);
             FlaskSediment2D sediment = FindFirstObjectByType<FlaskSediment2D>();
             Check(sediment != null && sediment.VisiblePieces > 0, $"溶け残りの薬草が、フラスコの底に見える（{(sediment != null ? sediment.VisiblePieces : 0)} 個）");
-            if (feedback != null)
-            {
-                float now = feedback.CurrentValue(PotionAttribute.Healing);
-                float soon = feedback.ProjectedValue(PotionAttribute.Healing);
-                Log($"[見立て] 混ぜる前：回復 今 {now:0.0} → 溶かしきると {soon:0.0} ／ {feedback.Status.Replace('\n', ' ')}");
-                Check(soon > now + 1f, "溶け残りの「これから増える分」が、今の値の先に予告される");
-            }
-            yield return Shot("meter_before_stir");
+            yield return Shot("before_stir");
 
             // ---- 円を描いてかき混ぜる -----------------------------------------------
             float turnsBefore = session.Flask.TotalTurns;
@@ -321,20 +328,35 @@ namespace PotionFrontier.Game2D
             Log($"[混ぜる] {session.Flask.TotalTurns - turnsBefore:0.#} 回転 ／ 溶け具合 {state.dissolvedFraction:P0} ／ {Describe(session.Preview)}");
             Check(session.Flask.TotalTurns - turnsBefore >= 3f, "マウスで円を描くとかき混ぜられる");
             yield return Shot("stirred");
-            if (feedback != null)
-            {
-                string status = feedback.Status.Replace('\n', ' ');
-                Log($"[見立て] 混ぜたあと：回復 {feedback.CurrentValue(PotionAttribute.Healing):0.0} ／ {status}");
-                Check(ringSeen, "かき混ぜている間、カーソルのそばに溶け具合の輪が出る");
-                if (state.dissolvedFraction >= 0.99f)
-                    Check(status.Contains("新しい素材まで") || status.Contains("届く") || status.Contains("そろった"), "溶けきると、見立てカードに「新しい素材まで：発見あと N」が出る");
-            }
+            if (feedback != null) Check(ringSeen, "かき混ぜている間、カーソルのそばに溶け具合の輪が出る");
 
-            // ---- 瓶に詰める（「全部詰める」ボタン）------------------------------------
+            // ---- つまみのクリックで、火を点ける・消す --------------------------------
+            HeaterKnob2D knob = FindFirstObjectByType<HeaterKnob2D>();
+            Collider2D knobHit = knob != null ? knob.GetComponentInChildren<Collider2D>() : null;
+            if (knobHit != null)
+            {
+                session.SetHeat(0f);
+                yield return Click(WorldToScreen(knobHit.bounds.center));
+                yield return Wait(0.2f);
+                Log($"[火] つまみをクリック → 火加減 {session.HeatLevel:0.00}");
+                Check(session.HeatLevel > 0.05f, "つまみをクリックすると火が点く");
+                yield return Click(WorldToScreen(knobHit.bounds.center));
+                yield return Wait(0.2f);
+                Check(session.HeatLevel <= 0.001f, "もう一度クリックすると火が消える");
+            }
+            else Fail("加熱台のつまみ（HeaterKnob2D の当たり判定）がない");
+
+            // ---- 瓶に詰める（素材トレイの下の空き瓶をクリック）--------------------------
             lastBottled = null;
-            Button bottleAll = FindButton("BottleAllButton");
-            Check(bottleAll != null, "「全部詰める」ボタンがある");
-            if (bottleAll != null) bottleAll.onClick.Invoke();
+            BottleStation2D station = FindFirstObjectByType<BottleStation2D>();
+            Check(station != null, "素材トレイのいちばん下に、空き瓶がある");
+            if (station != null)
+            {
+                Check(station.Ready, "液体があるとき、空き瓶が「詰められる」見た目になる");
+                yield return Hover(ColliderScreen(station), 0.25f);
+                Check(input.Hovered == BrewInput2D.HoverKind.Bottle, $"空き瓶を指せる（{input.HoverTitle}）");
+                yield return Click(ColliderScreen(station));
+            }
             else session.BottleAll();
             yield return Wait(0.15f);
             yield return Shot("new_page_turn");
@@ -367,20 +389,20 @@ namespace PotionFrontier.Game2D
                 Check(Mathf.Approximately(Time.timeScale, 1f), "反応のスローのあと、時間の速さが元に戻る");
                 Check(fx == null || fx.SparkleCount == 0, "新発見・反応のときに、きらきらの粒は出ない（夜の空気感）");
             }
-            Check(bottled != null, "ボタンで瓶に詰められる");
+            Check(bottled != null, "空き瓶のクリックで瓶に詰められる");
             PotionStack stack = bottled != null ? potions.Find(bottled.id) : null;
             Log($"[瓶詰め] {Describe(bottled)} ／ 瓶 {(stack != null ? stack.DescribeAmount() : "なし")} ／ フラスコの残り {session.Flask.VolumeMl:0}ml");
             Check(stack != null && stack.FullBottles >= 1, "満タンの瓶がトレイに入る");
             Log($"[発見] 瓶詰めのあと {flow.DiscoveryPoints} ／ 届いた素材 {arrivals.Count} 種類");
 
-            // ---- 素材ノート：熱に弱い薬草を、強火で温めて「熱で弱まる」を見つける（早送り）----------
+            // ---- 素材ノート：熱に弱い薬草を、強火で温めて「熱で弱まる」を見つける（テストだけ時間を速める）----------
             Check(DiscoveryJournal.Knows(herb, IngredientFact.Used) && DiscoveryJournal.Knows(water, IngredientFact.Used), "使った素材が素材ノートに「使った」と記録される");
             bool knewWeak = DiscoveryJournal.Knows(herb, IngredientFact.Weakens);
             session.ResetFlask();
             session.PourIngredient(water, 100f);
             session.AddSolid(herb);
             session.SetHeat(1f);
-            session.FastForward = true;
+            Time.timeScale = 4f; // 遊びの中の早送りはなくしたので、テストの間だけ時間を速める
             yield return WaitUntil(() => DiscoveryJournal.Knows(herb, IngredientFact.Weakens), 15f, "強火で薬草が熱で弱まり、素材ノートに書き足される");
             yield return Wait(0.5f);
             Log($"[素材ノート] 薬草：{DiscoveryJournal.KnownCount(herb)} / {DiscoveryJournal.TotalCount(herb)} の性質（{session.Flask.Temperature:0}℃）／ はじめから知っていた: {knewWeak}");
@@ -394,7 +416,7 @@ namespace PotionFrontier.Game2D
                 Check(fx.KnockCount > 0, "お湯が温まると、コトコトと音がする");
             }
             session.SetHeat(0f);
-            session.FastForward = false;
+            Time.timeScale = 1f;
             session.ResetFlask();
             yield return Wait(0.3f);
 
@@ -909,15 +931,6 @@ namespace PotionFrontier.Game2D
             foreach (TrayItem2D item in FindObjectsByType<TrayItem2D>(FindObjectsSortMode.None))
             {
                 if (item != null && item.isActiveAndEnabled && item.Entry.ingredient == data) return item;
-            }
-            return null;
-        }
-
-        private static Button FindButton(string objectName)
-        {
-            foreach (Button b in FindObjectsByType<Button>(FindObjectsSortMode.None))
-            {
-                if (b.name == objectName) return b;
             }
             return null;
         }

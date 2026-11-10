@@ -29,7 +29,7 @@ namespace PotionFrontier.Game
         [Header("UI の絵")]
         [SerializeField, Tooltip("UI の絵とフォント（空欄はコードで描いた仮の絵・OS のフォント）")] private UISkin skin;
 
-        [Header("ロード画面の長さ（秒。合計で 2〜3 秒が目安）")]
+        [Header("タイトル → 調合机の切り替え（ロード画面をはさむか・長さ。秒。ロード画面は合計で 2〜3 秒が目安）")]
         [SerializeField] private LoadingTiming loadingTiming = new LoadingTiming();
 
         private RectTransform root;
@@ -62,6 +62,10 @@ namespace PotionFrontier.Game
         public bool IsLoadingOpen => loading != null && loading.IsOpen;
         /// <summary>ロード画面（GameFlow が、タイトルから遊びはじめるときに出す）</summary>
         public LoadingScreenUI Loading => loading;
+        /// <summary>タイトルから遊びはじめるときに、ロード画面をはさむ（オフなら、タイトルの1枚絵から直接フェード）</summary>
+        public bool UseLoadingScreen => loadingTiming == null || loadingTiming.showLoadingScreen;
+        /// <summary>ロード画面をはさまないときに、タイトルの1枚絵が消えていく時間（秒）</summary>
+        public float TitleFadeSeconds => loadingTiming != null ? Mathf.Max(0.1f, loadingTiming.titleFadeOutSeconds) : 1.2f;
         /// <summary>素材ノート（自動テストが開いて確かめる）</summary>
         public IngredientNotebookUI Notebook => notebook;
         /// <summary>いま出ているお知らせの文（自動テスト用）</summary>
@@ -93,7 +97,7 @@ namespace PotionFrontier.Game
         {
             // レシピ本で名前を付けたら、トレイの瓶・手に持っている瓶の名前も合わせる
             if (alchemy != null) alchemy.Liquids.Renamed += OnLiquidRenamed;
-            // 新しい素材が届いたら、右下に小さな手紙を出す
+            // 新しい素材が届いたら、左上に小さな手紙を出す
             if (ingredients != null) ingredients.Arrived += OnIngredientArrived;
         }
 

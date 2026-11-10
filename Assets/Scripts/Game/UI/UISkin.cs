@@ -41,12 +41,16 @@ namespace PotionFrontier.Game
         [Tooltip("stamp_reaction.png：新しい反応を発見")] public Sprite stampReaction;
         [Tooltip("stamp_complete.png：素材ノート「すべて発見」")] public Sprite stampComplete;
         [Tooltip("letter.png：新しい素材が調合机に届いたときの、小さなお知らせの手紙")] public Sprite letter;
+        [Header("タイトル画面（Assets/CustomAssets/Images/UI/Title。同じ名前の PNG で上書きすると差し替わる）")]
+        [Tooltip("title_background.png：タイトル画面の後ろに出す、画面いっぱいの1枚絵（1920×1080）。後ろの調合机はこの絵で隠れる。空なら暗い単色")] public Sprite titleBackground;
+        [Range(0f, 0.9f), Tooltip("タイトルの1枚絵の上に重ねる暗がりの濃さ（0 で絵をそのまま見せる。ロゴやボタンが読みにくければ上げる）")] public float titleShade = 0f;
+
         [Header("ロード画面（Assets/CustomAssets/Images/UI/Loading。同じ名前の PNG で上書きすると差し替わる）")]
         [Tooltip("loading_background.png：タイトルから遊びはじめるときに出る、画面いっぱいの1枚絵（1920×1080）。空なら暗い単色")] public Sprite loadingBackground;
         [Range(0f, 0.9f), Tooltip("1枚絵の上に重ねる暗がりの濃さ（0 で絵をそのまま見せる。右下の Loading... が読みにくければ上げる）")] public float loadingShade = 0f;
 
         [Header("夜の色合い")]
-        [Tooltip("羊皮紙の UI（見立てカード・結果カード・お知らせ・本・ポーズなど）に掛ける色。白 = 絵そのまま。暗い夜の画面で紙が白く浮かないように、少しくすんだ暖色にしてある")]
+        [Tooltip("羊皮紙の UI（結果カード・お知らせ・本・ポーズなど）に掛ける色。白 = 絵そのまま。暗い夜の画面で紙が白く浮かないように、少しくすんだ暖色にしてある")]
         public Color paperTint = new Color(0.84f, 0.75f, 0.62f, 1f);
 
         [Header("そのほか")]

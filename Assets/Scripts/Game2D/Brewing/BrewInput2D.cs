@@ -6,20 +6,23 @@ using UnityEngine.EventSystems;
 namespace PotionFrontier.Game2D
 {
     /// <summary>
-    /// 2D 調合画面のマウス・キー操作（シーンの GameSystems に付ける）。3D 版 BrewMode の操作の決まりをそのまま 2D にしたもの。
-    ///   手に取る … トレイの物をクリック（持っている物があれば持ちかえる）
+    /// 2D 調合画面のマウス・キー操作（シーンの GameSystems に付ける）。画面のボタンは使わず、机の上の物を直接さわる。
+    ///   手に取る … 右の素材トレイのマスをクリック（持っている物があれば持ちかえる）。押したままフラスコまで運んでもよい
     ///   注ぐ     … 液体を持ってフラスコの上で左ボタンを押したまま「下へ」動かす（深いほど速い。ホイールでも傾く）
-    ///   入れる   … 固体・粉を持ってフラスコの上でクリック（押したままで続けて入れる）
+    ///              トレイから押したまま運んできたときは、フラスコの上に来たらそのまま傾けられる
+    ///   入れる   … 固体・粉を持ってフラスコの上でクリック（押したままで続けて入れる）。トレイから運んで、フラスコの上で離してもよい
     ///   混ぜる   … 手ぶらでフラスコの上を、左ボタンを押したまま円を描く（向きと速さがそのまま計算に入る）
-    ///   火加減   … つまみを左ドラッグ（右・上で強く）またはホイール
-    ///   戻す     … 右クリック／Q／Esc
-    /// キー：F 瓶に詰める・Shift+F 全部・H 火加減の段階・C/V かき混ぜる・Space 早送り
-    /// 当たり判定は Collider2D（トレイの物・つまみ・フラスコ）で調べる。
+    ///   火       … つまみをクリックで、点ける／消す（点けるときは前の火加減）。ドラッグ・ホイールで細かく調整
+    ///   瓶に詰める … 素材トレイのいちばん下の「空き瓶」をクリック（中身を全部詰める）
+    ///   ページ   … 素材トレイの上でホイール（入りきらないときだけ）
+    ///   戻す     … 右クリック／Q／Esc／素材トレイの空いている所をクリック
+    /// キー：C/V かき混ぜる（マウスの代わり）
+    /// 当たり判定は Collider2D（トレイの物・トレイの板・空き瓶・つまみ・フラスコ）で調べる。
     /// </summary>
     public class BrewInput2D : MonoBehaviour
     {
         public enum Activity { None, Pouring, Stirring, Dialing }
-        public enum HoverKind { None, TrayItem, Knob, Flask }
+        public enum HoverKind { None, TrayItem, Knob, Flask, Bottle, Tray }
 
         [Header("参照（空ならシーンから探す）")]
         [SerializeField] private BrewSession2D session;
@@ -39,6 +42,9 @@ namespace PotionFrontier.Game2D
 
         [Header("火加減・入れる")]
         [SerializeField, Min(10f), Tooltip("この画素数だけドラッグすると、火加減が 0 → 最大になる（1080p 換算）")] private float knobPixels = 300f;
+        [SerializeField, Range(0.05f, 1f), Tooltip("つまみをクリックして火を点けたときの火加減（はじめて点けるとき。2回目からは前の火加減）")] private float clickOnHeat = 0.6f;
+        [SerializeField, Min(1f), Tooltip("これより動かさずに離したら「クリック」とみなす（1080p 換算の画素数）")] private float clickPixels = 8f;
+        [SerializeField, Min(1f), Tooltip("トレイから押したまま、これより動かしたら「運んでいる」とみなす（1080p 換算の画素数）")] private float dragPixels = 24f;
         [SerializeField, Min(0.05f), Tooltip("固体・粉を押したままのとき、続けて入れる間隔（秒）")] private float dropInterval = 0.4f;
 
         private readonly Collider2D[] hits = new Collider2D[16];
@@ -55,6 +61,14 @@ namespace PotionFrontier.Game2D
         private bool hasStirDirection;
         private float stirElapsed;
         private TrayItem2D hoveredItem;
+        private BottleStation2D hoveredBottle;
+        private BrewTray2D hoveredTray;
+        private float dialTravel;
+        private float dialStartLevel;
+        private float lastOnHeat;
+        private bool dragging;
+        private Vector2 dragStart;
+        private float pageCooldown;
 
         public Activity Current { get; private set; }
         public HoverKind Hovered { get; private set; }
@@ -100,7 +114,11 @@ namespace PotionFrontier.Game2D
             {
                 if (Current != Activity.None) EndActivity();
                 if (hoveredItem != null) hoveredItem.SetHovered(false);
+                if (hoveredBottle != null) hoveredBottle.SetHovered(false);
                 hoveredItem = null;
+                hoveredBottle = null;
+                hoveredTray = null;
+                dragging = false;
                 SetHover(HoverKind.None, "", "");
                 lastPointer = Pointer2D.Position;
                 return;
@@ -129,6 +147,8 @@ namespace PotionFrontier.Game2D
         private void UpdateHover(bool overUI)
         {
             TrayItem2D item = null;
+            BottleStation2D bottle = null;
+            BrewTray2D trayBoard = null;
             bool knob = false, overFlask = false;
             if (!overUI)
             {
@@ -139,10 +159,16 @@ namespace PotionFrontier.Game2D
                     if (c == null) continue;
                     TrayItem2D ti = c.GetComponentInParent<TrayItem2D>();
                     if (ti != null) { item = ti; continue; }
+                    BottleStation2D bs = c.GetComponentInParent<BottleStation2D>();
+                    if (bs != null) { bottle = bs; continue; }
+                    BrewTray2D board = c.GetComponent<BrewTray2D>();
+                    if (board != null) { trayBoard = board; continue; }
                     if (c.GetComponentInParent<HeaterKnob2D>() != null) { knob = true; continue; }
                     if (c.GetComponentInParent<Flask2D>() != null) overFlask = true;
                 }
             }
+            if (item != null && trayBoard == null) trayBoard = item.GetComponentInParent<BrewTray2D>();
+            hoveredTray = trayBoard;
 
             if (hoveredItem != item)
             {
@@ -150,10 +176,19 @@ namespace PotionFrontier.Game2D
                 hoveredItem = item;
                 if (hoveredItem != null) hoveredItem.SetHovered(true);
             }
+            if (hoveredBottle != bottle)
+            {
+                if (hoveredBottle != null) hoveredBottle.SetHovered(false);
+                hoveredBottle = bottle;
+                if (hoveredBottle != null) hoveredBottle.SetHovered(true);
+            }
 
+            // 名前を出すのは、素材と空き瓶だけ（つまみ・フラスコは、さわれば分かるので何も出さない）
             if (item != null) SetHover(HoverKind.TrayItem, TrayTitle(item.Entry), TraySubtitle(item.Entry));
-            else if (knob) SetHover(HoverKind.Knob, "火加減のつまみ", $"{ProcessStep.HeatLabel(session.HeatLevel)}（{Mathf.RoundToInt(session.HeatLevel * 100f)}%）　ドラッグ・ホイールで回す");
-            else if (overFlask) SetHover(HoverKind.Flask, "調合フラスコ", FlaskHint());
+            else if (bottle != null) SetHover(HoverKind.Bottle, BottleTitle(), "");
+            else if (knob) SetHover(HoverKind.Knob, "", "");
+            else if (overFlask) SetHover(HoverKind.Flask, "", "");
+            else if (trayBoard != null) SetHover(HoverKind.Tray, "", "");
             else SetHover(HoverKind.None, "", "");
         }
 
@@ -164,10 +199,10 @@ namespace PotionFrontier.Game2D
             HoverSubtitle = subtitle;
         }
 
-        private string FlaskHint()
+        private string BottleTitle()
         {
-            if (Held == null) return session.Flask != null && !session.Flask.IsEmpty ? "押したまま円を描いて、かき混ぜる" : "トレイから素材を取って入れよう";
-            return Held.IsLiquid ? "押したまま下へ動かして、傾けて注ぐ" : "クリックで1回分入れる（押したままで続けて入れる）";
+            int n = session.BottlesForAll();
+            return n > 0 ? $"瓶に詰める（{n}本）" : "空き瓶";
         }
 
         private string TrayTitle(TrayEntry2D e)
@@ -178,10 +213,11 @@ namespace PotionFrontier.Game2D
 
         private string TraySubtitle(TrayEntry2D e)
         {
-            if (e.potion != null) return $"自作の液体　{e.potion.DescribeAmount()}";
+            if (e.potion != null) return e.potion.DescribeAmount();
             if (e.ingredient == null) return "";
-            string form = e.ingredient.IsPoured ? "液体（注ぐ）" : (e.ingredient.Form == IngredientForm.Powder ? "粉（振り入れる）" : "固体（入れる）");
-            return $"{form}　何度でも使える" + FactLine(e.ingredient);
+            // 名前の下には、素材ノートで見つけた性質だけ（操作の説明は出さない）
+            string facts = FactLine(e.ingredient);
+            return facts.Length > 0 ? facts.Substring(1) : "";
         }
 
         /// <summary>素材ノートで見つけた性質（まだの物は「？？？」の数だけ）</summary>
@@ -208,15 +244,6 @@ namespace PotionFrontier.Game2D
 
         private void HandleKeys(float dt)
         {
-            bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ||
-                         Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift);
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                if (shift) session.BottleAll();
-                else session.BottleOne();
-            }
-            if (Input.GetKeyDown(KeyCode.H)) session.CycleHeat();
-            if (Input.GetKeyDown(KeyCode.Space)) session.FastForward = !session.FastForward;
             // Esc はアトリエの画面（AtelierHUD）があればそちらで扱う（持っている物を戻す → ひとやすみ）
             bool escape = Input.GetKeyDown(KeyCode.Escape) && AtelierHUD.Instance == null;
             if (Input.GetKeyDown(KeyCode.Q) || escape || (Pointer2D.RightPressed && Current == Activity.None))
@@ -266,9 +293,13 @@ namespace PotionFrontier.Game2D
                 case Activity.Dialing:
                     if (!leftHeld)
                     {
+                        // ほとんど動かさずに離した＝クリック：火を点ける／消す
+                        if (dialTravel < clickPixels) ToggleFire();
                         EndActivity();
                         return;
                     }
+                    dialTravel += delta.magnitude;
+                    if (dialTravel < clickPixels) return; // クリックのつもりの小さなぶれでは回さない
                     // 動かした分をためていく（ゆっくり回しても、少しずつの動きが消えないように）
                     dialValue = Mathf.Clamp01(dialValue + (delta.x + delta.y) / knobPixels);
                     float level = dialValue < 0.03f ? 0f : dialValue;
@@ -276,11 +307,40 @@ namespace PotionFrontier.Game2D
                     return;
             }
 
-            // 何もしていないとき：ホイールでつまみ
+            // 何もしていないとき：ホイールでつまみ／素材トレイのページ
             if (Hovered == HoverKind.Knob && Mathf.Abs(scroll) > 0.01f)
             {
                 float level = Mathf.Clamp01(Mathf.Round((session.HeatLevel + Mathf.Sign(scroll) * 0.1f) * 10f) / 10f);
                 session.SetHeat(level);
+            }
+            if (pageCooldown > 0f) pageCooldown -= dt;
+            if ((Hovered == HoverKind.TrayItem || Hovered == HoverKind.Tray) && hoveredTray != null && Mathf.Abs(scroll) > 0.01f && pageCooldown <= 0f)
+            {
+                if (hoveredTray.PageCount > 1) hoveredTray.ChangePage(scroll > 0f ? -1 : 1);
+                pageCooldown = 0.15f;
+            }
+
+            // トレイから押したまま運んでいる
+            if (dragging && !leftPressed)
+            {
+                bool moved = (pointer - dragStart).magnitude * scale >= dragPixels;
+                if (Held == null) dragging = false;
+                else if (leftHeld)
+                {
+                    // 液体：フラスコの上まで運んだら、そのまま下へ動かして傾けられる
+                    if (moved && Held.IsLiquid && Hovered == HoverKind.Flask)
+                    {
+                        dragging = false;
+                        BeginPour();
+                        return;
+                    }
+                }
+                else
+                {
+                    // 固体・粉：フラスコの上で離したら、1回分入れる
+                    if (moved && !Held.IsLiquid && Hovered == HoverKind.Flask) DropOne();
+                    dragging = false;
+                }
             }
 
             // 押したまま入れ続ける（固体・粉）
@@ -296,18 +356,26 @@ namespace PotionFrontier.Game2D
             {
                 case HoverKind.TrayItem:
                     if (hoveredItem != null) Take(hoveredItem.Entry);
+                    dragging = Held != null;
+                    dragStart = pointer;
+                    return;
+                case HoverKind.Tray:
+                    // トレイの空いている所をクリック：持っている物を戻す
+                    ReturnHeld();
+                    return;
+                case HoverKind.Bottle:
+                    session.BottleAll();
                     return;
                 case HoverKind.Knob:
                     Current = Activity.Dialing;
                     dialValue = session.HeatLevel;
+                    dialStartLevel = session.HeatLevel;
+                    dialTravel = 0f;
                     return;
                 case HoverKind.Flask:
                     if (Held != null && Held.IsLiquid)
                     {
-                        Current = Activity.Pouring;
-                        Tilt = Mathf.Max(Tilt, 0.15f);
-                        PouredThisTime = 0f;
-                        PourRate = 0f;
+                        BeginPour();
                     }
                     else if (Held != null)
                     {
@@ -402,6 +470,25 @@ namespace PotionFrontier.Game2D
             session.Stir(turns, clockwise);
             StirTurnsThisTime += turns;
             StirClockwise = clockwise;
+        }
+
+        private void BeginPour()
+        {
+            Current = Activity.Pouring;
+            Tilt = Mathf.Max(Tilt, 0.15f);
+            PouredThisTime = 0f;
+            PourRate = 0f;
+        }
+
+        /// <summary>つまみのクリック：火が点いていれば消す、消えていれば前の火加減で点ける</summary>
+        private void ToggleFire()
+        {
+            if (dialStartLevel > 0.001f)
+            {
+                lastOnHeat = dialStartLevel;
+                session.SetHeat(0f);
+            }
+            else session.SetHeat(lastOnHeat > 0.04f ? lastOnHeat : clickOnHeat);
         }
 
         private void EndActivity()

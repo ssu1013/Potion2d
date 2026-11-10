@@ -26,7 +26,7 @@ namespace PotionFrontier.Game2D.EditorTools
         // ---- 夜の照明（前の値 → 新しい値）----
         private static readonly Color OldGlobalColor = new Color(1f, 0.84f, 0.66f, 1f);
         private static readonly Color NightGlobalColor = new Color(0.52f, 0.58f, 0.86f, 1f);   // 月夜の青い暗さ
-        private const float OldGlobal = 0.32f, NightGlobal = Step10Lighting2D.ComfortGlobal;                 // 0.16：奥の壁がうっすら見える暗さ（Step10 で 0.10 から上げた）
+        private const float OldGlobal = 0.32f, NightGlobal = Step11MinimalUI2D.BrightGlobal;                 // 0.5：部屋全体が見える明るさ（Step10 で 0.16、Step11 で 0.5 に上げた）
         private static readonly Color OldMoonColor = new Color(0.55f, 0.68f, 1f, 1f);
         private static readonly Color NightMoonColor = new Color(0.48f, 0.6f, 1f, 1f);
         private const float MoonScale = 0.7f;                                                     // 月明かりは控えめに

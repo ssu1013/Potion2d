@@ -12,13 +12,14 @@ namespace PotionFrontier.Game2D.EditorTools
     /// Step10：夜の机を、空気感はそのままに少し見やすくする（何度実行してもよい）。
     ///   1. 机の右（窓の下）に、左と同じランタンをもう1つ置く（Lamp の Prefab。温かい Point Light 2D と炎のゆらぎつき）
     ///   2. 全体の光（Global Light 2D）を 0.10 → 0.16 に（奥の壁や板が、うっすら見える暗さ）。手で変えてあれば触らない
+    ///      （Step11 で、さらに 0.5 に上げた）
     /// 羊皮紙の UI の色は、UISkin の「紙の色合い（Paper Tint）」で調整する（このメニューでは触らない）。
     /// </summary>
     public static class Step10Lighting2D
     {
         private const string LampPrefabPath = "Assets/Art2D/Brewing/Prefabs/Lamp.prefab";
         public const string RightLampName = "Lamp（右・窓の下）";
-        /// <summary>右のランタンの位置（左は x = -6.8）。フラスコ・つまみの右、トレイのページ送りの左</summary>
+        /// <summary>右のランタンの位置（左は x = -6.8）。フラスコ・つまみの右、右の素材トレイの左</summary>
         public static readonly Vector3 RightLampPosition = new Vector3(5.2f, -2.08f, 0f);
         public const float OldGlobal = 0.1f, ComfortGlobal = 0.16f;
 
