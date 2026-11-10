@@ -225,8 +225,9 @@ namespace PotionFrontier.Game
         }
 
         /// <summary>
-        /// タイトルから遊びはじめる：1枚絵のロード画面（右下に Loading...）が出て、2〜3秒で調合机が現れる。
-        /// 絵が出ている間に、後ろでタイトルを片付けてフラスコを用意する。環境音は途切れない
+        /// タイトルから遊びはじめる：ロゴとボタンがすっと消え、タイトルの1枚絵がロード画面の1枚絵（右下に Loading...）へ
+        /// 静かに入れ替わり、2〜3秒で調合机が現れる。絵が出ている間に、後ろでタイトルを片付けてフラスコを用意する。環境音は途切れない。
+        /// ロード画面をはさまない設定（AtelierHUD の「タイトル → 調合机の切り替え」）なら、タイトルの1枚絵そのものがゆっくり消えて調合机が現れる
         /// </summary>
         private IEnumerator BeginPlay(string welcome)
         {
@@ -234,9 +235,12 @@ namespace PotionFrontier.Game
             AtelierHUD hud = AtelierHUD.Instance;
             SoundLibrary lib = AudioManager.Lib;
             if (lib != null) AudioManager.Se(lib.startGame, 0.45f);
-            LoadingScreenUI card = hud != null ? hud.Loading : null;
+            TitleScreenUI title = hud != null ? hud.Title : null;
+            LoadingScreenUI card = hud != null && hud.UseLoadingScreen ? hud.Loading : null;
             if (card != null)
             {
+                // タイトルの文字とボタンが消え、1枚絵はロード画面の絵が上から静かに覆う
+                if (title != null) title.BeginLeave(false, 0f);
                 // タイトルの曲から調合机の曲へ、ロード画面の間にゆっくり入れ替える（環境音はそのまま）
                 if (lib != null)
                 {
@@ -247,7 +251,7 @@ namespace PotionFrontier.Game
                 while (card.IsOpen && !card.Covered) yield return null;
             }
 
-            // ロード画面の絵が出ている間に、机の上を用意する
+            // ロード画面（またはタイトル）の絵が出ている間に、机の上を用意する
             if (brewInput != null) brewInput.ReturnHeld();
             if (session != null)
             {
@@ -256,10 +260,24 @@ namespace PotionFrontier.Game
             }
             pendingFlask = null;
             if (view != null) view.Place();
-            if (hud != null) hud.ShowGameplay();
 
-            // ロード画面が消えはじめるのを待つ
-            if (card != null) while (card.IsOpen && !card.Revealing) yield return null;
+            if (card != null)
+            {
+                // タイトルは、ロード画面の絵の後ろで片付ける
+                if (hud != null) hud.ShowGameplay();
+                // ロード画面が消えはじめるのを待つ
+                while (card.IsOpen && !card.Revealing) yield return null;
+            }
+            else if (title != null && title.IsOpen)
+            {
+                // ロード画面をはさまない：タイトルの1枚絵がゆっくり消えて、後ろの調合机が見えてくる
+                if (lib != null)
+                {
+                    AudioManager.PlayBgm(lib.bgmAtelier, 2.5f);
+                    AudioManager.PlayAmbient(lib.ambientRoom);
+                }
+                title.BeginLeave(true, hud != null ? hud.TitleFadeSeconds : 1.2f);
+            }
 
             Mode = GameMode.Playing;
             if (ModeChanged != null) ModeChanged(Mode);
@@ -269,6 +287,8 @@ namespace PotionFrontier.Game
                 AudioManager.PlayAmbient(lib.ambientRoom);
             }
             if (card != null) while (card.IsOpen) yield return null;
+            else if (title != null) while (title.IsOpen && !title.LeaveFinished) yield return null;
+            if (hud != null) hud.ShowGameplay();
             if (hud != null) hud.ShowToast(welcome);
             transitioning = false;
             checkArrivals = true;

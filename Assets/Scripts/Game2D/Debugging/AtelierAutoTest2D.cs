@@ -169,8 +169,13 @@ namespace PotionFrontier.Game2D
             }
             Log($"画面 {Screen.width}×{Screen.height} ／ 絵の範囲 {Fmt(CameraAspect2D.ViewRect)} ／ カメラ {(cam != null ? $"{cam.name} {deskCamera} 大きさ {deskSize:0.00}" : "なし")}");
             Check(cam != null && Vector2.Distance(cam.transform.position, view.CameraPosition) < 0.01f && Mathf.Abs(cam.orthographicSize - view.CameraSize) < 0.01f,
-                  "タイトルの間も、カメラは調合机に向いている（後ろに机とランプが見える）");
+                  "タイトルの間も、カメラは調合机に向いたまま（机はタイトルの1枚絵で隠れている）");
             Check(hud.Title != null && hud.Title.IsOpen, "タイトル画面が出ている");
+            Check(UIFactory.Skin != null && UIFactory.Skin.titleBackground != null && hud.Title != null && hud.Title.HasBackgroundArt,
+                  "タイトルの1枚絵（CustomAssets/Images/UI/Title/title_background.png）が UISkin につながっている");
+            BrewHUD2D titleBrewHud = FindFirstObjectByType<BrewHUD2D>();
+            Canvas titleBrewCanvas = titleBrewHud != null ? titleBrewHud.GetComponent<Canvas>() : null;
+            Check(titleBrewCanvas == null || !titleBrewCanvas.enabled, "タイトルの間は、調合机の画面（液体の名前・温度計）が出ていない");
             Check(flow.Mode == GameMode.Title, "モードがタイトル");
             CheckFonts("タイトル");
             yield return Shot("title");
@@ -186,6 +191,8 @@ namespace PotionFrontier.Game2D
             // ---- はじめから（ロード画面 → 調合机）---------------------------------
             float loadStart = Time.realtimeSinceStartup;
             hud.Title.ForceNewGame();
+            yield return null;
+            Check(hud.Title.Leaving || !hud.Title.IsOpen, "はじめから → タイトルのロゴとボタンが静かに消えていく");
             yield return WaitUntil(() => hud.Loading != null && hud.Loading.Covered, 4f, "はじめから → 1枚絵のロード画面が出る");
             Check(UIFactory.Skin != null && UIFactory.Skin.loadingBackground != null, "ロード画面の絵（CustomAssets/Images/UI/Loading/loading_background.png）が UISkin につながっている");
             Check(hud.Loading != null && hud.Loading.LabelText.StartsWith("Loading"), "ロード画面の右下に Loading... と出る");

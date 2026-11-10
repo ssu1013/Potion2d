@@ -23,6 +23,7 @@ namespace PotionFrontier.Game2D.EditorTools
         public const string UIBrew = UI + "/Brew";
         public const string UIDiscovery = UI + "/Discovery";
         public const string UILoading = UI + "/Loading";
+        public const string UITitle = UI + "/Title";
         public const string UnusedImages = Images + "/_Unused";
 
         // ---- 音 ----
@@ -42,7 +43,7 @@ namespace PotionFrontier.Game2D.EditorTools
         public static readonly Dictionary<string, string> ImageFolders = new Dictionary<string, string>
         {
             { "lamp", Workbench },
-            { "loading_background", UILoading },
+            { "loading_background", UILoading }, { "title_background", UITitle },
             { "brew_background", Workbench }, { "flask_back", Workbench }, { "flask_front", Workbench }, { "flask_mask", Workbench },
             { "heater_stand", Workbench }, { "knob_base", Workbench }, { "knob_dial", Workbench }, { "flame", Workbench },
             { "stir_rod", Workbench }, { "tray_panel", Workbench }, { "tray_tile", Workbench }, { "tray_page_dot", Workbench },

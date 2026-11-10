@@ -6,13 +6,22 @@ using UnityEngine.UI;
 namespace PotionFrontier.Game
 {
     /// <summary>
-    /// タイトル画面。背景はアトリエをゆっくり映すカメラ（TitleCameraRig）、手前にロゴとメニュー。
+    /// タイトル画面。後ろは画面いっぱいのタイトル専用の1枚絵（不透明なので、調合机・フラスコ・素材トレイは見えない）、手前にロゴとメニュー。
     /// ロゴ → サブタイトル → ボタンの順に出てくる。光の粒がふわふわ昇っていく。
+    ///
+    /// 絵を差し替えるところ：Assets/CustomAssets/Images/UI/Title/title_background.png（1920×1080）を、
+    /// 同じ名前の PNG で上書きするだけ（UISkin の「タイトル画面」欄につないである）。絵が空欄なら、暗い単色になる。
+    /// 重なりの順（奥 → 手前）：Bleed（画面の外まで覆う暗い土台）→ Background（1枚絵）→ Shade（暗がり。濃さは UISkin）→ Content（ロゴ・ボタンなど）
+    /// 遊びはじめるとき：ロゴとボタンがすっと消え、1枚絵はロード画面の絵へ静かに入れ替わる
+    /// （ロード画面をはさまない設定なら、1枚絵そのものがゆっくり消えて調合机が現れる）。
     /// </summary>
     public sealed class TitleScreenUI
     {
+        private const float ContentFadeSeconds = 0.4f;
+
         private readonly GameObject root;
         private readonly CanvasGroup rootGroup;
+        private readonly CanvasGroup contentGroup;
         private readonly RectTransform logoGroup;
         private readonly CanvasGroup logoCanvas;
         private readonly RectTransform ribbon;
@@ -39,6 +48,10 @@ namespace PotionFrontier.Game
         private float time;
         private bool hasSave;
         private bool locked;
+        private bool leaving;
+        private bool fadeAll;
+        private float leaveTime;
+        private float fadeSeconds = 1.2f;
 
         private struct Mote
         {
@@ -52,6 +65,12 @@ namespace PotionFrontier.Game
 
         public bool IsOpen => root.activeSelf;
         public bool IsConfirmOpen => confirmRoot.activeSelf;
+        /// <summary>タイトルの1枚絵（UISkin の titleBackground）が入っている</summary>
+        public bool HasBackgroundArt { get; }
+        /// <summary>消えていくところ（遊びはじめるボタンを押したあと）</summary>
+        public bool Leaving => leaving;
+        /// <summary>すっかり消えた（1枚絵ごと消すときだけ true になる）</summary>
+        public bool LeaveFinished => leaving && fadeAll && leaveTime >= fadeSeconds;
 
         public TitleScreenUI(RectTransform parent, Action onNewGame, Action onContinue, Action onSettings, Action onQuit)
         {
@@ -60,10 +79,34 @@ namespace PotionFrontier.Game
             this.onSettings = onSettings;
             this.onQuit = onQuit;
 
-            RectTransform overlay = UIFactory.CreateRect("TitleScreen", parent);
-            UIFactory.Stretch(overlay);
-            root = overlay.gameObject;
+            RectTransform screen = UIFactory.CreateRect("TitleScreen", parent);
+            UIFactory.Stretch(screen);
+            root = screen.gameObject;
             rootGroup = root.AddComponent<CanvasGroup>();
+            UISkin skin = UIFactory.Skin;
+
+            // 画面の外（ウルトラワイドなどの余白）まで覆う暗い土台。後ろの調合机・素材トレイは一切見えない・触れない
+            Image bleed = UIFactory.CreateImage(screen, "Bleed", null, new Color(0.02f, 0.015f, 0.02f, 1f));
+            UIFactory.Stretch(bleed.rectTransform, -2000f, -2000f, -2000f, -2000f);
+            bleed.raycastTarget = true;
+
+            // タイトル専用の1枚絵（title_background.png）。空欄なら暗い単色
+            Sprite art = skin != null ? skin.titleBackground : null;
+            HasBackgroundArt = art != null;
+            Image background = UIFactory.CreateImage(screen, "Background", art, art != null ? Color.white : new Color(0.035f, 0.028f, 0.04f, 1f));
+            UIFactory.Stretch(background.rectTransform);
+            background.raycastTarget = false;
+
+            // 絵の上に重ねる暗がり（濃さは UISkin。0 なら絵をそのまま見せる）
+            float shadeAlpha = skin != null ? skin.titleShade : 0f;
+            Image shade = UIFactory.CreateImage(screen, "Shade", null, new Color(0f, 0f, 0f, art != null ? shadeAlpha : 0f));
+            UIFactory.Stretch(shade.rectTransform);
+            shade.raycastTarget = false;
+
+            // ロゴ・ボタンなど（遊びはじめるとき、先にこれだけ消える）
+            RectTransform overlay = UIFactory.CreateRect("Content", screen);
+            UIFactory.Stretch(overlay);
+            contentGroup = overlay.gameObject.AddComponent<CanvasGroup>();
 
             // ふちを暗く、下のほうも少し暗く（ボタンを読みやすく）
             Image vignette = UIFactory.CreateImage(overlay, "Vignette", UIWidgets.Vignette(), Color.white);
@@ -171,7 +214,12 @@ namespace PotionFrontier.Game
         {
             hasSave = saveExists;
             locked = false;
+            leaving = false;
+            leaveTime = 0f;
             time = 0f;
+            rootGroup.alpha = 1f;
+            rootGroup.blocksRaycasts = true;
+            contentGroup.alpha = 1f;
             root.SetActive(true);
             confirmRoot.SetActive(false);
             continueButton.interactable = saveExists;
@@ -192,7 +240,23 @@ namespace PotionFrontier.Game
 
         public void Hide()
         {
+            leaving = false;
             root.SetActive(false);
+        }
+
+        /// <summary>
+        /// 遊びはじめるとき：ロゴとボタンが静かに消えていく。wholeScreen = true なら、1枚絵もゆっくり消える
+        /// （後ろの調合机が見えてくる。ロード画面をはさむときは false：1枚絵はロード画面が覆う）
+        /// </summary>
+        public void BeginLeave(bool wholeScreen, float seconds)
+        {
+            if (!IsOpen) return;
+            locked = true;
+            CloseConfirm();
+            if (!leaving) leaveTime = 0f;
+            leaving = true;
+            fadeAll = wholeScreen;
+            fadeSeconds = Mathf.Max(0.05f, seconds);
         }
 
         /// <summary>毎フレーム呼ぶ（HUD から）。メニューの操作を受け付けるときは allowInput = true</summary>
@@ -201,6 +265,18 @@ namespace PotionFrontier.Game
             if (!IsOpen) return;
             time += dt;
             Animate(dt);
+            if (leaving)
+            {
+                leaveTime += dt;
+                contentGroup.alpha = 1f - Ease(Mathf.Clamp01(leaveTime / ContentFadeSeconds));
+                if (fadeAll)
+                {
+                    float k = Mathf.Clamp01(leaveTime / fadeSeconds);
+                    rootGroup.alpha = 1f - k * k * (3f - 2f * k);
+                    if (rootGroup.alpha < 0.5f) rootGroup.blocksRaycasts = false;
+                }
+                return;
+            }
 
             if (!allowInput || locked || time < 1.0f) return;
             if (IsConfirmOpen)

@@ -4,10 +4,12 @@ using UnityEngine.UI;
 
 namespace PotionFrontier.Game
 {
-    /// <summary>ロード画面の長さ（AtelierHUD のインスペクターで調整できる。単位は秒。合計で 2〜3 秒が目安）</summary>
+    /// <summary>タイトル → 調合机の切り替え（AtelierHUD のインスペクターで調整できる。単位は秒。ロード画面は合計で 2〜3 秒が目安）</summary>
     [Serializable]
     public class LoadingTiming
     {
+        [Tooltip("タイトルから遊びはじめるときに、ロード画面をはさむ（オフにすると、タイトルの1枚絵から直接、調合机へ静かにフェードする）")] public bool showLoadingScreen = true;
+        [Tooltip("ロード画面をはさまないときに、タイトルの1枚絵が消えて調合机が見えてくるまで")] public float titleFadeOutSeconds = 1.2f;
         [Tooltip("タイトルが消えて、ロード画面の絵が出るまで")] public float fadeInSeconds = 0.6f;
         [Tooltip("ロード画面の絵を見せておく時間")] public float holdSeconds = 1.1f;
         [Tooltip("ロード画面が消えて、調合机が見えてくるまで")] public float fadeOutSeconds = 0.8f;
