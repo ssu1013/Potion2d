@@ -19,7 +19,6 @@ namespace PotionFrontier.Game
         public AudioClip uiClose;
         public AudioClip page;
         public AudioClip startGame;
-        [Tooltip("日付のアイキャッチで、日付が浮かび上がるときの静かな音（se_date.wav）")] public AudioClip dateCard;
 
         [Header("調合")]
         public AudioClip pickup;

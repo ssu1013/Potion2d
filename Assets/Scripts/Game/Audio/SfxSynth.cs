@@ -13,7 +13,7 @@ namespace PotionFrontier.Game
     {
         private const int Rate = 44100;
 
-        private static AudioClip chime, goal, discovery, reaction, softWarning, pageTurn, lampFire, knock, glassTap, letter, dateBell;
+        private static AudioClip chime, goal, discovery, reaction, softWarning, pageTurn, lampFire, knock, glassTap, letter;
 
         /// <summary>木琴の「コン」（★1つ分・溶けきった。pitch を上げて音階にする）</summary>
         public static AudioClip Chime
@@ -263,22 +263,6 @@ namespace PotionFrontier.Game
             }
         }
 
-        /// <summary>日付が浮かび上がるとき：低いナイロン弦を2音、ゆっくり（夜のはじまりの合図。長く静かに消える）</summary>
-        public static AudioClip DateBell
-        {
-            get
-            {
-                if (dateBell == null)
-                {
-                    var data = new float[(int)(Rate * 4.2f)];
-                    AddPluck(data, 0f, 146.8f, 0.9f, 3.6f, 41);   // レ（D3）
-                    AddPluck(data, 0.55f, 220f, 0.7f, 3.2f, 42);  // ラ（A3）
-                    dateBell = Make("synth_date_bell", data, 0.7f);
-                }
-                return dateBell;
-            }
-        }
-
         // ------------------------------------------------------------------
 
         /// <summary>木琴（木の板をたたく音）：基音と、木琴らしい高い倍音がすぐ消える。たたいた瞬間の「コッ」も少し</summary>
@@ -366,7 +350,6 @@ namespace PotionFrontier.Game
             knock = null;
             glassTap = null;
             letter = null;
-            dateBell = null;
         }
     }
 }

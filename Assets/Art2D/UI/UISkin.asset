@@ -33,7 +33,6 @@ MonoBehaviour:
   stampReaction: {fileID: 21300000, guid: 854bbe7ae4a7aac42b44804f60869f0d, type: 3}
   stampComplete: {fileID: 21300000, guid: 391c006dfb7eaa94ca9728ad823c0746, type: 3}
   letter: {fileID: 21300000, guid: 3d4a31726c2811e4b9f2e58552747c51, type: 3}
-  dateBackground: {fileID: 21300000, guid: 676e302838c1764428ab742b197e97f5, type: 3}
-  dateOrnament: {fileID: 21300000, guid: 521aa0c4fa359e841a7a8ffc213797b0, type: 3}
-  dateShade: 0.25
+  loadingBackground: {fileID: 21300000, guid: 676e302838c1764428ab742b197e97f5, type: 3}
+  loadingShade: 0
   drawStampLabels: 1

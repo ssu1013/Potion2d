@@ -8,7 +8,7 @@ namespace PotionFrontier.Game
 {
     /// <summary>
     /// 調合机の上に重ねる画面（シーンの AtelierHUD に付ける）。1画面版なので、ほかの画面へは移らない。
-    /// タイトル・日付のアイキャッチ・ポーズ・設定・レシピ本・素材ノート・お知らせ・新しい素材が届いたお知らせ・画面のフェードをまとめて持つ。
+    /// タイトル・ロード画面・ポーズ・設定・レシピ本・素材ノート・お知らせ・新しい素材が届いたお知らせ・画面のフェードをまとめて持つ。
     /// 本（レシピ本・素材ノート）は机の上に広げるように出し、後ろは少しだけ暗くする（ランプの火のゆらぎ・環境音はそのまま）。
     /// 調合机の操作の画面（BrewHUD2D）はこれとは別の Canvas。
     ///
@@ -29,15 +29,15 @@ namespace PotionFrontier.Game
         [Header("UI の絵")]
         [SerializeField, Tooltip("UI の絵とフォント（空欄はコードで描いた仮の絵・OS のフォント）")] private UISkin skin;
 
-        [Header("日付のアイキャッチの「間」（秒）")]
-        [SerializeField] private DateCardTiming dateCardTiming = new DateCardTiming();
+        [Header("ロード画面の長さ（秒。合計で 2〜3 秒が目安）")]
+        [SerializeField] private LoadingTiming loadingTiming = new LoadingTiming();
 
         private RectTransform root;
         private RecipeBookUI recipeBook;
         private IngredientNotebookUI notebook;
         private TitleScreenUI title;
         private PauseMenuUI pause;
-        private DateCardUI dateCard;
+        private LoadingScreenUI loading;
         private SettingsPanel settings;
         private ArrivalNoticeUI arrival;
 
@@ -59,9 +59,9 @@ namespace PotionFrontier.Game
         public bool IsRecipeBookOpen => recipeBook != null && recipeBook.IsOpen;
         public bool IsNotebookOpen => notebook != null && notebook.IsOpen;
         public bool IsPauseOpen => pause != null && pause.IsOpen;
-        public bool IsDateCardOpen => dateCard != null && dateCard.IsOpen;
-        /// <summary>日付のアイキャッチ（GameFlow が、遊びはじめるときに出す）</summary>
-        public DateCardUI DateCard => dateCard;
+        public bool IsLoadingOpen => loading != null && loading.IsOpen;
+        /// <summary>ロード画面（GameFlow が、タイトルから遊びはじめるときに出す）</summary>
+        public LoadingScreenUI Loading => loading;
         /// <summary>素材ノート（自動テストが開いて確かめる）</summary>
         public IngredientNotebookUI Notebook => notebook;
         /// <summary>いま出ているお知らせの文（自動テスト用）</summary>
@@ -69,7 +69,7 @@ namespace PotionFrontier.Game
 
         /// <summary>何かのウィンドウ（タイトル含む）を開いていて、調合机の操作を止めるべきとき</summary>
         public bool IsModalOpen =>
-            IsRecipeBookOpen || IsNotebookOpen || IsPauseOpen || IsSettingsOpen || (title != null && title.IsOpen) || IsDateCardOpen;
+            IsRecipeBookOpen || IsNotebookOpen || IsPauseOpen || IsSettingsOpen || (title != null && title.IsOpen) || IsLoadingOpen;
 
         /// <summary>最後にウィンドウを閉じたフレーム（閉じたクリック・キーで、そのまま別の操作が起きないようにする）</summary>
         public int LastModalCloseFrame => lastModalCloseFrame;
@@ -141,14 +141,7 @@ namespace PotionFrontier.Game
 
             if (allowInput && Input.GetKeyDown(KeyCode.Escape)) HandleEscape(playing);
 
-            // 日付のアイキャッチ：浮かび上がる瞬間に、静かな音を1つ
-            bool cardWasCovered = dateCard.Covered;
-            dateCard.Tick(dt, allowInput);
-            if (!cardWasCovered && dateCard.Covered)
-            {
-                SoundLibrary lib = AudioManager.Lib;
-                AudioManager.Se(lib != null && lib.dateCard != null ? lib.dateCard : SfxSynth.DateBell, 0.5f);
-            }
+            loading.Tick(dt);
 
             // 一番手前のウィンドウだけがキー入力を受け取る
             bool frameFree = LastModalCloseFrame != Time.frameCount;
@@ -160,7 +153,7 @@ namespace PotionFrontier.Game
                 notebook.Tick(dt, allowInput && frameFree);
                 if (allowInput && frameFree && Input.GetKeyDown(KeyCode.M)) CloseNotebook();
             }
-            title.Tick(dt, allowInput && frameFree && !settings.IsOpen && !dateCard.IsOpen);
+            title.Tick(dt, allowInput && frameFree && !settings.IsOpen && !loading.IsOpen);
 
             // R でレシピ本を開く（閉じるのは Esc・閉じるボタン。検索欄で r を打っても閉じないように）
             if (playing && allowInput && frameFree && !IsModalOpen && Input.GetKeyDown(KeyCode.R)) OpenRecipeBook();
@@ -174,7 +167,7 @@ namespace PotionFrontier.Game
         private void HandleEscape(bool playing)
         {
             if (settings.IsOpen) settings.Close();
-            else if (dateCard.IsOpen) dateCard.Skip();
+            else if (loading.IsOpen) { }
             else if (title.IsOpen && title.IsConfirmOpen) title.CloseConfirm();
             else if (pause.IsOpen) ClosePause();
             else if (recipeBook.IsOpen)
@@ -272,7 +265,7 @@ namespace PotionFrontier.Game
             if (recipeBook.IsOpen) recipeBook.Close(false);
             if (notebook.IsOpen) notebook.Close();
             pause.Close();
-            dateCard.Close();
+            loading.Close();
             if (settings.IsOpen) settings.Close();
             arrival.Clear();
             toastTimer = 0f;
@@ -310,7 +303,7 @@ namespace PotionFrontier.Game
             lastModalCloseFrame = Time.frameCount;
         }
 
-        /// <summary>ポーズに出す、今日の日付と探求の進み具合</summary>
+        /// <summary>ポーズに出す、探求の進み具合</summary>
         private string Summary()
         {
             GameFlow flow = GameFlow.Instance;
@@ -320,9 +313,9 @@ namespace PotionFrontier.Game
             int onDesk = ingredients != null ? ingredients.CountKinds(db) : 0;
             int total = db != null ? db.Count : onDesk;
             int bottles = inventory != null ? inventory.TotalCount : 0;
-            string today = flow != null ? $"<size=22><color=#7A5A38>{flow.DateLabel}（{flow.Day}日目の夜）　瓶に詰めた回数 {flow.BrewCount}</color></size>\n" : "";
-            string line1 = today + $"発見　<b>{points}</b>　／　見つけた液体　<b>{liquids} 種類</b>";
+            string line1 = $"発見　<b>{points}</b>　／　見つけた液体　<b>{liquids} 種類</b>";
             string line2 = $"机の素材　<b>{onDesk} / {total}</b>　／　トレイの瓶　<b>{bottles} 本</b>";
+            if (flow != null && flow.BrewCount > 0) line2 += $"\n<size=22><color=#7A5A38>これまでに瓶に詰めた回数：{flow.BrewCount}</color></size>";
             string next = "";
             int remaining = 0;
             IngredientData coming = flow != null ? flow.NextArrival(out remaining) : null;
@@ -356,7 +349,7 @@ namespace PotionFrontier.Game
             // 画面の比率が 16:9 でないとき（ウルトラワイド・Steam Deck など）も、UI を絵と同じ 16:9 の範囲に収める
             root = canvasGo.AddComponent<ViewportFit2D>().SafeRoot;
 
-            // 奥から：プレイ中の UI → レシピ本・素材ノート → お知らせ → タイトル → 日付のアイキャッチ → ポーズ → 設定
+            // 奥から：プレイ中の UI → レシピ本・素材ノート → お知らせ → タイトル → ロード画面 → ポーズ → 設定
             RectTransform gameplay = UIFactory.CreateRect("Gameplay", root);
             UIFactory.Stretch(gameplay);
             gameplayGroup = gameplay.gameObject.AddComponent<CanvasGroup>();
@@ -377,7 +370,7 @@ namespace PotionFrontier.Game
                 () => { if (GameFlow.Instance != null) GameFlow.Instance.ContinueGame(); },
                 OpenSettings,
                 () => { if (GameFlow.Instance != null) GameFlow.Instance.QuitGame(); });
-            dateCard = new DateCardUI(root, dateCardTiming);
+            loading = new LoadingScreenUI(root, loadingTiming);
             pause = new PauseMenuUI(root,
                 ClosePause,
                 OpenSettings,

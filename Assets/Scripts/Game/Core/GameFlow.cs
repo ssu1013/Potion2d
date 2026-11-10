@@ -12,7 +12,7 @@ namespace PotionFrontier.Game
     /// <summary>
     /// ゲーム全体の流れ（1画面版）：タイトル ⇄ 調合机、ポーズ、セーブ／ロード。シーンの GameSystems に付ける。
     /// 画面は1つだけ。タイトルも本も、同じ調合机の上に重ねて出す（カメラの移動はない）。
-    /// タイトルから遊びはじめるときだけ、日付のアイキャッチ（DateCardUI）をはさむ。調合机に向かうたびに1日進む。
+    /// タイトルから遊びはじめるときだけ、1枚絵のロード画面（LoadingScreenUI。2〜3秒）をはさむ。
     /// 発見が進むと、新しい素材が自動で机に届く（DiscoveryProgress）。
     /// クリアや終わりはない：伝説の特効薬を作ったあとも、いつまでも調合を続けられる。
     /// セーブは自動（瓶に詰めたとき・素材が届いたとき・タイトルに戻るとき・終了するとき）。
@@ -35,12 +35,8 @@ namespace PotionFrontier.Game
 
         public GameMode Mode { get; private set; } = GameMode.Title;
         public bool IsPaused { get; private set; }
-        /// <summary>何日目か（1から。調合机に向かうたびに1日進む）</summary>
-        public int Day { get; private set; } = 1;
         /// <summary>これまでに瓶に詰めた回数</summary>
         public int BrewCount { get; private set; }
-        /// <summary>今日の日付（「4月12日」）</summary>
-        public string DateLabel => GameCalendar.Format(Day, GameContext.Balance);
 
         public event Action<GameMode> ModeChanged;
 
@@ -129,7 +125,6 @@ namespace PotionFrontier.Game
             if (ingredients != null) ingredients.ResetToStarter(GameContext.Balance);
             if (alchemy != null) alchemy.Liquids.Clear();
             DiscoveryJournal.Clear();
-            Day = 1;
             BrewCount = 0;
             pendingFlask = null;
             StartCoroutine(BeginPlay("静かな夜の調合机へ、ようこそ。発見が進むと、新しい素材が届く"));
@@ -170,8 +165,6 @@ namespace PotionFrontier.Game
             }
             // 発見のポイントで届くはずの素材は、お知らせなしで机に並べておく（届く時期を調整したとき・古いセーブ）
             DiscoveryProgress.Deliver(GameContext.Ingredients, ingredients, DiscoveryPoints, false);
-            // 調合机に向かうたびに、1日進む（古いセーブは 0 なので、1日目から）
-            Day = Mathf.Max(0, data.day) + 1;
             BrewCount = Mathf.Max(0, data.brewCount);
             pendingFlask = data.version >= 3 && data.flaskState != null && data.flaskState.version > 0 ? data.flaskState : null;
             StartCoroutine(BeginPlay($"おかえりなさい（{data.savedAt} のつづき）"));
@@ -213,7 +206,7 @@ namespace PotionFrontier.Game
         public void Save()
         {
             if (Mode != GameMode.Playing) return;
-            var data = new SaveData { day = Day, brewCount = BrewCount };
+            var data = new SaveData { brewCount = BrewCount };
             data.potions = inventory != null ? inventory.Export() : new List<PotionStack>();
             // 手に持っている瓶は、トレイに戻したことにして保存する
             PotionStack held = brewInput != null && brewInput.Held != null ? brewInput.Held.Potion : null;
@@ -232,8 +225,8 @@ namespace PotionFrontier.Game
         }
 
         /// <summary>
-        /// タイトルから遊びはじめる：画面が静かに暗くなり、日付が浮かび上がって、暗がりが晴れると調合机。
-        /// 暗い間に、後ろでタイトルを片付けてフラスコを用意する。曲は止めて、環境音だけが続く
+        /// タイトルから遊びはじめる：1枚絵のロード画面（右下に Loading...）が出て、2〜3秒で調合机が現れる。
+        /// 絵が出ている間に、後ろでタイトルを片付けてフラスコを用意する。環境音は途切れない
         /// </summary>
         private IEnumerator BeginPlay(string welcome)
         {
@@ -241,19 +234,20 @@ namespace PotionFrontier.Game
             AtelierHUD hud = AtelierHUD.Instance;
             SoundLibrary lib = AudioManager.Lib;
             if (lib != null) AudioManager.Se(lib.startGame, 0.45f);
-            DateCardUI card = hud != null ? hud.DateCard : null;
+            LoadingScreenUI card = hud != null ? hud.Loading : null;
             if (card != null)
             {
-                // タイトルの曲は静かに消えて、夜の環境音だけが残る
-                AudioManager.PlayBgm(null, 1.6f);
-                if (lib != null) AudioManager.PlayAmbient(lib.ambientRoom);
-                string sub = $"{Day}日目の夜";
-                string detail = BrewCount > 0 ? $"これまでに瓶に詰めた回数　{BrewCount}" : "";
-                card.Show(DateLabel, sub, detail);
+                // タイトルの曲から調合机の曲へ、ロード画面の間にゆっくり入れ替える（環境音はそのまま）
+                if (lib != null)
+                {
+                    AudioManager.PlayBgm(lib.bgmAtelier, 2.5f);
+                    AudioManager.PlayAmbient(lib.ambientRoom);
+                }
+                card.Show();
                 while (card.IsOpen && !card.Covered) yield return null;
             }
 
-            // 暗い間に、机の上を用意する
+            // ロード画面の絵が出ている間に、机の上を用意する
             if (brewInput != null) brewInput.ReturnHeld();
             if (session != null)
             {
@@ -264,23 +258,18 @@ namespace PotionFrontier.Game
             if (view != null) view.Place();
             if (hud != null) hud.ShowGameplay();
 
-            // 日付が消えて、暗がりが晴れはじめるのを待つ
+            // ロード画面が消えはじめるのを待つ
             if (card != null) while (card.IsOpen && !card.Revealing) yield return null;
 
             Mode = GameMode.Playing;
             if (ModeChanged != null) ModeChanged(Mode);
-            Save(); // 進んだ日付を、すぐに覚えておく
             if (lib != null)
             {
-                AudioManager.PlayBgm(lib.bgmAtelier, 3.5f);
+                AudioManager.PlayBgm(lib.bgmAtelier, 2f);
                 AudioManager.PlayAmbient(lib.ambientRoom);
             }
             if (card != null) while (card.IsOpen) yield return null;
-            if (hud != null)
-            {
-                yield return new WaitForSecondsRealtime(0.4f);
-                hud.ShowToast(welcome);
-            }
+            if (hud != null) hud.ShowToast(welcome);
             transitioning = false;
             checkArrivals = true;
         }
