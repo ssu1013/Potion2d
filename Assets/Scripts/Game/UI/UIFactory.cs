@@ -295,37 +295,6 @@ namespace PotionFrontier.Game
             return Finish(key, tex, pixels, 20);
         }
 
-        /// <summary>照準（四隅のカッコと中心の点）</summary>
-        public static Sprite Crosshair()
-        {
-            if (Skin != null && Skin.crosshair != null) return Skin.crosshair;
-            const string key = "crosshair";
-            if (spriteCache.TryGetValue(key, out Sprite cached)) return cached;
-
-            const int size = 96;
-            var tex = NewTexture(size, size);
-            var pixels = new Color[size * size];
-            float half = size * 0.5f;
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    var p = new Vector2(x + 0.5f - half, y + 0.5f - half);
-                    float r = p.magnitude;
-                    float angle = Mathf.Abs(Mathf.Repeat(Mathf.Atan2(p.y, p.x) * Mathf.Rad2Deg, 90f) - 45f); // 対角線からのずれ
-                    float arc = Mathf.Abs(r - 36f);
-                    bool onArc = angle < 24f;
-                    Color c = Color.clear;
-                    if (onArc && arc < 4.5f) c = UIColors.Outline;
-                    if (onArc && arc < 2.5f) c = UIColors.Cream;
-                    if (r < 4.5f) c = UIColors.Outline;
-                    if (r < 2.8f) c = UIColors.Cream;
-                    pixels[y * size + x] = c;
-                }
-            }
-            return Finish(key, tex, pixels, 0);
-        }
-
         /// <summary>ポーションのアイコン（丸底フラスコ＋コルク。液体の色を指定）</summary>
         public static Sprite PotionIcon(Color liquid)
         {

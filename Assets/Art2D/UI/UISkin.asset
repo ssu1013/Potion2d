@@ -19,7 +19,6 @@ MonoBehaviour:
   button: {fileID: 21300000, guid: 87232a6560e459e44bdff2721653ea65, type: 3}
   slot: {fileID: 21300000, guid: 05cc4e00b98660044a23022460a26aac, type: 3}
   slotSelected: {fileID: 21300000, guid: d858af4fe5c5dff488a86278135043b4, type: 3}
-  crosshair: {fileID: 0}
   knob: {fileID: 21300000, guid: fd7b5e6e3c7051441a9ae22a99329c86, type: 3}
   vignette: {fileID: 21300000, guid: a1d1fc11cb30d2a4a9d3a8bc17f365c4, type: 3}
   sparkle: {fileID: 21300000, guid: 3d157db061d196a4aa39363fbd79dfd3, type: 3}

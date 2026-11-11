@@ -8,8 +8,7 @@ namespace PotionFrontier.Alchemy
     /// 素材データ（ベース液体・主素材・触媒の共通クラス）。
     /// 1アセット = 1素材。属性パラメータは「1単位あたり」の値。
     ///
-    /// 大量に作るときは、表計算（CSV）からまとめて作成・更新できる
-    /// （メニュー Tools > Potion Frontier > 素材データ（表計算・チェック））。
+    /// 新しく作ったら、素材カタログ（GameData/Alchemy/IngredientDatabase.asset）の一覧にも追加する。
     /// 見た目（3Dモデル・アイコン）は、このアセットのインスペクターで指定する。
     /// </summary>
     [CreateAssetMenu(fileName = "Ingredient_New", menuName = "Potion Frontier/素材データ (Ingredient)", order = 0)]

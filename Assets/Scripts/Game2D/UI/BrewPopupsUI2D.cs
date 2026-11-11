@@ -14,9 +14,6 @@ namespace PotionFrontier.Game2D
         public string detail = "";
         public int stars;
         public bool isNew;
-        /// <summary>結果カードの下のひとこと（空なら出さない。今のゲームでは使っていない）</summary>
-        public string quest = "";
-        public bool questMatch;
     }
 
     /// <summary>
@@ -58,7 +55,6 @@ namespace PotionFrontier.Game2D
         private readonly LiquidPreview preview;
         private readonly Text resultName;
         private readonly Text resultDetail;
-        private readonly Text resultQuest;
         private readonly RectTransform newStamp;
         private bool resultIsNew;
         // 新しい液体：「新発見！」の見出し・ページめくり・影絵から色が付いていく瓶
@@ -182,8 +178,6 @@ namespace PotionFrontier.Game2D
                 stars[i] = UIFactory.Label(result, "Star_" + i, "★", 34, new Color(0.45f, 0.35f, 0.25f, 0.35f), TextAnchor.MiddleCenter, FontStyle.Bold);
                 UIFactory.Place(stars[i].rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(210f + i * 38f, -146f), new Vector2(40f, 40f));
             }
-            resultQuest = UIFactory.Label(result, "Quest", "", 18, UIColors.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
-            UIFactory.Place(resultQuest.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(190f, -172f), new Vector2(296f, 50f));
 
             // 新しい液体なら「新発見」のスタンプ（UISkin の stamp_new）
             newStamp = StampUI.Create(result, "NewStamp", SkinSprite(s => s.stampNew), "新発見", new Vector2(112f, 112f), -12f, StampUI.Red);
@@ -323,8 +317,6 @@ namespace PotionFrontier.Game2D
             preview.Show(m.record);
             resultName.text = m.name;
             resultDetail.text = m.detail;
-            resultQuest.text = m.quest;
-            resultQuest.color = m.questMatch ? new Color(0.2f, 0.5f, 0.18f, 1f) : UIColors.InkLight;
             resultIsNew = m.isNew;
             newStamp.gameObject.SetActive(false);
             newHeader.gameObject.SetActive(m.isNew);
