@@ -6,14 +6,13 @@ namespace PotionFrontier.Alchemy
 {
     /// <summary>
     /// 素材カタログ（ゲームに登場するすべての素材の一覧）。
-    /// Assets/GameData 以下に素材データ（IngredientData）を作ると、エディタが自動でここに登録する
-    /// （手動で更新するときは Tools > Potion Frontier > 素材データ（表計算・チェック） の「カタログを更新」）。
+    /// 素材データ（IngredientData）を新しく作ったら、このアセットの一覧（Inspector）に手で追加する。
     /// ゲーム中は ID で素材を探す（セーブデータの在庫も ID で記録される）。
     /// </summary>
     [CreateAssetMenu(fileName = "IngredientDatabase", menuName = "Potion Frontier/素材カタログ (Ingredient Database)", order = 2)]
     public class IngredientDatabase : ScriptableObject
     {
-        [SerializeField, Tooltip("登録されている素材（自動で集められる。並び順は カテゴリ → 並び順 → ID）")]
+        [SerializeField, Tooltip("登録されている素材（新しい素材はここに追加する。並び順は カテゴリ → 並び順 → ID）")]
         private List<IngredientData> ingredients = new List<IngredientData>();
 
         [NonSerialized] private Dictionary<string, IngredientData> byId;

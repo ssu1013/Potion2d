@@ -15,7 +15,6 @@ MonoBehaviour:
   bgmTitle: {fileID: 8300000, guid: de5e51481766fcb41ab4795946e92f6b, type: 3}
   bgmAtelier: {fileID: 8300000, guid: cea98c9fe16a2e646b80ecfe278ef6c9, type: 3}
   ambientRoom: {fileID: 8300000, guid: 53bc4e3026de07642ba544a472191908, type: 3}
-  ambientCauldron: {fileID: 8300000, guid: ce0a3d69f8c827e48b183b7cd4dc0e7e, type: 3}
   uiClick: {fileID: 8300000, guid: b2ab8f0aca2d57c4c8b935a7254a61cb, type: 3}
   uiHover: {fileID: 8300000, guid: aac083fd087997c47ad541fa5e0cee37, type: 3}
   uiOpen: {fileID: 8300000, guid: 9fbe5a615bb8c264a988ed3a1c481454, type: 3}
@@ -26,10 +25,7 @@ MonoBehaviour:
   putBack: {fileID: 8300000, guid: eeeae15950b599544b57d74a80103d16, type: 3}
   pourLoop: {fileID: 8300000, guid: 74eea1582393d6c428449b0ed33c668d, type: 3}
   plop: {fileID: 8300000, guid: c6b3e6112e003f949ad9e4a26eab59a2, type: 3}
-  brewSuccess: {fileID: 8300000, guid: 4d8075797361f574fa3ee9f7bb838781, type: 3}
   brewSpecial: {fileID: 8300000, guid: 59b7ae2c1e4c9314e9f51fe6068a20d2, type: 3}
-  brewFail: {fileID: 8300000, guid: d7368a3cdf811a84fb540b0569bd175c, type: 3}
-  discard: {fileID: 8300000, guid: bc70b4c03deadd24eb218a63f47513d2, type: 3}
   warning: {fileID: 8300000, guid: 94688e4e88b841d49a7bf32723535a52, type: 3}
   shelfPlace: {fileID: 8300000, guid: 2f42c3a2bb3f53d45be38ce74c9e426e, type: 3}
   dropSolid:

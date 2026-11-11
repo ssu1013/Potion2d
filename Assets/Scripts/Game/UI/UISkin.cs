@@ -25,7 +25,6 @@ namespace PotionFrontier.Game
         [Tooltip("選んでいるマス")] public Sprite slotSelected;
 
         [Header("アイコン・小物（Assets/CustomAssets/Images/UI/Common）")]
-        [Tooltip("照準（3D 版の名残り。2D 版では使っていない）")] public Sprite crosshair;
         [Tooltip("knob.png：スライダーのつまみ")] public Sprite knob;
         [Tooltip("vignette.png：タイトル画面のふちの暗がり")] public Sprite vignette;
         [Tooltip("sparkle.png：タイトルのロゴのきらめき")] public Sprite sparkle;

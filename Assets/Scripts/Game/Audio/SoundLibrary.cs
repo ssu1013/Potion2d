@@ -10,7 +10,6 @@ namespace PotionFrontier.Game
         public AudioClip bgmTitle;
         public AudioClip bgmAtelier;
         public AudioClip ambientRoom;
-        public AudioClip ambientCauldron;
 
         [Header("UI")]
         public AudioClip uiClick;
@@ -25,10 +24,7 @@ namespace PotionFrontier.Game
         public AudioClip putBack;
         public AudioClip pourLoop;
         public AudioClip plop;
-        public AudioClip brewSuccess;
         public AudioClip brewSpecial;
-        public AudioClip brewFail;
-        public AudioClip discard;
         public AudioClip warning;
         public AudioClip shelfPlace;
 

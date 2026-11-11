@@ -10,12 +10,13 @@ namespace PotionFrontier.Game2D.EditorTools
     ///   ・はじめて取り込む画像（Assets/CustomAssets/Images・Assets/Art2D）：スプライト・100 ピクセル = 1 ワールド単位・ミップマップなし
     ///   ・差し替え用の画像（Assets/CustomAssets/Images）：同じ名前の PNG で上書きしたとき、元と大きさ（ピクセル）が違っても、
     ///     ゲームの中での大きさ・9スライスのふちの太さが変わらないように、ピクセル数の比で自動で合わせる。
-    ///     （元の大きさは .meta の userData に「potion2d:design=幅x高さ;ppu=…;border=…」として覚えている。Step7 が書き込む）
+    ///     （元の大きさは .meta の userData に「potion2d:design=幅x高さ;ppu=…;border=…」として覚えている。今ある絵には書き込み済み。
+    ///     新しい名前で足した絵には無いので、そのときはふつうの取り込み（100 ピクセル = 1 単位）になる）
     /// </summary>
     public class Art2DImportRules : AssetPostprocessor
     {
         public const string Root = "Assets/Art2D/";
-        public const string CustomRoot = CustomAssetPaths.Images + "/";
+        public const string CustomRoot = "Assets/CustomAssets/Images/";
         private const string Tag = "potion2d:";
 
         private void OnPreprocessTexture()
