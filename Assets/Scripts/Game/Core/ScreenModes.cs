@@ -20,9 +20,15 @@ namespace PotionFrontier.Game
             new Vector2Int(2560, 1440),
         };
 
+        /// <summary>切り替えの順番（専有のフルスクリーンが使えない OS では飛ばす）</summary>
+        private static readonly Kind[] Order = { Kind.Borderless, Kind.Fullscreen, Kind.Windowed };
+        /// <summary>続けて切り替えられる、いちばん短い間隔（秒）。連打でモニターの切り替えが何度も走らないように</summary>
+        private const float ApplyInterval = 0.5f;
+
         private static Kind pendingKind;
         private static int pendingSize = -1;
         private static float pendingTime = -10f;
+        private static float lastApply = -10f;
 
         /// <summary>専有のフルスクリーンを選べるか（Windows だけ。ほかの OS ではボーダーレスとウィンドウ）</summary>
         public static bool SupportsFullscreen =>
@@ -54,24 +60,35 @@ namespace PotionFrontier.Game
         }
 
         /// <summary>次の画面モードへ（ボーダーレス → フルスクリーン → ウィンドウ → …）</summary>
-        public static void Next()
+        public static void Next() => Step(1);
+
+        /// <summary>画面モードを前後に切り替える（direction：+1 で次、-1 で前）</summary>
+        public static void Step(int direction)
         {
-            Kind next;
-            switch (Current)
+            if (Time.unscaledTime - lastApply < ApplyInterval) return;
+            int i = System.Array.IndexOf(Order, Current);
+            int d = direction >= 0 ? 1 : -1;
+            for (int n = 0; n < Order.Length; n++)
             {
-                case Kind.Borderless: next = SupportsFullscreen ? Kind.Fullscreen : Kind.Windowed; break;
-                case Kind.Fullscreen: next = Kind.Windowed; break;
-                default: next = Kind.Borderless; break;
+                i = (i + d + Order.Length) % Order.Length;
+                if (Order[i] != Kind.Fullscreen || SupportsFullscreen) break;
             }
-            Apply(next, WindowSizeIndex);
+            Apply(Order[i], WindowSizeIndex);
         }
 
         /// <summary>ウィンドウの大きさを次へ（ウィンドウのときだけ、すぐに変わる）</summary>
-        public static void NextWindowSize()
+        public static void NextWindowSize() => StepWindowSize(1);
+
+        /// <summary>ウィンドウの大きさを前後に切り替える（ウィンドウのときだけ、すぐに変わる。ほかのときは、次にウィンドウにしたときの大きさ）</summary>
+        public static void StepWindowSize(int direction)
         {
             int count = FittingSizeCount();
-            int next = (WindowSizeIndex + 1) % count;
-            if (Current == Kind.Windowed) Apply(Kind.Windowed, next);
+            int next = (WindowSizeIndex + (direction >= 0 ? 1 : -1) + count) % count;
+            if (Current == Kind.Windowed)
+            {
+                if (Time.unscaledTime - lastApply < ApplyInterval) return;
+                Apply(Kind.Windowed, next);
+            }
             else
             {
                 pendingKind = Current;
@@ -85,7 +102,9 @@ namespace PotionFrontier.Game
             get
             {
                 int count = FittingSizeCount();
-                if (pendingSize >= 0) return Mathf.Min(pendingSize, count - 1);
+                // 選んだ大きさ（ウィンドウのときは、ふちをドラッグして変えたあとの実際の大きさを優先する）
+                bool windowedNow = Screen.fullScreenMode == FullScreenMode.Windowed;
+                if (pendingSize >= 0 && (!windowedNow || Time.unscaledTime - pendingTime < 1.5f)) return Mathf.Min(pendingSize, count - 1);
                 if (Screen.fullScreenMode == FullScreenMode.Windowed)
                 {
                     // 今のウィンドウにいちばん近い大きさ
@@ -116,6 +135,7 @@ namespace PotionFrontier.Game
             pendingKind = kind;
             pendingSize = sizeIndex;
             pendingTime = Time.unscaledTime;
+            lastApply = Time.unscaledTime;
             int dw = Mathf.Max(640, Display.main.systemWidth);
             int dh = Mathf.Max(360, Display.main.systemHeight);
             switch (kind)
@@ -164,6 +184,7 @@ namespace PotionFrontier.Game
         {
             pendingSize = -1;
             pendingTime = -10f;
+            lastApply = -10f;
         }
     }
 }

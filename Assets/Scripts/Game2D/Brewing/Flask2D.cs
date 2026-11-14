@@ -61,6 +61,8 @@ namespace PotionFrontier.Game2D
         private float bloomStrength;
         private Color flashColor = Color.white;
         private float splash;
+        /// <summary>落ちている途中の欠片（途中でフラスコが消えても、欠片だけが残らないように）</summary>
+        private readonly System.Collections.Generic.List<GameObject> fallingPieces = new System.Collections.Generic.List<GameObject>();
 
         /// <summary>発見の光がふくらんでいる最中か</summary>
         public bool Blooming => bloomTime < bloomSeconds;
@@ -102,6 +104,13 @@ namespace PotionFrontier.Game2D
         private void OnDestroy()
         {
             if (session != null) session.Bottled -= OnBottled;
+        }
+
+        private void OnDisable()
+        {
+            // コルーチンは止まるので、落ちている途中の欠片をここで片付ける
+            foreach (GameObject piece in fallingPieces) if (piece != null) Destroy(piece);
+            fallingPieces.Clear();
         }
 
         private void Update()
@@ -214,6 +223,7 @@ namespace PotionFrontier.Game2D
         private IEnumerator DropRoutine(Vector3 from, Sprite sprite, Color color, bool powder)
         {
             var go = new GameObject("DropPiece");
+            fallingPieces.Add(go);
             go.transform.position = from;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
@@ -232,6 +242,7 @@ namespace PotionFrontier.Game2D
                 go.transform.position = new Vector3(Mathf.Lerp(from.x, to.x, u), Mathf.Lerp(from.y, to.y, u * u), 0f);
                 yield return null;
             }
+            fallingPieces.Remove(go);
             if (go != null) Destroy(go);
             splash = powder ? 0.4f : 1f;
             if (PieceLanded != null) PieceLanded(SurfaceWorld, color, powder);

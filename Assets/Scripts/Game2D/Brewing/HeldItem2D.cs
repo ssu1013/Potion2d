@@ -31,6 +31,8 @@ namespace PotionFrontier.Game2D
 
         private Vector3 mouthLocal;
         private float shake;
+        private float pop;
+        private Vector3 baseScale = Vector3.one;
 
         public HeldThing2D Thing { get; private set; }
         public bool HasItem => Thing != null;
@@ -39,6 +41,7 @@ namespace PotionFrontier.Game2D
 
         private void Awake()
         {
+            baseScale = transform.localScale;
             HideStream();
             if (body != null) body.enabled = false;
             if (content != null) content.enabled = false;
@@ -67,11 +70,30 @@ namespace PotionFrontier.Game2D
             transform.position = cursorWorld + (Vector3)cursorOffset;
             transform.rotation = Quaternion.identity;
             gameObject.SetActive(true);
+            Pop();
+        }
+
+        /// <summary>手に取った瞬間の、小さく「ぽん」とふくらむ動き（取った手ごたえ）</summary>
+        public void Pop()
+        {
+            pop = 1f;
+            ApplyPop(0f);
+        }
+
+        private void ApplyPop(float dt)
+        {
+            if (pop <= 0f) return;
+            pop = Mathf.MoveTowards(pop, 0f, dt * 7f);
+            // 少し小さい所から、すっと元の大きさへ（最後はゆっくり）
+            float s = pop > 0f ? 1f - 0.14f * pop * pop : 1f;
+            transform.localScale = baseScale * s;
         }
 
         public void Hide()
         {
             Thing = null;
+            pop = 0f;
+            transform.localScale = baseScale;
             HideStream();
             if (body != null) body.enabled = false;
             if (content != null) content.enabled = false;
@@ -80,6 +102,7 @@ namespace PotionFrontier.Game2D
         /// <summary>カーソルについていく（傾きは元に戻る）</summary>
         public void Follow(Vector3 cursorWorld, float dt)
         {
+            ApplyPop(dt);
             float k = 1f - Mathf.Exp(-followSharpness * dt);
             Vector3 target = cursorWorld + (Vector3)cursorOffset;
             if (shake > 0f)
@@ -94,6 +117,7 @@ namespace PotionFrontier.Game2D
         /// <summary>注ぐ姿勢：瓶の口をフラスコの口の上に置き、tilt（0〜1）だけ傾ける</summary>
         public void PourPose(Vector3 flaskMouth, float tilt, float dt)
         {
+            ApplyPop(dt);
             float k = 1f - Mathf.Exp(-followSharpness * dt);
             Quaternion rotation = Quaternion.Euler(0f, 0f, Mathf.Clamp01(tilt) * maxTiltDegrees);
             Vector3 mouthTarget = flaskMouth + (Vector3)pourOffset;

@@ -47,6 +47,10 @@ namespace PotionFrontier.Game
         private Text toastText;
         private CanvasGroup toastGroup;
         private float toastTimer;
+        private float toastAge;
+        private const float ToastSeconds = 3.5f;
+        private const float ToastFadeIn = 0.2f;
+        private const float ToastFadeOut = 0.4f;
         private int lastModalCloseFrame = -1;
 
         public ScreenFader Fader { get; private set; }
@@ -136,9 +140,11 @@ namespace PotionFrontier.Game
             bool playing = flow == null || flow.Mode == GameMode.Playing;
             bool allowInput = Fader == null || Fader.Alpha < 0.5f;
 
-            // ボタンをクリックすると「選択中」になり、Enter/Space で二重に押されてしまうので選択を外す
+            // ボタン・スライダーをクリックすると「選択中」になり、Enter/Space で二重に押されたり、
+            // ←→ で設定のキー操作と二重に動いたりするので、選択を外す（文字を打つ欄は外さない）
             EventSystem es = EventSystem.current;
-            if (es != null && es.currentSelectedGameObject != null && es.currentSelectedGameObject.GetComponent<Button>() != null)
+            GameObject selected = es != null ? es.currentSelectedGameObject : null;
+            if (selected != null && (selected.GetComponent<Button>() != null || selected.GetComponent<Slider>() != null))
             {
                 es.SetSelectedGameObject(null);
             }
@@ -201,7 +207,9 @@ namespace PotionFrontier.Game
             if (toastTimer > 0f)
             {
                 toastTimer -= dt;
-                toastGroup.alpha = Mathf.Clamp01(toastTimer / 0.4f);
+                toastAge += dt;
+                // すっと現れて、ゆっくり消える
+                toastGroup.alpha = Mathf.Clamp01(Mathf.Min(toastAge / ToastFadeIn, toastTimer / ToastFadeOut));
             }
             // 届いたお知らせは、本を開いていても静かに出しておく（タイトルでは消す）
             if (playing) arrival.Tick(dt);
@@ -214,9 +222,12 @@ namespace PotionFrontier.Game
         public void ShowToast(string message)
         {
             if (string.IsNullOrEmpty(message)) return;
+            // 出ている途中に次のお知らせが来たときは、消えずに文字だけ変える（ちらつかないように）
+            bool visible = toastTimer > 0f && toastGroup.alpha > 0.5f;
             toastText.text = message;
-            toastTimer = 3.5f;
-            toastGroup.alpha = 1f;
+            toastTimer = ToastSeconds;
+            toastAge = visible ? ToastFadeIn : 0f;
+            if (!visible) toastGroup.alpha = 0f;
         }
 
         public void OpenRecipeBook()

@@ -36,6 +36,9 @@ namespace PotionFrontier.Game2D
         private float maxTemp = 130f;
         private bool scorching;
         private float time;
+        // 数字が変わったときだけ文字を作り直す（毎フレーム文字を作らない）
+        private int shownTempInt = int.MinValue;
+        private readonly int[] markTemps = { int.MinValue, int.MinValue, int.MinValue, int.MinValue, int.MinValue, int.MinValue };
 
         public BrewThermoUI2D(RectTransform parent, Vector2 position, Vector2 size, Sprite tube)
         {
@@ -90,7 +93,12 @@ namespace PotionFrontier.Game2D
                 if (!on) continue;
                 Mark m = markList[i];
                 markImages[i].color = m.color;
-                markLabels[i].text = Mathf.RoundToInt(m.temperature) + "℃";
+                int markTemp = Mathf.RoundToInt(m.temperature);
+                if (markTemps[i] != markTemp)
+                {
+                    markTemps[i] = markTemp;
+                    markLabels[i].text = markTemp + "℃";
+                }
                 markLabels[i].color = Color.Lerp(m.color, Color.white, 0.25f);
                 marks[i].anchoredPosition = new Vector2(0f, Y(m.temperature));
                 // 近すぎる目盛りは、数字を出さない（重なって読めないので）
@@ -110,7 +118,12 @@ namespace PotionFrontier.Game2D
             if (scorching) c = Color.Lerp(c, new Color(1f, 0.15f, 0.1f, 1f), 0.5f + 0.5f * Mathf.Sin(time * 14f));
             fillImage.color = c;
             bulbFill.color = c;
-            tempText.text = Mathf.RoundToInt(shownTemp) + "℃";
+            int t = Mathf.RoundToInt(shownTemp);
+            if (t != shownTempInt)
+            {
+                shownTempInt = t;
+                tempText.text = t + "℃";
+            }
             tempText.color = scorching ? new Color(1f, 0.5f, 0.4f, 1f) : Color.white;
             root.anchoredPosition = scorching ? basePosition + new Vector2(Mathf.Sin(time * 47f) * 2.5f, 0f) : basePosition;
         }

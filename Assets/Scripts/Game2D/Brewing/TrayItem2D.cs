@@ -6,6 +6,7 @@ namespace PotionFrontier.Game2D
     /// 素材トレイの1マスに並ぶ物（TrayItem の Prefab のルートに付ける）。絵は並ぶ物で自動で入れ替わる
     /// （素材データのアイコン、なければ BrewArt2D の容器の絵）。クリック・ドラッグで手に持つ（BrewInput2D が判定する）。
     /// 大きさと当たり判定は、素材トレイ（BrewTray2D）がマスの大きさに合わせて決める。
+    /// 指したとき・離したときの明るさの変化が終わると、自分の Update を止める（マスが何十・何百あっても軽い）。
     /// </summary>
     public class TrayItem2D : MonoBehaviour
     {
@@ -73,13 +74,17 @@ namespace PotionFrontier.Game2D
         public void SetHovered(bool on)
         {
             hovered = on;
+            enabled = true; // 明るさの変化が終わるまで動く
         }
 
         private void Update()
         {
-            highlight = Mathf.MoveTowards(highlight, hovered ? 1f : 0f, Time.deltaTime * 8f);
+            float target = hovered ? 1f : 0f;
+            // ポーズ中でも離したマスが明るいまま残らないよう、実時間で動かす
+            highlight = Mathf.MoveTowards(highlight, target, Time.unscaledDeltaTime * 8f);
             transform.localScale = baseScale * (1f + highlight * 0.1f);
             if (tile != null) tile.color = Color.Lerp(tileColor, tileHoverColor, highlight);
+            if (highlight == target) enabled = false;
         }
     }
 }

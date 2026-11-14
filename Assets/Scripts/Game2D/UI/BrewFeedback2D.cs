@@ -47,8 +47,23 @@ namespace PotionFrontier.Game2D
 
         private readonly List<FlaskSimulation.IngredientState> states = new List<FlaskSimulation.IngredientState>();
         private readonly List<BrewThermoUI2D.Mark> marks = new List<BrewThermoUI2D.Mark>();
-        // このフラスコで、もう知らせたこと（「素材ID:性質」）。フラスコが空になったら忘れる
-        private readonly HashSet<string> noticed = new HashSet<string>();
+        // このフラスコで、もう知らせたこと（素材と性質の組）。フラスコが空になったら忘れる
+        private readonly HashSet<long> noticed = new HashSet<long>();
+        /// <summary>「溶ける温度に届かず溶けない」のお知らせ用の印（性質の印と重ならない番号）</summary>
+        private const int BlockedNotice = 1 << 20;
+
+        // カーソルのそばの数字・温度計の火加減の文字は、値が変わったときだけ作り直す（毎フレーム文字を作らない）
+        private int followMl = int.MinValue;
+        private string followPour = "";
+        private int followTenths = int.MinValue;
+        private bool followClockwise;
+        private string followStir = "";
+        private int ringPercent = int.MinValue;
+        private bool ringClockwise;
+        private string ringLabel = "";
+        private string heatBase;
+        private bool heatBoiling;
+        private string heatLabel = "";
 
         private bool wasBoiling;
         private bool wasScorching;
@@ -113,7 +128,7 @@ namespace PotionFrontier.Game2D
             BrewHUD2D hud = GetComponent<BrewHUD2D>();
             if (hud != null && hud.LayoutVersion < BrewHUD2D.MinimalLayout)
             {
-                Debug.LogWarning("[調合画面] 画面の配置が Step11 より前のままです（工程・ボタン・ページ送りが残っています）。メニュー「Tools/Potion Frontier 2D/Step11：画面をスッキリ（UI の断捨離・右の素材トレイ・明るさ）」を実行してください。", this);
+                Debug.LogWarning("[調合画面] BrewHUD の Prefab の配置が古いままです（工程・ボタン・ページ送りが残っています）。Git の履歴から Step11 の BrewHUD.prefab を戻してください。", this);
             }
             // コードで作る音は、最初に鳴らすときに引っかからないよう、先に作っておく
             _ = SfxSynth.Chime;
@@ -172,8 +187,14 @@ namespace PotionFrontier.Game2D
                 if (DiscoveryJournal.Knows(s.ingredient, IngredientFact.Wakes) && marks.Count < 6) marks.Add(new BrewThermoUI2D.Mark { temperature = s.ingredient.ActivationTemp, color = new Color(1f, 0.82f, 0.3f, 1f) });
                 if (DiscoveryJournal.Knows(s.ingredient, IngredientFact.Melts) && marks.Count < 6) marks.Add(new BrewThermoUI2D.Mark { temperature = s.ingredient.MeltTemp, color = new Color(1f, 0.62f, 0.18f, 1f) });
             }
-            thermo.Apply(sim.Temperature, rules != null ? rules.maxHeatTemperature : 130f,
-                         ProcessStep.HeatLabel(sim.HeatLevel) + (sim.IsBoiling ? "・沸騰" : ""), sim.IsScorching, marks);
+            string heat = ProcessStep.HeatLabel(sim.HeatLevel);
+            if (!ReferenceEquals(heat, heatBase) || sim.IsBoiling != heatBoiling)
+            {
+                heatBase = heat;
+                heatBoiling = sim.IsBoiling;
+                heatLabel = heatBoiling ? heat + "・沸騰" : heat;
+            }
+            thermo.Apply(sim.Temperature, rules != null ? rules.maxHeatTemperature : 130f, heatLabel, sim.IsScorching, marks);
 
             UpdateCursorHelpers(sim);
             thermo.Tick(dt);
@@ -198,17 +219,43 @@ namespace PotionFrontier.Game2D
             switch (input.Current)
             {
                 case BrewInput2D.Activity.Pouring:
-                    if (showWorkNumbers) follow = $"+{Mathf.RoundToInt(input.PouredThisTime)}ml";
+                    if (showWorkNumbers)
+                    {
+                        int ml = Mathf.RoundToInt(input.PouredThisTime);
+                        if (ml != followMl)
+                        {
+                            followMl = ml;
+                            followPour = "+" + ml + "ml";
+                        }
+                        follow = followPour;
+                    }
                     if (held != null && held.HasItem) at = WorldToScreen(held.MouthWorld) + new Vector2(30f, 6f);
                     break;
                 case BrewInput2D.Activity.Stirring:
                     if (solids) ring = true;
-                    else if (showWorkNumbers) follow = $"{(input.StirClockwise ? "時計回り" : "反時計回り")} {input.StirTurnsThisTime:0.0}回";
+                    else if (showWorkNumbers)
+                    {
+                        int tenths = Mathf.RoundToInt(input.StirTurnsThisTime * 10f);
+                        if (tenths != followTenths || input.StirClockwise != followClockwise)
+                        {
+                            followTenths = tenths;
+                            followClockwise = input.StirClockwise;
+                            followStir = (followClockwise ? "時計回り " : "反時計回り ") + (tenths / 10f).ToString("0.0") + "回";
+                        }
+                        follow = followStir;
+                    }
                     break;
             }
             popups.SetFollow(follow, at);
             float df = sim.DissolvedFraction;
-            popups.SetRing(ring, pointer, df, $"溶け {Mathf.FloorToInt(df * 100f)}%　{(input.StirClockwise ? "時計回り" : "反時計回り")}");
+            int percent = Mathf.FloorToInt(df * 100f);
+            if (percent != ringPercent || input.StirClockwise != ringClockwise)
+            {
+                ringPercent = percent;
+                ringClockwise = input.StirClockwise;
+                ringLabel = "溶け " + percent + "%　" + (ringClockwise ? "時計回り" : "反時計回り");
+            }
+            popups.SetRing(ring, pointer, df, ringLabel);
         }
 
         /// <summary>沸騰した・焦げはじめた・溶けきった・素材が弱まった／目覚めた、を見つけて知らせる</summary>
@@ -279,7 +326,7 @@ namespace PotionFrontier.Game2D
                     popups.ShowPop($"{n}は、この向きでは溶けないようだ", at, new Color(1f, 0.8f, 0.6f, 1f), true);
                 }
                 // 溶ける温度に届かず、かき混ぜても溶けない（知っていてもいなくても、このフラスコで1回）
-                if (s.meltBlocked && s.undissolved > 0.01f && noticed.Add(d.IngredientId + ":blocked"))
+                if (s.meltBlocked && s.undissolved > 0.01f && noticed.Add(NoticeKey(d, BlockedNotice)))
                 {
                     string text = DiscoveryJournal.Knows(d, IngredientFact.Melts)
                         ? $"{n}は {d.MeltTemp:0}℃ にならないと溶けない"
@@ -293,14 +340,20 @@ namespace PotionFrontier.Game2D
         private bool Once(IngredientData d, IngredientFact fact)
         {
             if (!DiscoveryJournal.Knows(d, fact)) return false;
-            return noticed.Add(d.IngredientId + ":" + fact);
+            return noticed.Add(NoticeKey(d, (int)fact));
+        }
+
+        /// <summary>素材と性質の組を、文字を作らずに1つの数にする</summary>
+        private static long NoticeKey(IngredientData d, int code)
+        {
+            return ((long)d.GetInstanceID() << 32) | (uint)code;
         }
 
         /// <summary>素材の性質を初めて見つけた：素材ノートに書き足したお知らせ（スタンプがぽんっ）</summary>
         private void OnFactDiscovered(IngredientData d, IngredientFact fact)
         {
             if (d == null) return;
-            noticed.Add(d.IngredientId + ":" + fact);
+            noticed.Add(NoticeKey(d, (int)fact));
             if (popups == null) return;
             popups.ShowSlip(IngredientIcons.Get(d), "素材ノートに書き足した：" + d.DisplayName, DiscoveryJournal.Describe(d, fact));
             SoundLibrary lib = AudioManager.Lib;

@@ -43,8 +43,15 @@ namespace PotionFrontier.Game2D
 
         private float infoTimer;
         private float toastTimer;
+        private float toastAge;
         private Canvas canvas;
         private bool infoBackgroundSearched;
+        private CanvasGroup tooltipGroup;
+        private string tooltipTitle;
+        private string tooltipSubtitle;
+        private const float ToastSeconds = 3f;
+        private const float ToastFadeIn = 0.15f;
+        private const float ToastFadeOut = 0.5f;
 
         private void Awake()
         {
@@ -81,7 +88,15 @@ namespace PotionFrontier.Game2D
                 session.Bottled += OnBottled;
             }
             if (toast != null) toast.text = "";
-            if (tooltipPanel != null) tooltipPanel.gameObject.SetActive(false);
+            if (tooltipPanel != null)
+            {
+                // 説明の札は、ふわっと出す（クリックは邪魔しない）
+                tooltipGroup = tooltipPanel.GetComponent<CanvasGroup>();
+                if (tooltipGroup == null) tooltipGroup = tooltipPanel.gameObject.AddComponent<CanvasGroup>();
+                tooltipGroup.blocksRaycasts = false;
+                tooltipGroup.interactable = false;
+                tooltipPanel.gameObject.SetActive(false);
+            }
         }
 
         private void OnDestroy()
@@ -111,8 +126,10 @@ namespace PotionFrontier.Game2D
             if (toast != null && toastTimer > 0f)
             {
                 toastTimer -= dt;
+                toastAge += dt;
                 Color c = toast.color;
-                c.a = Mathf.Clamp01(toastTimer / 0.5f);
+                // すっと現れて、ゆっくり消える
+                c.a = Mathf.Clamp01(Mathf.Min(toastAge / ToastFadeIn, toastTimer / ToastFadeOut));
                 toast.color = c;
             }
         }
@@ -120,11 +137,14 @@ namespace PotionFrontier.Game2D
         public void ShowToast(string text)
         {
             if (toast == null) return;
+            // 出ている途中に次のお知らせが来たときは、消えずにそのまま文字だけ変える（ちらつかないように）
+            bool visible = toastTimer > 0f && toast.color.a > 0.5f;
             toast.text = text;
+            toastAge = visible ? ToastFadeIn : 0f;
+            toastTimer = ToastSeconds;
             Color c = toast.color;
-            c.a = 1f;
+            c.a = visible ? 1f : 0f;
             toast.color = c;
-            toastTimer = 3f;
         }
 
         private void OnBottled(LiquidRecord record, bool isNew, float ml, int bottles)
@@ -165,11 +185,19 @@ namespace PotionFrontier.Game2D
         {
             if (tooltipPanel == null || tooltipText == null || input == null) return;
             bool show = input.Current == BrewInput2D.Activity.None && !string.IsNullOrEmpty(input.HoverTitle);
-            if (tooltipPanel.gameObject.activeSelf != show) tooltipPanel.gameObject.SetActive(show);
-            if (!show) return;
-            string text = string.IsNullOrEmpty(input.HoverSubtitle) ? input.HoverTitle : input.HoverTitle + "\n<size=16>" + input.HoverSubtitle + "</size>";
-            if (tooltipText.text != text)
+            if (tooltipPanel.gameObject.activeSelf != show)
             {
+                tooltipPanel.gameObject.SetActive(show);
+                if (show && tooltipGroup != null) tooltipGroup.alpha = 0f;
+            }
+            if (!show) return;
+            if (tooltipGroup != null && tooltipGroup.alpha < 1f) tooltipGroup.alpha = Mathf.MoveTowards(tooltipGroup.alpha, 1f, Time.unscaledDeltaTime * 10f);
+            // 指している物が変わったときだけ、文字を作り直す（BrewInput2D も、変わったときだけ新しい文字にする）
+            if (!ReferenceEquals(input.HoverTitle, tooltipTitle) || !ReferenceEquals(input.HoverSubtitle, tooltipSubtitle))
+            {
+                tooltipTitle = input.HoverTitle;
+                tooltipSubtitle = input.HoverSubtitle;
+                string text = string.IsNullOrEmpty(tooltipSubtitle) ? tooltipTitle : tooltipTitle + "\n<size=16>" + tooltipSubtitle + "</size>";
                 tooltipText.text = text;
                 // 素材ノートの性質の行が増えても、枠からはみ出さないように高さを合わせる
                 float h = Mathf.Max(30f, tooltipText.preferredHeight);
