@@ -15,7 +15,8 @@ namespace PotionFrontier.Game
     /// タイトルから遊びはじめるときだけ、1枚絵のロード画面（LoadingScreenUI。2〜3秒）をはさむ。
     /// 発見が進むと、新しい素材が自動で机に届く（DiscoveryProgress）。
     /// クリアや終わりはない：伝説の特効薬を作ったあとも、いつまでも調合を続けられる。
-    /// セーブは自動（瓶に詰めたとき・素材が届いたとき・タイトルに戻るとき・終了するとき）。
+    /// セーブは自動（瓶に詰めたとき・素材が届いたとき・タイトルに戻るとき・終了するとき・
+    /// ウィンドウが裏に回ったとき・遊んでいる間の一定時間ごと）。強制終了や電源断でも、失うのは最後の数十秒だけ。
     /// </summary>
     public class GameFlow : MonoBehaviour
     {
@@ -29,9 +30,19 @@ namespace PotionFrontier.Game
         [SerializeField] private BrewInput2D brewInput;
         [SerializeField] private AtelierView2D view;
 
+        [Header("自動セーブ")]
+        [SerializeField, Min(0f), Tooltip("遊んでいる間、この秒数ごとに自動でセーブする（0 = しない）。ほかに、瓶に詰めたとき・素材が届いたとき・ウィンドウが裏に回ったとき・終了するときにもセーブする")]
+        private float autosaveSeconds = 60f;
+
         private bool transitioning;
         private bool checkArrivals;
+        private bool quitting;
         private FlaskSaveData pendingFlask;
+        private float autosaveTimer;
+        private float lastSaveTime = -999f;
+        private float lastSaveWarning = -999f;
+        /// <summary>読み込みで困ったことがあったときに、調合机に着いてから出すお知らせ</summary>
+        private string loadNotice;
 
         public GameMode Mode { get; private set; } = GameMode.Title;
         public bool IsPaused { get; private set; }
@@ -95,12 +106,21 @@ namespace PotionFrontier.Game
 
         private void LateUpdate()
         {
+            TickAutosave();
             // 発見のあと、同じフレームにまとめて届ける（性質と液体が同時に増えても、お知らせは1回ずつ）
             if (!checkArrivals) return;
             checkArrivals = false;
             if (Mode != GameMode.Playing || transitioning) return;
             List<IngredientData> arrived = DiscoveryProgress.Deliver(GameContext.Ingredients, ingredients, DiscoveryPoints);
             if (arrived.Count > 0) Save();
+        }
+
+        /// <summary>遊んでいる間の自動セーブ（ポーズ中・切り替えの途中は数えない）</summary>
+        private void TickAutosave()
+        {
+            if (autosaveSeconds <= 0f || Mode != GameMode.Playing || transitioning || IsPaused) return;
+            autosaveTimer += Time.unscaledDeltaTime;
+            if (autosaveTimer >= autosaveSeconds) Save();
         }
 
         private void OnDiscovery() => checkArrivals = true;
@@ -117,9 +137,13 @@ namespace PotionFrontier.Game
         // タイトル ⇄ 調合机
         // ------------------------------------------------------------------
 
-        public void StartNewGame()
+        /// <summary>はじめから遊ぶ（それまでのセーブは SaveSystem が .prev.json に1つだけ残す）。notice は調合机に着いてから出すお知らせ</summary>
+        public void StartNewGame() => StartNewGame(null);
+
+        private void StartNewGame(string notice)
         {
             if (transitioning) return;
+            loadNotice = notice;
             SaveSystem.Delete();
             if (inventory != null) inventory.Clear();
             if (ingredients != null) ingredients.ResetToStarter(GameContext.Balance);
@@ -136,9 +160,30 @@ namespace PotionFrontier.Game
             SaveData data = SaveSystem.Load();
             if (data == null)
             {
-                StartNewGame();
+                // ファイルはあるのに読めなかった（壊れていた）ときは、そのことを知らせる（元のファイルは SaveSystem が残している）
+                StartNewGame(SaveSystem.Exists ? "セーブデータを読み込めなかったので、はじめから始めます（元のファイルは残してあります）" : null);
                 return;
             }
+            loadNotice = null;
+            try
+            {
+                Import(data);
+            }
+            catch (Exception e)
+            {
+                // 思わぬ形のセーブでも、遊べるところまでは読み込んで続ける。元のファイルは、上書きする前に控えを残す
+                Debug.LogException(e, this);
+                SaveSystem.KeepCopy("loadfail");
+                loadNotice = "セーブデータの一部を読み込めませんでした（元のファイルは残してあります）";
+            }
+            BrewCount = Mathf.Max(0, data.brewCount);
+            pendingFlask = data.version >= 3 && data.flaskState != null && data.flaskState.version > 0 ? data.flaskState : null;
+            StartCoroutine(BeginPlay($"おかえりなさい（{data.savedAt} のつづき）"));
+        }
+
+        /// <summary>セーブの中身を、在庫・液体の記録・素材ノートに読み込む（古い版は足りない物を補う）</summary>
+        private void Import(SaveData data)
+        {
             if (inventory != null) inventory.Import(data.potions);
             if (ingredients != null)
             {
@@ -165,9 +210,6 @@ namespace PotionFrontier.Game
             }
             // 発見のポイントで届くはずの素材は、お知らせなしで机に並べておく（届く時期を調整したとき・古いセーブ）
             DiscoveryProgress.Deliver(GameContext.Ingredients, ingredients, DiscoveryPoints, false);
-            BrewCount = Mathf.Max(0, data.brewCount);
-            pendingFlask = data.version >= 3 && data.flaskState != null && data.flaskState.version > 0 ? data.flaskState : null;
-            StartCoroutine(BeginPlay($"おかえりなさい（{data.savedAt} のつづき）"));
         }
 
         public void ReturnToTitle()
@@ -182,7 +224,6 @@ namespace PotionFrontier.Game
             if (Mode != GameMode.Playing || IsPaused) return;
             IsPaused = true;
             Time.timeScale = 0f;
-            AudioManager.SetPourLoop(false);
         }
 
         public void Resume()
@@ -194,6 +235,9 @@ namespace PotionFrontier.Game
 
         public void QuitGame()
         {
+            // 連打しても、セーブと終了は1回だけ
+            if (quitting) return;
+            quitting = true;
             Save();
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
@@ -202,10 +246,29 @@ namespace PotionFrontier.Game
 #endif
         }
 
-        /// <summary>今の状態をセーブする（プレイ中だけ）</summary>
+        /// <summary>今の状態をセーブする（プレイ中だけ）。失敗しても遊びは止めず、画面に小さく知らせる</summary>
         public void Save()
         {
             if (Mode != GameMode.Playing) return;
+            autosaveTimer = 0f;
+            lastSaveTime = Time.unscaledTime;
+            SaveData data;
+            try
+            {
+                data = Collect();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e, this);
+                NotifySaveProblem();
+                return;
+            }
+            if (!SaveSystem.Save(data)) NotifySaveProblem();
+        }
+
+        /// <summary>セーブに書く中身を集める</summary>
+        private SaveData Collect()
+        {
             var data = new SaveData { brewCount = BrewCount };
             data.potions = inventory != null ? inventory.Export() : new List<PotionStack>();
             // 手に持っている瓶は、トレイに戻したことにして保存する
@@ -216,11 +279,42 @@ namespace PotionFrontier.Game
             if (alchemy != null) data.liquids = alchemy.Liquids.Export();
             data.notes = DiscoveryJournal.ExportNotes();
             data.knownReactions = DiscoveryJournal.ExportReactions();
-            SaveSystem.Save(data);
+            return data;
+        }
+
+        /// <summary>セーブできなかったことを知らせる（何度も失敗しても、1分に1回まで）</summary>
+        private void NotifySaveProblem()
+        {
+            if (Time.unscaledTime - lastSaveWarning < 60f) return;
+            lastSaveWarning = Time.unscaledTime;
+            AtelierHUD hud = AtelierHUD.Instance;
+            if (hud != null) hud.ShowToast("セーブできませんでした（ディスクの空きや、保存先のフォルダを確かめてください）");
         }
 
         private void OnApplicationQuit()
         {
+            quitting = true;
+            Save();
+            GameSettings.Save();
+        }
+
+        /// <summary>ウィンドウが裏に回った（Alt+Tab・最小化）：その場でセーブする（裏に回ったまま PC を落とされても大丈夫なように）</summary>
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus) SaveInBackground();
+        }
+
+        /// <summary>OS にアプリを止められる直前（スリープなど）</summary>
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused) SaveInBackground();
+        }
+
+        private void SaveInBackground()
+        {
+            GameSettings.Save();
+            // フォーカスの出入りが続いても、書くのは1秒に1回まで
+            if (quitting || Time.unscaledTime - lastSaveTime < 1f) return;
             Save();
         }
 
@@ -289,7 +383,9 @@ namespace PotionFrontier.Game
             if (card != null) while (card.IsOpen) yield return null;
             else if (title != null) while (title.IsOpen && !title.LeaveFinished) yield return null;
             if (hud != null) hud.ShowGameplay();
-            if (hud != null) hud.ShowToast(welcome);
+            if (hud != null) hud.ShowToast(string.IsNullOrEmpty(loadNotice) ? welcome : loadNotice);
+            loadNotice = null;
+            autosaveTimer = 0f;
             transitioning = false;
             checkArrivals = true;
         }
@@ -298,7 +394,6 @@ namespace PotionFrontier.Game
         {
             Resume();
             if (brewInput != null) brewInput.ReturnHeld();
-            AudioManager.SetPourLoop(false);
             if (view != null) view.Place();
             Mode = GameMode.Title;
             if (ModeChanged != null) ModeChanged(Mode);

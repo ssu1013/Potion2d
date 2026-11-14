@@ -127,108 +127,95 @@ namespace PotionFrontier.Game
         }
     }
 
-    /// <summary>音量とマウス感度の設定（タイトルとポーズの両方から開く）</summary>
+    /// <summary>
+    /// 設定（タイトルとポーズの両方から開く）。
+    ///   おと：全体・BGM・環境音・効果音の音量、ウィンドウが裏に回ったときの音
+    ///   がめん：画面モード・画面サイズ（ウィンドウのとき）・フレームレート
+    /// マウスでもキーボードでも操作できる：↑↓（W/S）で項目を選ぶ・←→（A/D）で値を変える（押し続けると続けて動く）・
+    /// Enter で切り替え／とじる・Esc でとじる。下の行に、選んでいる項目の説明が出る。
+    /// 値はすぐに反映され、閉じるとき（・裏に回ったとき・終了するとき）にディスクへ書かれる。
+    /// </summary>
     public sealed class SettingsPanel
     {
+        private const float SliderStep = 0.05f;
+        private const string DefaultNote = "設定は自動で保存されます";
+
+        private sealed class Row
+        {
+            public Image background;
+            public Slider slider;
+            public Text value;
+            public Action<int> step;
+            public Func<string> describe;
+        }
+
+        private static readonly Color RowIdle = new Color(0.45f, 0.28f, 0.12f, 0f);
+        private static readonly Color RowFocused = new Color(0.45f, 0.28f, 0.12f, 0.15f);
+
         private readonly GameObject root;
         private readonly RectTransform panel;
-        private readonly Slider bgm;
-        private readonly Slider se;
-        private readonly Slider mouse;
-        private readonly Text bgmValue;
-        private readonly Text seValue;
-        private readonly Text mouseValue;
-        private readonly Text qualityValue;
-        private readonly Text bobValue;
-        private readonly Text qualityNote;
-        private readonly Text screenValue;
-        private readonly Text sizeValue;
-        private readonly Text screenNote;
+        private readonly List<Row> rows = new List<Row>();
+        private readonly Row master;
+        private readonly Row bgm;
+        private readonly Row ambient;
+        private readonly Row se;
+        private readonly Row background;
+        private readonly Row screenMode;
+        private readonly Row screenSize;
+        private readonly Row frameRate;
+        private readonly Text note;
+        private readonly Text closeLabel;
+        private readonly UIButtonFx closeFx;
         private readonly Color sizeColor;
-        private readonly MenuList menu = new MenuList();
         private Action onClosed;
         private float appear;
         private float previewTimer;
+        private float refreshTimer;
+        private float repeatTimer;
+        private int repeatDirection;
         private bool syncing;
+        /// <summary>キーボードで選んでいる項目（-1 = なし、rows.Count = とじる）</summary>
+        private int focus = -1;
 
         public bool IsOpen => root.activeSelf;
 
         public SettingsPanel(RectTransform parent)
         {
-            Image paper = MenuPanel.Create(parent, "Settings", "せってい", new Vector2(820f, 760f), out root, 0.45f);
+            Image paper = MenuPanel.Create(parent, "Settings", "せってい", new Vector2(860f, 860f), out root, 0.45f);
             panel = paper.rectTransform;
 
-            RectTransform rows = UIFactory.CreateRect("Rows", panel);
-            UIFactory.Place(rows, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -86f), new Vector2(700f, 440f));
-            UIFactory.Vertical(rows.gameObject, new RectOffset(0, 0, 0, 0), 26f, TextAnchor.UpperCenter);
+            RectTransform list = UIFactory.CreateRect("Rows", panel);
+            UIFactory.Place(list, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(760f, 560f));
+            UIFactory.Vertical(list.gameObject, new RectOffset(0, 0, 0, 0), 6f, TextAnchor.UpperCenter);
 
-            bgm = Row(rows, "BGM の音量", out bgmValue, v =>
-            {
-                if (syncing) return;
-                GameSettings.BgmVolume = v;
-                bgmValue.text = Percent(v);
-            });
-            se = Row(rows, "効果音の音量", out seValue, v =>
-            {
-                if (syncing) return;
-                GameSettings.SeVolume = v;
-                seValue.text = Percent(v);
-                // 動かしたときに大きさがわかるよう、ときどき鳴らす
-                if (previewTimer <= 0f)
-                {
-                    previewTimer = 0.15f;
-                    SoundLibrary lib = AudioManager.Lib;
-                    if (lib != null) AudioManager.Se(lib.plop, 0.8f);
-                }
-            });
-            // 画面モード・ウィンドウの大きさ（Unity が覚えていて、次に起動したときもそのまま）
-            OptionRow(rows, "画面モード", out screenValue, () =>
-            {
-                ScreenModes.Next();
-                RefreshOptions();
-            });
-            OptionRow(rows, "画面サイズ", out sizeValue, () =>
-            {
-                ScreenModes.NextWindowSize();
-                RefreshOptions();
-            });
-            sizeColor = sizeValue.color;
-            screenNote = UIFactory.Label(rows, "ScreenNote", "", 19, UIColors.InkLight, TextAnchor.MiddleCenter);
-            UIFactory.Size(screenNote.gameObject, 700f, 24f);
+            Heading(list, "おと");
+            master = SliderRow(list, "全体の音量", v => { GameSettings.MasterVolume = v; Preview(); }, () => "すべての音の大きさ");
+            bgm = SliderRow(list, "BGM", v => GameSettings.BgmVolume = v, () => "曲の大きさ");
+            ambient = SliderRow(list, "環境音", v => GameSettings.AmbientVolume = v, () => "部屋の音・ランプの火・お湯のコトコト");
+            se = SliderRow(list, "効果音", v => { GameSettings.SeVolume = v; Preview(); }, () => "素材を取る・注ぐ・かき混ぜる・火・瓶詰め・ボタンの音");
+            background = OptionRow(list, "裏にあるとき", d => GameSettings.MuteInBackground = !GameSettings.MuteInBackground,
+                () => "Alt+Tab などでウィンドウが裏に回ったときも、音を鳴らし続けるか");
 
-            mouse = Row(rows, "マウス感度", out mouseValue, v =>
+            Heading(list, "がめん");
+            screenMode = OptionRow(list, "画面モード", ScreenModes.Step, DescribeScreenMode);
+            screenSize = OptionRow(list, "画面サイズ", ScreenModes.StepWindowSize, DescribeScreenSize);
+            sizeColor = screenSize.value.color;
+            frameRate = OptionRow(list, "フレームレート", d =>
             {
-                if (syncing) return;
-                GameSettings.MouseSensitivity = Mathf.Lerp(0.2f, 5f, v);
-                mouseValue.text = GameSettings.MouseSensitivity.ToString("0.0");
-            });
+                int count = GameSettings.FrameRateNames.Length;
+                GameSettings.FrameRate = (FrameRateMode)((((int)GameSettings.FrameRate + d) % count + count) % count);
+            }, DescribeFrameRate);
 
-            OptionRow(rows, "画質", out qualityValue, () =>
-            {
-                GameSettings.GraphicsQuality = (GameSettings.GraphicsQuality + 1) % GameSettings.QualityNames.Length;
-                RefreshOptions();
-            });
-            qualityNote = UIFactory.Label(rows, "QualityNote", "", 19, UIColors.InkLight, TextAnchor.MiddleCenter);
-            UIFactory.Size(qualityNote.gameObject, 700f, 24f);
-            OptionRow(rows, "歩くときの揺れ", out bobValue, () =>
-            {
-                GameSettings.ViewBob = !GameSettings.ViewBob;
-                RefreshOptions();
-            });
-
-            // 2D 版では、マウス感度・画質・歩くときの揺れは使わないので隠す（設定の値そのものは残る）
-            mouse.transform.parent.gameObject.SetActive(false);
-            qualityValue.transform.parent.parent.gameObject.SetActive(false);
-            qualityNote.gameObject.SetActive(false);
-            bobValue.transform.parent.parent.gameObject.SetActive(false);
-
-            Text note = UIFactory.Label(panel, "Note", "設定は自動で保存されます", 22, UIColors.InkLight, TextAnchor.MiddleCenter);
-            UIFactory.Place(note.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 132f), new Vector2(600f, 30f));
+            note = UIFactory.Label(panel, "Note", DefaultNote, 21, UIColors.InkLight, TextAnchor.MiddleCenter);
+            UIFactory.Place(note.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 124f), new Vector2(760f, 56f));
 
             RectTransform buttons = UIFactory.CreateRect("Buttons", panel);
-            UIFactory.Place(buttons, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(400f, 84f));
+            UIFactory.Place(buttons, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 36f), new Vector2(400f, 84f));
             UIFactory.Horizontal(buttons.gameObject, new RectOffset(0, 0, 0, 0), 0f, TextAnchor.MiddleCenter);
-            menu.Add(UIWidgets.WoodButton(buttons, "とじる", 32, new Vector2(300f, 76f), Close));
+            Button close = UIWidgets.WoodButton(buttons, "とじる", 32, new Vector2(300f, 76f), Close);
+            closeLabel = close.GetComponentInChildren<Text>();
+            closeFx = close.GetComponent<UIButtonFx>();
+            if (closeFx != null) closeFx.Hovered = () => SetFocus(rows.Count, true);
             root.SetActive(false);
         }
 
@@ -237,16 +224,8 @@ namespace PotionFrontier.Game
             this.onClosed = onClosed;
             root.SetActive(true);
             appear = 0f;
-            syncing = true;
-            bgm.value = GameSettings.BgmVolume;
-            se.value = GameSettings.SeVolume;
-            mouse.value = Mathf.InverseLerp(0.2f, 5f, GameSettings.MouseSensitivity);
-            syncing = false;
-            bgmValue.text = Percent(bgm.value);
-            seValue.text = Percent(se.value);
-            mouseValue.text = GameSettings.MouseSensitivity.ToString("0.0");
-            RefreshOptions();
-            menu.ResetSelection(0);
+            repeatDirection = 0;
+            Sync();
             SoundLibrary lib = AudioManager.Lib;
             if (lib != null) AudioManager.Se(lib.uiOpen, 0.7f);
         }
@@ -268,9 +247,171 @@ namespace PotionFrontier.Game
             if (!IsOpen) return;
             previewTimer -= dt;
             MenuPanel.Pop(panel, ref appear, dt);
-            if (!allowInput) return;
-            // ←→ で一番上の項目（BGM）以外も操作できるように、選択中の行をキーで動かすのは省略し、決定キーで閉じる
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) menu.Activate(0);
+            // Alt+Enter などで画面モードが外から変わっても、表示が追いつくように
+            refreshTimer -= dt;
+            if (refreshTimer <= 0f) RefreshOptions();
+            if (allowInput) HandleKeys(dt);
+        }
+
+        // ------------------------------------------------------------------
+        // キーボード
+        // ------------------------------------------------------------------
+
+        private void HandleKeys(float dt)
+        {
+            int count = rows.Count + 1; // 最後は「とじる」
+            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) SetFocus(focus < 0 ? 0 : (focus - 1 + count) % count, true);
+            else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) SetFocus(focus < 0 ? 0 : (focus + 1) % count, true);
+
+            Row row = focus >= 0 && focus < rows.Count ? rows[focus] : null;
+            int pressed = 0;
+            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) pressed = -1;
+            else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) pressed = 1;
+            int held = Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A) ? -1
+                     : Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D) ? 1 : 0;
+            if (pressed != 0)
+            {
+                if (row != null) Adjust(row, pressed, true);
+                repeatDirection = pressed;
+                repeatTimer = 0.4f;
+            }
+            else if (held != 0 && held == repeatDirection && row != null && row.slider != null)
+            {
+                // スライダーは、押し続けると続けて動く（項目の切り替えは1回ずつ）
+                repeatTimer -= dt;
+                if (repeatTimer <= 0f)
+                {
+                    repeatTimer = 0.05f;
+                    Adjust(row, held, false);
+                }
+            }
+            else repeatDirection = 0;
+
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E))
+            {
+                if (row == null)
+                {
+                    SoundLibrary lib = AudioManager.Lib;
+                    if (lib != null) AudioManager.Se(lib.uiClick, 0.8f);
+                    Close();
+                }
+                else if (row.step != null) Adjust(row, 1, true);
+            }
+        }
+
+        private void Adjust(Row row, int direction, bool sound)
+        {
+            SoundLibrary lib = AudioManager.Lib;
+            if (row.slider != null)
+            {
+                float before = row.slider.value;
+                float next = Mathf.Clamp01(Mathf.Round((before + direction * SliderStep) / SliderStep) * SliderStep);
+                if (Mathf.Approximately(next, before)) return;
+                row.slider.value = next;
+                if (sound && lib != null && row != se && row != master) AudioManager.Se(lib.uiHover, 0.4f);
+                return;
+            }
+            if (row.step == null) return;
+            row.step(direction);
+            if (lib != null) AudioManager.Se(lib.uiClick, 0.8f);
+            RefreshOptions();
+        }
+
+        private void SetFocus(int index, bool sound)
+        {
+            if (index == focus) return;
+            focus = index;
+            if (sound)
+            {
+                SoundLibrary lib = AudioManager.Lib;
+                if (lib != null) AudioManager.Se(lib.uiHover, 0.45f);
+            }
+            ApplyFocus();
+        }
+
+        private void ApplyFocus()
+        {
+            for (int i = 0; i < rows.Count; i++) rows[i].background.color = i == focus ? RowFocused : RowIdle;
+            bool closeFocused = focus == rows.Count;
+            if (closeFx != null) closeFx.Selected = closeFocused;
+            if (closeLabel != null) closeLabel.color = closeFocused ? UIColors.Gold : UIColors.Cream;
+            UpdateNote();
+        }
+
+        // ------------------------------------------------------------------
+        // 表示
+        // ------------------------------------------------------------------
+
+        private void Sync()
+        {
+            syncing = true;
+            master.slider.value = GameSettings.MasterVolume;
+            bgm.slider.value = GameSettings.BgmVolume;
+            ambient.slider.value = GameSettings.AmbientVolume;
+            se.slider.value = GameSettings.SeVolume;
+            syncing = false;
+            foreach (Row row in rows) if (row.slider != null) row.value.text = Percent(row.slider.value);
+            focus = -1;
+            ApplyFocus();
+            RefreshOptions();
+        }
+
+        private void RefreshOptions()
+        {
+            refreshTimer = 0.25f;
+            SetText(background.value, GameSettings.MuteInBackground ? "止める" : "鳴らす");
+            ScreenModes.Kind kind = ScreenModes.Current;
+            SetText(screenMode.value, ScreenModes.Label(kind));
+            SetText(screenSize.value, ScreenModes.WindowSizeLabel);
+            bool windowed = kind == ScreenModes.Kind.Windowed;
+            screenSize.value.color = new Color(sizeColor.r, sizeColor.g, sizeColor.b, windowed ? sizeColor.a : sizeColor.a * 0.45f);
+            int fr = Mathf.Clamp((int)GameSettings.FrameRate, 0, GameSettings.FrameRateNames.Length - 1);
+            SetText(frameRate.value, GameSettings.FrameRateNames[fr]);
+            UpdateNote();
+        }
+
+        private void UpdateNote()
+        {
+            Row row = focus >= 0 && focus < rows.Count ? rows[focus] : null;
+            SetText(note, row != null && row.describe != null ? row.describe() : DefaultNote);
+        }
+
+        private void Preview()
+        {
+            // 動かしたときに大きさがわかるよう、ときどき鳴らす
+            if (previewTimer > 0f) return;
+            previewTimer = 0.15f;
+            SoundLibrary lib = AudioManager.Lib;
+            if (lib != null) AudioManager.Se(lib.plop, 0.8f);
+        }
+
+        private static string DescribeScreenMode()
+        {
+            if (Application.isEditor) return "画面の切り替えは、ビルドした製品版で反映されます";
+            switch (ScreenModes.Current)
+            {
+                case ScreenModes.Kind.Fullscreen: return "フルスクリーン：画面をひとりじめにする（環境によっては少し軽い）";
+                case ScreenModes.Kind.Windowed: return "ウィンドウ：ふちをドラッグしても大きさを変えられる";
+                default: return "ボーダーレス：画面いっぱいのウィンドウ（Alt+Tab がすばやい。おすすめ）";
+            }
+        }
+
+        private static string DescribeScreenSize()
+        {
+            if (Application.isEditor) return "画面の切り替えは、ビルドした製品版で反映されます";
+            return ScreenModes.Current == ScreenModes.Kind.Windowed
+                ? "ウィンドウの大きさ（今の画面に収まる大きさだけ選べる）"
+                : "画面サイズは「ウィンドウ」のときに使われます";
+        }
+
+        private static string DescribeFrameRate()
+        {
+            switch (GameSettings.FrameRate)
+            {
+                case FrameRateMode.Monitor: return "モニターに合わせる：144Hz なら 144fps（なめらかだが、PC の負担が大きい）";
+                case FrameRateMode.Battery: return "30 fps：いちばん軽い（バッテリーで遊ぶとき）";
+                default: return "60 fps：なめらかで静か。ノート PC でもファンが回りにくい（おすすめ）";
+            }
         }
 
         private static string Percent(float v)
@@ -278,50 +419,68 @@ namespace PotionFrontier.Game
             return Mathf.RoundToInt(v * 100f) + "%";
         }
 
-        private void RefreshOptions()
+        private static void SetText(Text text, string value)
         {
-            int q = GameSettings.GraphicsQuality;
-            qualityValue.text = GameSettings.QualityNames[q];
-            qualityNote.text = q == GameSettings.QualityLow ? "軽量：影を近くだけ・光のにじみと飾りの演出なし・60fps上限"
-                             : q == GameSettings.QualityHigh ? "高：なめらかな輪郭・遠くまでくっきりした影・ランタンの影"
-                             : "標準：見た目と軽さのバランス（おすすめ）";
-            bobValue.text = GameSettings.ViewBob ? "オン" : "オフ";
-
-            ScreenModes.Kind kind = ScreenModes.Current;
-            bool windowed = kind == ScreenModes.Kind.Windowed;
-            screenValue.text = ScreenModes.Label(kind);
-            sizeValue.text = ScreenModes.WindowSizeLabel;
-            sizeValue.color = new Color(sizeColor.r, sizeColor.g, sizeColor.b, windowed ? sizeColor.a : sizeColor.a * 0.45f);
-            screenNote.text = Application.isEditor ? "画面の切り替えは、ビルドした製品版で反映されます"
-                            : windowed ? "ウィンドウの大きさは、ふちをドラッグしても変えられます"
-                            : "画面サイズは「ウィンドウ」のときに使われます";
+            if (text != null && text.text != value) text.text = value;
         }
 
-        /// <summary>押すたびに値が切り替わる項目（画質・揺れ）</summary>
-        private static void OptionRow(Transform parent, string label, out Text value, Action onClick)
+        // ------------------------------------------------------------------
+        // 組み立て
+        // ------------------------------------------------------------------
+
+        private static void Heading(Transform parent, string text)
         {
-            RectTransform row = UIFactory.CreateRect("Row_" + label, parent);
-            UIFactory.Horizontal(row.gameObject, new RectOffset(0, 0, 0, 0), 24f, TextAnchor.MiddleCenter);
-            UIFactory.Size(row.gameObject, 700f, 56f);
-            Text name = UIFactory.Label(row, "Label", label, 30, UIColors.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UIFactory.Size(name.gameObject, 220f, 44f);
-            Button button = UIWidgets.WoodButton(row, "", 28, new Vector2(240f, 56f), onClick);
-            value = button.GetComponentInChildren<Text>();
-            Text hint = UIFactory.Label(row, "Hint", "クリックで切替", 18, UIColors.InkLight, TextAnchor.MiddleLeft);
-            UIFactory.Size(hint.gameObject, 190f, 44f);
+            Text t = UIFactory.Label(parent, "Heading_" + text, text, 22, UIColors.InkLight, TextAnchor.LowerLeft, FontStyle.Bold);
+            UIFactory.Size(t.gameObject, 740f, 30f);
         }
 
-        private static Slider Row(Transform parent, string label, out Text value, Action<float> onChanged)
+        /// <summary>項目の行（指すと選ばれ、選ばれている行はうっすら色がつく）</summary>
+        private Row NewRow(Transform parent, string label, float height, Func<string> describe)
         {
-            RectTransform row = UIFactory.CreateRect("Row_" + label, parent);
-            UIFactory.Horizontal(row.gameObject, new RectOffset(0, 0, 0, 0), 24f, TextAnchor.MiddleCenter);
-            UIFactory.Size(row.gameObject, 700f, 50f);
-            Text name = UIFactory.Label(row, "Label", label, 30, UIColors.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UIFactory.Size(name.gameObject, 220f, 44f);
-            Slider slider = UIWidgets.CreateSlider(row, 340f, 0.5f, onChanged);
-            value = UIFactory.Label(row, "Value", "", 28, UIColors.Ink, TextAnchor.MiddleRight, FontStyle.Bold);
-            UIFactory.Size(value.gameObject, 90f, 44f);
-            return slider;
+            int index = rows.Count;
+            Image back = UIFactory.CreateImage(parent, "Row_" + label, UIFactory.RoundedRect(Color.white, Color.white, 10, 0), RowIdle);
+            back.raycastTarget = true;
+            UIFactory.Size(back.gameObject, 760f, height);
+            UIFactory.Horizontal(back.gameObject, new RectOffset(16, 16, 0, 0), 20f, TextAnchor.MiddleLeft);
+            Text name = UIFactory.Label(back.transform, "Label", label, 28, UIColors.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.Size(name.gameObject, 240f, 44f);
+            back.gameObject.AddComponent<UIHoverRelay>().Entered = () => SetFocus(index, true);
+            var row = new Row { background = back, describe = describe };
+            rows.Add(row);
+            return row;
+        }
+
+        private Row SliderRow(Transform parent, string label, Action<float> apply, Func<string> describe)
+        {
+            Row row = NewRow(parent, label, 50f, describe);
+            row.slider = UIWidgets.CreateSlider(row.background.transform, 330f, 0.5f, v =>
+            {
+                if (syncing) return;
+                apply(v);
+                if (row.value != null) row.value.text = Percent(v);
+            });
+            row.value = UIFactory.Label(row.background.transform, "Value", "", 28, UIColors.Ink, TextAnchor.MiddleRight, FontStyle.Bold);
+            UIFactory.Size(row.value.gameObject, 90f, 44f);
+            return row;
+        }
+
+        /// <summary>押すたびに値が切り替わる項目（←→ で前後に切り替え）</summary>
+        private Row OptionRow(Transform parent, string label, Action<int> step, Func<string> describe)
+        {
+            Row row = NewRow(parent, label, 56f, describe);
+            int index = rows.Count - 1;
+            row.step = step;
+            Button button = UIWidgets.WoodButton(row.background.transform, "", 26, new Vector2(300f, 52f), () =>
+            {
+                step(1);
+                RefreshOptions();
+            });
+            row.value = button.GetComponentInChildren<Text>();
+            UIButtonFx fx = button.GetComponent<UIButtonFx>();
+            if (fx != null) fx.Hovered = () => SetFocus(index, true);
+            Text hint = UIFactory.Label(row.background.transform, "Hint", "←→ で切替", 18, UIColors.InkLight, TextAnchor.MiddleLeft);
+            UIFactory.Size(hint.gameObject, 140f, 44f);
+            return row;
         }
     }
 }

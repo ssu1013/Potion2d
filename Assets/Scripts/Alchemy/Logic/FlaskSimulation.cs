@@ -1091,20 +1091,22 @@ namespace PotionFrontier.Alchemy
             log.Clear();
             VolumeMl = 0f;
             if (data == null || data.version <= 0) return;
-            VolumeMl = data.volumeMl;
-            Temperature = data.temperature;
-            HeatLevel = data.heatLevel;
-            Time = data.time;
+            // 壊れた数字（NaN・無限大）が入っていても、計算が止まらないようにする（セーブは SaveRepair でも直している）
+            VolumeMl = Mathf.Max(0f, Finite(data.volumeMl, 0f));
+            Temperature = Finite(data.temperature, Temperature);
+            HeatLevel = Mathf.Clamp01(Finite(data.heatLevel, 0f));
+            Time = Mathf.Max(0f, Finite(data.time, 0f));
             lastActionTime = Time;
-            TotalTurns = data.totalTurns;
-            evaporatedMl = data.evaporatedMl;
-            globalAmplifyPool = data.globalAmplifyPool;
+            TotalTurns = Mathf.Max(0f, Finite(data.totalTurns, 0f));
+            evaporatedMl = Mathf.Max(0f, Finite(data.evaporatedMl, 0f));
+            globalAmplifyPool = Finite(data.globalAmplifyPool, 0f);
             if (data.amplifierPool != null) Array.Copy(data.amplifierPool, amplifierPool, Mathf.Min(amplifierPool.Length, data.amplifierPool.Length));
-            parentLiquidIds.AddRange(data.parentLiquidIds);
-            foreach (string id in data.carriedIngredientIds) carriedIngredientIds.Add(id);
-            firedReactions.AddRange(data.firedReactions);
-            foreach (FlaskSaveData.PortionData d in data.portions)
+            if (data.parentLiquidIds != null) foreach (string id in data.parentLiquidIds) if (!string.IsNullOrEmpty(id)) parentLiquidIds.Add(id);
+            if (data.carriedIngredientIds != null) foreach (string id in data.carriedIngredientIds) if (!string.IsNullOrEmpty(id)) carriedIngredientIds.Add(id);
+            if (data.firedReactions != null) foreach (string id in data.firedReactions) if (!string.IsNullOrEmpty(id)) firedReactions.Add(id);
+            if (data.portions != null) foreach (FlaskSaveData.PortionData d in data.portions)
             {
+                if (d == null) continue;
                 IngredientData ingredient = !string.IsNullOrEmpty(d.ingredientId) && findIngredient != null ? findIngredient(d.ingredientId) : null;
                 if (!string.IsNullOrEmpty(d.ingredientId) && ingredient == null && d.undissolved > 0f) continue;
                 var p = new Portion
@@ -1129,9 +1131,14 @@ namespace PotionFrontier.Alchemy
                 if (d.essence != null) Array.Copy(d.essence, p.essence, Mathf.Min(p.essence.Length, d.essence.Length));
                 AddPortion(p);
             }
-            foreach (LiquidTrait t in data.intrinsicTraits) intrinsicTraits[t.id] = t.strength;
-            foreach (LiquidTrait t in data.carriedTraitMl) carriedTraitMl[t.id] = t.strength;
-            foreach (ProcessStep s in data.log) log.Add(s.Clone());
+            if (data.intrinsicTraits != null) foreach (LiquidTrait t in data.intrinsicTraits) if (t != null && !string.IsNullOrEmpty(t.id)) intrinsicTraits[t.id] = Finite(t.strength, 0f);
+            if (data.carriedTraitMl != null) foreach (LiquidTrait t in data.carriedTraitMl) if (t != null && !string.IsNullOrEmpty(t.id)) carriedTraitMl[t.id] = Finite(t.strength, 0f);
+            if (data.log != null) foreach (ProcessStep s in data.log) if (s != null) log.Add(s.Clone());
+        }
+
+        private static float Finite(float value, float fallback)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value) ? fallback : value;
         }
     }
 

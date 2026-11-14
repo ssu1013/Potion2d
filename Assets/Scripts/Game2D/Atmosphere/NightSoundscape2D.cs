@@ -7,7 +7,7 @@ namespace PotionFrontier.Game2D
     /// 夜の環境音（シーンに1つ。「Step6：夜の空気感」で置かれる）。
     /// ランプの火が静かに燃える音を、部屋でも調合台でもずっと小さく鳴らす（調合台では手元のランプが近いので少し大きく）。
     /// お湯のコトコト・ガラスが触れ合う音は、フラスコの温度に合わせて FlaskEffects2D が鳴らす。
-    /// 音は「ここ → SoundLibrary の夜の環境音 → コードで作った音」の順に探す。音量は設定の効果音の音量と掛け合わせる。
+    /// 音は「ここ → SoundLibrary の夜の環境音 → コードで作った音」の順に探す。音量は設定の環境音の音量と掛け合わせる。
     /// </summary>
     public class NightSoundscape2D : MonoBehaviour
     {
@@ -64,7 +64,7 @@ namespace PotionFrontier.Game2D
             GameFlow flow = GameFlow.Instance;
             bool quiet = flow == null || flow.Mode != GameMode.Playing || flow.IsPaused;
             float want = quiet ? fireVolumeQuiet : fireVolumeBrew;
-            want *= GameSettings.SeVolume;
+            want *= GameSettings.AmbientVolume;
             fire.volume = Mathf.MoveTowards(fire.volume, want, Time.unscaledDeltaTime * fadeSpeed);
             if (!fire.isPlaying && want > 0f) fire.Play();
         }

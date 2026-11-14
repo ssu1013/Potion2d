@@ -5,29 +5,34 @@ using UnityEngine;
 namespace PotionFrontier.Game
 {
     /// <summary>
-    /// BGM（クロスフェード）・環境音・効果音・注ぐ音のループをまとめて鳴らす。
+    /// BGM（クロスフェード）・部屋の環境音・効果音をまとめて鳴らす。
     /// どこからでも AudioManager.Se(AudioManager.Lib?.uiClick) のように呼べる。
+    /// 音量：設定のマスター音量（全体）× 種類ごとの音量（BGM／環境音／効果音）。
+    ///   Se … 効果音の音量で鳴らす ／ Ambient … 環境音の音量で鳴らす（お湯のコトコトなど、1回きりの環境音）
+    /// 効果音は使い回しの AudioSource で鳴らす。鳴っている途中の音を横取りしない・同じ音を連打で重ねすぎない。
+    /// ウィンドウが裏に回ったとき、設定で「止める」を選んでいれば、すべての音を止める（戻ったら続きから）。
     /// </summary>
     public class AudioManager : MonoBehaviour
     {
         public static AudioManager Instance { get; private set; }
 
         [SerializeField] private SoundLibrary library;
-        [SerializeField, Range(0f, 1f), Tooltip("BGMの基本音量（設定の音量と掛け合わせる）。夜の空気感では小さめ（BGM より環境音）")] private float bgmBase = 0.18f;
-        [SerializeField, Range(0f, 1f), Tooltip("部屋の環境音の基本音量（設定の効果音の音量と掛け合わせる）")] private float ambientBase = 0.55f;
+        [SerializeField, Range(0f, 1f), Tooltip("BGMの基本音量（設定の BGM の音量と掛け合わせる）。夜の空気感では小さめ（BGM より環境音）")] private float bgmBase = 0.18f;
+        [SerializeField, Range(0f, 1f), Tooltip("部屋の環境音の基本音量（設定の環境音の音量と掛け合わせる）")] private float ambientBase = 0.55f;
+        [SerializeField, Range(0f, 0.2f), Tooltip("同じ効果音を続けて鳴らせる、いちばん短い間隔（秒）。連打で同じ音が重なって大きくなりすぎないように")] private float sameClipInterval = 0.035f;
+
+        private const int PoolSize = 16;
 
         private AudioSource bgmA;
         private AudioSource bgmB;
         private AudioSource ambient;
-        private AudioSource pourSource;
-        private readonly List<AudioSource> pool = new List<AudioSource>();
-        private readonly List<AudioSource> pool3D = new List<AudioSource>();
-        private int nextPool3D;
-        private readonly List<KeyValuePair<AudioSource, float>> registered = new List<KeyValuePair<AudioSource, float>>();
-        private int nextPool;
+        private readonly AudioSource[] pool = new AudioSource[PoolSize];
+        /// <summary>使い回しの AudioSource ごとの、鳴り終わる時刻（実時間）</summary>
+        private readonly float[] busyUntil = new float[PoolSize];
+        private readonly Dictionary<AudioClip, float> lastPlayed = new Dictionary<AudioClip, float>();
         private bool bgmOnA = true;
         private Coroutine bgmFade;
-        private float pourTarget;
+        private bool backgrounded;
 
         public static SoundLibrary Lib => Instance != null ? Instance.library : null;
 
@@ -38,23 +43,16 @@ namespace PotionFrontier.Game
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Debug.LogWarning("[AudioManager] シーンに2つ以上あります。あとから動いた方を使います。", this);
+            }
             Instance = this;
             bgmA = CreateSource("BGM_A", true);
             bgmB = CreateSource("BGM_B", true);
             ambient = CreateSource("Ambient", true);
-            pourSource = CreateSource("PourLoop", true);
-            for (int i = 0; i < 12; i++) pool.Add(CreateSource("SE_" + i, false));
-            // 位置のある効果音（足音・ドアベル）は、毎回オブジェクトを作らずに使い回す
-            for (int i = 0; i < 8; i++)
-            {
-                AudioSource src = CreateSource("SE3D_" + i, false);
-                src.spatialBlend = 1f;
-                src.minDistance = 1f;
-                src.maxDistance = 14f;
-                src.rolloffMode = AudioRolloffMode.Linear;
-                src.dopplerLevel = 0f;
-                pool3D.Add(src);
-            }
+            ambient.priority = 160; // 環境音は、ほかの音に席をゆずる
+            for (int i = 0; i < PoolSize; i++) pool[i] = CreateSource("SE_" + i, false);
             GameSettings.Changed += ApplyVolumes;
             ApplyVolumes();
         }
@@ -62,62 +60,36 @@ namespace PotionFrontier.Game
         private void OnDestroy()
         {
             GameSettings.Changed -= ApplyVolumes;
-            if (Instance == this) Instance = null;
+            if (Instance != this) return;
+            Instance = null;
+            AudioListener.pause = false;
         }
 
-        private void Update()
+        /// <summary>ウィンドウが裏に回った／戻った</summary>
+        private void OnApplicationFocus(bool hasFocus)
         {
-            // 注ぐ音は急に止めず、すっと消す
-            float target = pourTarget * GameSettings.SeVolume * 0.7f;
-            pourSource.volume = Mathf.MoveTowards(pourSource.volume, target, Time.unscaledDeltaTime * 3f);
-            if (pourSource.volume <= 0.001f && pourTarget <= 0f && pourSource.isPlaying) pourSource.Stop();
+            backgrounded = !hasFocus;
+            ApplyBackgroundMute();
+            // 別のモニターへ移したときなど、リフレッシュレートが変わっていることがあるので、戻ったときに合わせ直す
+            if (hasFocus) GameSettings.ApplyFrameRate();
         }
 
         // ------------------------------------------------------------------
         // 効果音
         // ------------------------------------------------------------------
 
-        /// <summary>2Dの効果音を鳴らす</summary>
+        /// <summary>効果音を鳴らす（設定の効果音の音量）</summary>
         public static void Se(AudioClip clip, float volume = 1f, float pitch = 1f)
         {
             if (Instance == null || clip == null) return;
-            Instance.PlayPooled(clip, volume, pitch);
+            Instance.PlayPooled(clip, volume * GameSettings.SeVolume, pitch);
         }
 
-        /// <summary>位置のある効果音を鳴らす（遠いと小さく聞こえる）</summary>
-        public static void SeAt(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
+        /// <summary>1回きりの環境音を鳴らす（設定の環境音の音量。お湯のコトコト・ガラスが触れ合う音など）</summary>
+        public static void Ambient(AudioClip clip, float volume = 1f, float pitch = 1f)
         {
             if (Instance == null || clip == null) return;
-            AudioSource src = Instance.pool3D[Instance.nextPool3D];
-            Instance.nextPool3D = (Instance.nextPool3D + 1) % Instance.pool3D.Count;
-            src.transform.position = position;
-            src.Stop();
-            src.clip = clip;
-            src.pitch = pitch;
-            src.volume = volume * GameSettings.SeVolume;
-            src.Play();
-        }
-
-        /// <summary>注ぐ音（ループ）のオン・オフ</summary>
-        public static void SetPourLoop(bool on, float pitch = 1f)
-        {
-            if (Instance == null) return;
-            Instance.pourTarget = on ? 1f : 0f;
-            if (on && Lib != null && Lib.pourLoop != null)
-            {
-                AudioSource s = Instance.pourSource;
-                if (s.clip != Lib.pourLoop) s.clip = Lib.pourLoop;
-                s.pitch = pitch;
-                if (!s.isPlaying) s.Play();
-            }
-        }
-
-        /// <summary>シーン上の AudioSource（大鍋の環境音など）を効果音の音量設定に従わせる</summary>
-        public static void RegisterSeSource(AudioSource source, float baseVolume)
-        {
-            if (Instance == null || source == null) return;
-            Instance.registered.Add(new KeyValuePair<AudioSource, float>(source, baseVolume));
-            source.volume = baseVolume * GameSettings.SeVolume;
+            Instance.PlayPooled(clip, volume * GameSettings.AmbientVolume, pitch);
         }
 
         // ------------------------------------------------------------------
@@ -147,7 +119,7 @@ namespace PotionFrontier.Game
             AudioSource to = bgmOnA ? bgmB : bgmA;
             bgmOnA = !bgmOnA;
             if (bgmFade != null) StopCoroutine(bgmFade);
-            bgmFade = StartCoroutine(Crossfade(from, to, clip, seconds));
+            bgmFade = StartCoroutine(Crossfade(from, to, clip, Mathf.Max(0.01f, seconds)));
         }
 
         private IEnumerator Crossfade(AudioSource from, AudioSource to, AudioClip clip, float seconds)
@@ -158,7 +130,8 @@ namespace PotionFrontier.Game
             float startFrom = from.volume;
             for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
             {
-                float k = t / seconds;
+                // 耳に自然に聞こえるよう、なめらかな曲線で入れ替える
+                float k = Mathf.SmoothStep(0f, 1f, t / seconds);
                 from.volume = startFrom * (1f - k);
                 to.volume = BgmVolume * k;
                 yield return null;
@@ -173,22 +146,53 @@ namespace PotionFrontier.Game
 
         private void ApplyVolumes()
         {
+            AudioListener.volume = GameSettings.MasterVolume;
             AudioSource current = bgmOnA ? bgmA : bgmB;
             if (bgmFade == null) current.volume = BgmVolume;
-            ambient.volume = ambientBase * GameSettings.SeVolume;
-            foreach (KeyValuePair<AudioSource, float> pair in registered)
-            {
-                if (pair.Key != null) pair.Key.volume = pair.Value * GameSettings.SeVolume;
-            }
+            ambient.volume = ambientBase * GameSettings.AmbientVolume;
+            ApplyBackgroundMute();
         }
+
+        private void ApplyBackgroundMute()
+        {
+            bool mute = backgrounded && GameSettings.MuteInBackground;
+            if (AudioListener.pause != mute) AudioListener.pause = mute;
+        }
+
+        // ------------------------------------------------------------------
 
         private void PlayPooled(AudioClip clip, float volume, float pitch)
         {
-            AudioSource src = pool[nextPool];
-            nextPool = (nextPool + 1) % pool.Count;
-            src.pitch = pitch;
+            if (volume <= 0.0001f) return;
+            float now = Time.unscaledTime;
+            // 連打・同じフレームの重複で、同じ音が何重にもならないように
+            if (sameClipInterval > 0f && lastPlayed.TryGetValue(clip, out float last) && now - last < sameClipInterval) return;
+            lastPlayed[clip] = now;
+
+            int index = FreeSource(now);
+            AudioSource src = pool[index];
+            src.Stop();
+            src.pitch = Mathf.Clamp(pitch, 0.1f, 3f);
             src.volume = 1f;
-            src.PlayOneShot(clip, volume * GameSettings.SeVolume);
+            src.PlayOneShot(clip, volume);
+            busyUntil[index] = now + clip.length / Mathf.Max(0.1f, src.pitch) + 0.02f;
+        }
+
+        /// <summary>鳴っていない AudioSource（どれも鳴っていれば、いちばん早く鳴り終わる物）</summary>
+        private int FreeSource(float now)
+        {
+            int best = 0;
+            float soonest = float.MaxValue;
+            for (int i = 0; i < PoolSize; i++)
+            {
+                if (busyUntil[i] <= now) return i;
+                if (busyUntil[i] < soonest)
+                {
+                    soonest = busyUntil[i];
+                    best = i;
+                }
+            }
+            return best;
         }
 
         private AudioSource CreateSource(string name, bool loop)

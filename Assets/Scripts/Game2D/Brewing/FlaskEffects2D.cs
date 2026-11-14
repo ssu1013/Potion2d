@@ -35,7 +35,7 @@ namespace PotionFrontier.Game2D
         [SerializeField, Range(0f, 2f)] private float burnerVolume = 1f;
         [SerializeField, Range(0f, 1f), Tooltip("本（レシピ本・素材ノート）を開いている間の、ループの音の大きさ（途切れさせず、少しだけ遠くする）")] private float bookVolume = 0.7f;
 
-        [Header("夜の環境音（お湯がコトコト・ガラスが触れ合う）")]
+        [Header("夜の環境音（お湯がコトコト・ガラスが触れ合う。設定の環境音の音量と掛け合わせる）")]
         [SerializeField, Range(0f, 2f), Tooltip("お湯が温まると、泡でフラスコが台に当たる「コト」の大きさ（50℃ から増える）")] private float kotoVolume = 1f;
         [SerializeField, Range(0f, 2f), Tooltip("沸きはじめたフラスコのガラスが、軽く触れ合う「ちん」の大きさ（75℃ から）")] private float glassVolume = 1f;
 
@@ -73,6 +73,7 @@ namespace PotionFrontier.Game2D
 
         private AudioSource pourThin, pourThick, stirLoop, simmer, boil, scorch, burner;
         private readonly List<AudioSource> sources = new List<AudioSource>();
+        private readonly List<Material> materials = new List<Material>();
         private readonly Dictionary<AudioSource, float> targets = new Dictionary<AudioSource, float>();
 
         private float swirlStrength, swirlAngle, swirlSign = -1f;
@@ -138,6 +139,29 @@ namespace PotionFrontier.Game2D
         private void OnDestroy()
         {
             if (flask != null) flask.PieceLanded -= OnPieceLanded;
+            // 粒のために作った素材（Material）は、自分で消さないと残り続ける
+            foreach (Material m in materials) if (m != null) Destroy(m);
+            materials.Clear();
+        }
+
+        /// <summary>
+        /// ウィンドウが裏に回ったら、注ぐ音・かき混ぜる音だけはすぐに消す（裏に回るとゲームが止まり、
+        /// 音を小さくしていく処理も止まるので、手を離したはずの注ぐ音が鳴り続けてしまう）。火やお湯の音は、そのまま
+        /// </summary>
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus) return;
+            Silence(pourThin);
+            Silence(pourThick);
+            Silence(stirLoop);
+        }
+
+        private void Silence(AudioSource source)
+        {
+            if (source == null) return;
+            targets[source] = 0f;
+            source.volume = 0f;
+            if (source.isPlaying) source.Stop();
         }
 
         // ------------------------------------------------------------------
@@ -229,6 +253,7 @@ namespace PotionFrontier.Game2D
                 m = shader != null ? new Material(shader) : new Material(Shader.Find("Sprites/Default"));
             }
             if (sprite != null) m.mainTexture = sprite.texture;
+            materials.Add(m);
             return m;
         }
 
@@ -587,7 +612,7 @@ namespace PotionFrontier.Game2D
                     float perSecond = Mathf.Lerp(0.35f, 2.2f, warm) * (sim.IsBoiling ? 1.4f : 1f);
                     kotoTimer = Random.Range(0.5f, 1.5f) / perSecond;
                     AudioClip clip = Pick(lib != null ? lib.kotoKnock : null, SfxSynth.Knock);
-                    AudioManager.Se(clip, (0.1f + 0.18f * warm) * kotoVolume * room, Random.Range(0.85f, 1.18f));
+                    AudioManager.Ambient(clip, (0.1f + 0.18f * warm) * kotoVolume * room, Random.Range(0.85f, 1.18f));
                     KnockCount++;
                 }
             }
@@ -601,10 +626,10 @@ namespace PotionFrontier.Game2D
                 {
                     glassTimer = Random.Range(1.5f, 5f) / Mathf.Lerp(0.5f, 1.4f, hot);
                     AudioClip custom = Pick(lib != null ? lib.glassTouch : null, null);
-                    if (custom != null) AudioManager.Se(custom, (0.06f + 0.06f * hot) * glassVolume * room, Random.Range(0.95f, 1.08f));
+                    if (custom != null) AudioManager.Ambient(custom, (0.06f + 0.06f * hot) * glassVolume * room, Random.Range(0.95f, 1.08f));
                     else if (lib != null && lib.stirTink != null && lib.stirTink.Length > 0)
-                        AudioManager.Se(lib.stirTink[Random.Range(0, lib.stirTink.Length)], (0.05f + 0.05f * hot) * glassVolume * room, Random.Range(1.35f, 1.7f));
-                    else AudioManager.Se(SfxSynth.GlassTap, (0.04f + 0.04f * hot) * glassVolume * room, Random.Range(0.9f, 1.1f));
+                        AudioManager.Ambient(lib.stirTink[Random.Range(0, lib.stirTink.Length)], (0.05f + 0.05f * hot) * glassVolume * room, Random.Range(1.35f, 1.7f));
+                    else AudioManager.Ambient(SfxSynth.GlassTap, (0.04f + 0.04f * hot) * glassVolume * room, Random.Range(0.9f, 1.1f));
                     GlassCount++;
                 }
             }

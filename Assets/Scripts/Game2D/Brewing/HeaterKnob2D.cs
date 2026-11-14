@@ -34,6 +34,7 @@ namespace PotionFrontier.Game2D
         private BrewSession2D session;
         private float shown;
         private float seed;
+        private bool asleep;
 
         /// <summary>今の見た目の火加減（0〜1）</summary>
         public float ShownLevel => shown;
@@ -54,6 +55,21 @@ namespace PotionFrontier.Game2D
             float level = session != null ? session.HeatLevel : 0f;
             shown = Mathf.MoveTowards(shown, level, Time.deltaTime * 3f);
             if (knobDial != null) knobDial.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(offAngle, maxAngle, level));
+
+            // 火が消えて落ち着いたら、炎と光は一度だけ消して、あとは何もしない
+            if (level <= 0f && shown <= 0.01f)
+            {
+                if (asleep) return;
+                asleep = true;
+                foreach (SpriteRenderer f in flames) if (f != null) f.enabled = false;
+                if (heaterLight != null)
+                {
+                    heaterLight.intensity = 0f;
+                    heaterLight.enabled = false;
+                }
+                return;
+            }
+            asleep = false;
 
             float t = Time.time;
             bool on = shown > 0.01f;

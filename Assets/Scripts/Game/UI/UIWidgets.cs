@@ -233,8 +233,21 @@ namespace PotionFrontier.Game
         {
             bool usable = button == null || button.interactable;
             float target = usable && (Selected || pointerInside) ? 1.06f : 1f;
+            // 大きさが落ち着いているボタンは、何もしない（画面のボタンが多くても軽く）
+            if (current == target) return;
             current = Mathf.MoveTowards(current, target, Time.unscaledDeltaTime * 0.8f);
             transform.localScale = new Vector3(current, current, 1f);
+        }
+    }
+
+    /// <summary>マウスが乗ったことを知らせるだけの小さな部品（設定の行など、ボタンではない所を指したとき）</summary>
+    public class UIHoverRelay : MonoBehaviour, IPointerEnterHandler
+    {
+        public Action Entered;
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (Entered != null) Entered();
         }
     }
 

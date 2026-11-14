@@ -64,6 +64,15 @@ namespace PotionFrontier.Game
         /// <summary>中身が変わった（ノートを開いていれば描き直す）</summary>
         public static event Action Changed;
 
+        /// <summary>中身が変わるたびに 1 ずつ増える番号（表示の文字を、変わったときだけ作り直すのに使う）</summary>
+        public static int Revision { get; private set; }
+
+        private static void NotifyChanged()
+        {
+            Revision++;
+            if (Changed != null) Changed();
+        }
+
         // ------------------------------------------------------------------
         // 調べる
         // ------------------------------------------------------------------
@@ -122,7 +131,7 @@ namespace PotionFrontier.Game
             // 性質がわかったら、使ったことがあるのも当然
             facts[d.IngredientId] = v | (int)fact | (int)IngredientFact.Used;
             if (fact != IngredientFact.Used && FactDiscovered != null) FactDiscovered(d, fact);
-            if (Changed != null) Changed();
+            NotifyChanged();
             return true;
         }
 
@@ -131,7 +140,7 @@ namespace PotionFrontier.Game
         {
             if (r == null || !reactions.Add(r.ReactionId)) return false;
             if (ReactionDiscovered != null) ReactionDiscovered(r);
-            if (Changed != null) Changed();
+            NotifyChanged();
             return true;
         }
 
@@ -187,7 +196,7 @@ namespace PotionFrontier.Game
         {
             facts.Clear();
             reactions.Clear();
-            if (Changed != null) Changed();
+            NotifyChanged();
         }
 
         public static List<IngredientNote> ExportNotes()
@@ -223,7 +232,7 @@ namespace PotionFrontier.Game
                     if (!string.IsNullOrEmpty(r)) reactions.Add(r);
                 }
             }
-            if (Changed != null) Changed();
+            NotifyChanged();
         }
 
         private static int Count(IngredientFact f)
